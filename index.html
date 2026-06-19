@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>伪声训练器</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <div class="panel panel-spectrogram">
+      <canvas id="spectrogram"></canvas>
+    </div>
+    <div class="panel panel-formants">
+      <canvas id="formantChart"></canvas>
+      <div id="formantValues">
+        <span class="f0" id="f0Label">F0: -- Hz</span>
+        <span class="f1" id="f1Label">F1: -- Hz</span>
+        <span class="f2" id="f2Label">F2: -- Hz</span>
+        <span class="f3" id="f3Label">F3: -- Hz</span>
+        <span class="f4" id="f4Label">F4: -- Hz</span>
+      </div>
+    </div>
+    <div id="controls">
+      <button id="btnPause">暂停</button>
+    </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

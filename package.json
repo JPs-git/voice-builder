@@ -1,0 +1,12 @@
+{
+  "name": "voice-builder",
+  "version": "1.0.0",
+  "description": "Web-based voice training tool with real-time spectrogram and formant analysis",
+  "type": "module",
+  "scripts": {
+    "start": "/usr/bin/node server.js",
+    "start:serve": "serve .",
+    "start:py": "python3 -m http.server 3000"
+  },
+  "dependencies": {}
+}

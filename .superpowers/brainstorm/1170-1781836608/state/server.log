@@ -1,0 +1,8 @@
+{"type":"server-started","port":61147,"host":"0.0.0.0","url_host":"localhost","url":"http://localhost:61147","screen_dir":"/home/administrator/projects/voice-builder/.superpowers/brainstorm/1170-1781836608/content","state_dir":"/home/administrator/projects/voice-builder/.superpowers/brainstorm/1170-1781836608/state"}
+{"type":"screen-added","file":"/home/administrator/projects/voice-builder/.superpowers/brainstorm/1170-1781836608/content/layout-options.html"}
+{"source":"user-event","type":"click","text":"A\n    \n      叠加显示 (Praat 风格)\n      共振峰轨迹 (F0–F4) 直接画在声谱图上，时间轴共用，一目了然。\n      \n        优点紧凑，信息密度高符合语音学界习惯时间对齐无歧义\n        缺点初学者可能觉得杂乱声谱图能量可能掩盖共振峰线","choice":"overlay","id":null,"timestamp":1781836812659}
+{"source":"user-event","type":"click","text":"B\n    \n      上下分离视图\n      上方声谱图，下方单独画共振峰折线图 (纵轴 Hz)，时间轴同步。\n      \n        优点干净清晰，互不干扰共振峰数值容易读取适合初学者理解\n        缺点占更多屏幕空间视线需要上下移动","choice":"split","id":null,"timestamp":1781836885427}
+{"source":"user-event","type":"click","text":"A\n    \n      叠加显示 (Praat 风格)\n      共振峰轨迹 (F0–F4) 直接画在声谱图上，时间轴共用，一目了然。\n      \n        优点紧凑，信息密度高符合语音学界习惯时间对齐无歧义\n        缺点初学者可能觉得杂乱声谱图能量可能掩盖共振峰线","choice":"overlay","id":null,"timestamp":1781836887340}
+{"source":"user-event","type":"click","text":"B\n    \n      上下分离视图\n      上方声谱图，下方单独画共振峰折线图 (纵轴 Hz)，时间轴同步。\n      \n        优点干净清晰，互不干扰共振峰数值容易读取适合初学者理解\n        缺点占更多屏幕空间视线需要上下移动","choice":"split","id":null,"timestamp":1781836892299}
+{"source":"user-event","type":"click","text":"B\n    \n      上下分离视图\n      上方声谱图，下方单独画共振峰折线图 (纵轴 Hz)，时间轴同步。\n      \n        优点干净清晰，互不干扰共振峰数值容易读取适合初学者理解\n        缺点占更多屏幕空间视线需要上下移动","choice":"split","id":null,"timestamp":1781836892705}
+{"type":"server-stopped","reason":"idle timeout"}

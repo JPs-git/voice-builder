@@ -1,0 +1,54 @@
+<h2>声谱图 vs 共振峰图谱 — 布局方案</h2>
+<p class="subtitle">选一个你最倾向的布局方式，或选多个表示"都想要"</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="overlay" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>叠加显示 (Praat 风格)</h3>
+      <p>共振峰轨迹 (F0–F4) 直接画在声谱图上，时间轴共用，一目了然。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:0.85em">
+        <div class="pros"><h4>优点</h4><ul><li>紧凑，信息密度高</li><li>符合语音学界习惯</li><li>时间对齐无歧义</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>初学者可能觉得杂乱</li><li>声谱图能量可能掩盖共振峰线</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="split" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>上下分离视图</h3>
+      <p>上方声谱图，下方单独画共振峰折线图 (纵轴 Hz)，时间轴同步。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:0.85em">
+        <div class="pros"><h4>优点</h4><ul><li>干净清晰，互不干扰</li><li>共振峰数值容易读取</li><li>适合初学者理解</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>占更多屏幕空间</li><li>视线需要上下移动</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="tab" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>可切换标签</h3>
+      <p>通过 Tab/开关在"声谱图"和"共振峰"视图之间切换，同一块区域。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:0.85em">
+        <div class="pros"><h4>优点</h4><ul><li>最大利用屏幕空间</li><li>专注当前视图</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>无法同时看到两者</li><li>快速对比不方便</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="overlay-toggle" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>叠加 + 可切换分离</h3>
+      <p>默认叠加显示，但提供一个按钮一键切换到上下分离视图。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:0.85em">
+        <div class="pros"><h4>优点</h4><ul><li>兼顾两种需求</li><li>用户可自由选择</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>实现复杂度增加</li><li>开发时间增加</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:24px;color:var(--muted)">在浏览器里点击选择，或者在终端告诉我你的想法都可以。</p>

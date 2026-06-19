@@ -1,0 +1,25 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #111; color: #ccc; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; }
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+.panel { position: relative; flex: 1; min-height: 0; border-bottom: 1px solid #333; }
+.panel canvas { display: block; width: 100%; height: 100%; }
+
+#formantValues {
+  position: absolute; left: 8px; top: 8px;
+  display: flex; flex-direction: column; gap: 2px;
+  font-size: 12px; pointer-events: none; z-index: 10;
+}
+#formantValues .f0 { color: rgba(255,255,255,0.6); }
+#formantValues .f1 { color: #ff4444; }
+#formantValues .f2 { color: #4488ff; }
+#formantValues .f3 { color: #44cc44; }
+#formantValues .f4 { color: #ff8844; }
+
+#controls { position: fixed; bottom: 12px; right: 12px; z-index: 20; }
+#controls button {
+  background: #333; color: #ccc; border: 1px solid #555;
+  padding: 6px 16px; font-family: inherit; font-size: 13px; cursor: pointer;
+}
+#controls button:hover { background: #444; }
