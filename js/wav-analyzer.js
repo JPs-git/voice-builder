@@ -1,4 +1,6 @@
 import { detectPitch } from './lpc.js'
+import { Resampler } from './resampler.js'
+import { FrameProcessor } from './frame-processor.js'
 
 function readSample(view, offset, bitsPerSample) {
   switch (bitsPerSample) {
@@ -70,22 +72,39 @@ export function parseWav(arrayBuffer) {
   return { samples, sampleRate, numChannels, bitsPerSample, audioFormat }
 }
 
-const CHUNK_SIZE = 512
-
 export async function analyzeWavF0(file) {
   const arrayBuffer = await file.arrayBuffer()
   const parsed = parseWav(arrayBuffer)
   const { samples, sampleRate } = parsed
 
+  const resampler = new Resampler(sampleRate, 16000)
+  const resampled = resampler.process(samples)
+
+  const fp = new FrameProcessor({
+    sampleRate: 16000,
+    frameSize: 400,
+    hopSize: 160,
+  })
+
   const f0Data = []
-  for (let offset = 0; offset + CHUNK_SIZE <= samples.length; offset += CHUNK_SIZE) {
-    const chunk = samples.subarray(offset, offset + CHUNK_SIZE)
-    const f0 = detectPitch(chunk, sampleRate)
-    f0Data.push({ time: offset / sampleRate, f0 })
+  fp.onFrame = (frame) => {
+    const f0 = detectPitch(frame.samples, frame.sampleRate)
+    f0Data.push({ time: frame.time, f0 })
   }
 
-  const duration = samples.length / sampleRate
+  fp.push(resampled)
+  fp.push(new Float32Array(400))
+
+  const lastFrame = f0Data.length > 0 ? f0Data[f0Data.length - 1] : null
+  const duration = lastFrame ? lastFrame.time + 0.01 : 0
   const voiced = f0Data.filter(d => d.f0 != null).length
 
-  return { f0Data, sampleRate, duration, fileName: file.name, totalFrames: f0Data.length, voicedFrames: voiced }
+  return {
+    f0Data,
+    sampleRate: 16000,
+    duration,
+    fileName: file.name,
+    totalFrames: f0Data.length,
+    voicedFrames: voiced,
+  }
 }
