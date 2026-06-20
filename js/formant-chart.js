@@ -116,9 +116,6 @@ export class FormantChartRenderer {
     }
   }
 
-    return freq;
-  }
-
   showWavF0Trace(f0Data, fileName, duration) {
     this._wavMode = true;
     this._wavData = f0Data;
