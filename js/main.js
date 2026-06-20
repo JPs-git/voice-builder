@@ -19,21 +19,21 @@ const f4Label = document.getElementById('f4Label')
 const wavInfo = document.getElementById('wavInfo')
 
 function updateFormantLabels(f) {
-  if (!f) {
-    const els = [f0Label, f1Label, f2Label, f3Label, f4Label]
-    for (const el of els) {
-      if (el) el.textContent = '-- Hz'
-    }
-    return
+  const labels = [
+    { el: f0Label, prefix: 'F0: ' },
+    { el: f1Label, prefix: 'F1: ' },
+    { el: f2Label, prefix: 'F2: ' },
+    { el: f3Label, prefix: 'F3: ' },
+    { el: f4Label, prefix: 'F4: ' },
+  ]
+  const set = (el, prefix, val) => {
+    if (!el) return
+    el.textContent = val != null ? `${prefix}${Math.round(val)} Hz` : `${prefix}-- Hz`
   }
-  const set = (el, val) => {
-    if (el) el.textContent = val != null ? `${Math.round(val)} Hz` : '-- Hz'
+  for (const { el, prefix } of labels) {
+    const val = f ? f[prefix.toLowerCase().slice(0, 2)] : null
+    set(el, prefix, val)
   }
-  set(f0Label, f.f0)
-  set(f1Label, f.f1)
-  set(f2Label, f.f2)
-  set(f3Label, f.f3)
-  set(f4Label, f.f4)
 }
 
 btnRecord.addEventListener('click', async () => {
