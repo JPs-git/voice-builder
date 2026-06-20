@@ -60,6 +60,9 @@ export class FormantChartRenderer {
 
     ctx.drawImage(this.canvas, 1, 0, w - 1, h, 0, 0, w - 1, h);
 
+    ctx.fillStyle = '#111';
+    ctx.fillRect(w - 1, 0, 1, h);
+
     const freq = formantFrame.f0;
     if (freq != null && !isNaN(freq)) {
       const y = Math.round(this._freqToY(freq));
