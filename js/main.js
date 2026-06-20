@@ -1,37 +1,42 @@
 import { AudioEngine } from './audio-engine.js'
-import { SpectrogramRenderer } from './spectrogram.js'
 import { FormantChartRenderer } from './formant-chart.js'
-import { PlaybackManager } from './playback.js'
 import { analyzeWavF0 } from './wav-analyzer.js'
 
-const spectrogramCanvas = document.getElementById('spectrogram')
 const formantCanvas = document.getElementById('formantChart')
-const btnPause = document.getElementById('btnPause')
+const btnRecord = document.getElementById('btnRecord')
 
 const audioEngine = new AudioEngine()
-const spectrogram = new SpectrogramRenderer(spectrogramCanvas)
 const formantChart = new FormantChartRenderer(formantCanvas)
 
-audioEngine.onCombinedFrame = (frame) => {
-  spectrogram.pushFrame(frame.magnitudes, frame.time)
-  formantChart.pushFrame(frame, frame.time)
-  updateFormantLabels(frame)
-}
+const f0Label = document.getElementById('f0Label')
 
-const playback = new PlaybackManager(audioEngine, spectrogram, formantChart)
+btnRecord.addEventListener('click', async () => {
+  if (audioEngine.running) {
+    btnRecord.textContent = '分析中...'
+    btnRecord.disabled = true
 
-btnPause.addEventListener('click', () => {
-  playback.toggle()
-  btnPause.textContent = playback.paused ? '继续' : '暂停'
-})
+    const { samples, sampleRate } = audioEngine.stopRecording()
+    const result = audioEngine.analyzePcm(samples, sampleRate)
 
-function updateFormantLabels(f) {
-  const set = (id, val) => {
-    const el = document.getElementById(id)
-    if (el) el.textContent = val != null ? val.toFixed(0) + ' Hz' : '-- Hz'
+    formantChart.showWavF0Trace(result.f0Data, '录制', result.duration)
+    f0Label.textContent = `F0: ${result.voicedFrames}/${result.totalFrames} framed`
+
+    btnRecord.textContent = '录制'
+    btnRecord.disabled = false
+  } else {
+    formantChart.clear()
+    formantChart.clearWavTrace()
+    f0Label.textContent = 'F0: -- Hz'
+
+    try {
+      await audioEngine.startRecording()
+      btnRecord.textContent = '停止'
+    } catch (err) {
+      f0Label.textContent = '麦克风初始化失败'
+      console.error('Recording start failed:', err)
+    }
   }
-  set('f0Label', f.f0)
-}
+})
 
 const wavInfo = document.getElementById('wavInfo')
 
@@ -56,14 +61,3 @@ wavInfo.addEventListener('click', () => {
     wavInfo.textContent = ''
   }
 })
-
-async function init() {
-  try {
-    await audioEngine.start()
-  } catch (err) {
-    console.error('Failed to start:', err)
-    document.body.innerHTML = `<div style="color:red;padding:20px">麦克风初始化失败: ${err.message}</div>`
-  }
-}
-
-init()
