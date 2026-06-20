@@ -26,7 +26,6 @@ formantCanvas.addEventListener('click', (e) => {
   const frame = data[Math.min(idx, lastIdx)]
   if (frame) {
     f0Label.textContent = frame.f0 != null ? `F0: ${Math.round(frame.f0)} Hz` : 'F0: -- Hz'
-    formantChart.showVerticalLine(clickX, frame)
     formantChart.setMarker(frame, clickX)
   }
 })
