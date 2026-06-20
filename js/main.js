@@ -1,53 +1,37 @@
 import { AudioEngine } from './audio-engine.js'
+import { SpectrogramRenderer } from './spectrogram.js'
 import { FormantChartRenderer } from './formant-chart.js'
 import { analyzeWavF0 } from './wav-analyzer.js'
 
+const spectrogramCanvas = document.getElementById('spectrogram')
 const formantCanvas = document.getElementById('formantChart')
 const btnRecord = document.getElementById('btnRecord')
 
 const audioEngine = new AudioEngine()
+const spectrogram = new SpectrogramRenderer(spectrogramCanvas)
 const formantChart = new FormantChartRenderer(formantCanvas)
 
 const f0Label = document.getElementById('f0Label')
 const wavInfo = document.getElementById('wavInfo')
 
-let _f0Data = []
-let _rafId = null
-
-function redrawTrace() {
-  if (_f0Data.length === 0) return
-  const last = _f0Data[_f0Data.length - 1]
-  const duration = last.time + 0.01
-  formantChart.showWavF0Trace(_f0Data, '实时', duration)
-}
-
 btnRecord.addEventListener('click', async () => {
   if (audioEngine.running) {
-    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null }
     audioEngine.stopStream()
     btnRecord.textContent = '录制'
-    if (_f0Data.length > 0) {
-      redrawTrace()
-    }
   } else {
+    spectrogram.clear()
+    formantChart.clear()
     formantChart.clearWavTrace()
     wavInfo.textContent = ''
-    _f0Data = []
     f0Label.textContent = 'F0: -- Hz'
 
     try {
-      await audioEngine.startStream((f0, time) => {
-        _f0Data.push({ time, f0 })
+      await audioEngine.startStream(({ f0, time, magnitudes }) => {
+        spectrogram.pushFrame(magnitudes, time)
+        formantChart.pushFrame({ f0 }, time)
         f0Label.textContent = f0 != null ? `F0: ${Math.round(f0)} Hz` : 'F0: -- Hz'
       })
       btnRecord.textContent = '停止'
-
-            const loop = () => {
-        if (!audioEngine.running) return
-        redrawTrace()
-        _rafId = requestAnimationFrame(loop)
-      }
-      _rafId = requestAnimationFrame(loop)
     } catch (err) {
       f0Label.textContent = '麦克风初始化失败'
       console.error('Stream start failed:', err)

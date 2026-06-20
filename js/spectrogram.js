@@ -1,5 +1,5 @@
 export class SpectrogramRenderer {
-  constructor(canvas, sampleRate = 44100) {
+  constructor(canvas, sampleRate = 16000) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.sampleRate = sampleRate;
