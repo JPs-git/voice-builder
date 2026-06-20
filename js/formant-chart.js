@@ -67,7 +67,17 @@ export class FormantChartRenderer {
     if (freq != null && !isNaN(freq)) {
       const y = Math.round(this._freqToY(freq));
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(w - 1, y, 1, 1);
+      if (this._lastF0 != null && !isNaN(this._lastF0)) {
+        const lastY = Math.round(this._freqToY(this._lastF0));
+        const minY = Math.min(lastY, y);
+        const maxY = Math.max(lastY, y);
+        ctx.fillRect(w - 1, minY, 1, maxY - minY + 1);
+      } else {
+        ctx.fillRect(w - 1, y, 1, 1);
+      }
+      this._lastF0 = freq;
+    } else {
+      this._lastF0 = null;
     }
   }
 
@@ -87,7 +97,7 @@ export class FormantChartRenderer {
     const dpr = this._dpr || 1;
     const freq = frame.f0;
     if (freq != null && !isNaN(freq)) {
-      const y = this._freqToY(freq);
+      const y = Math.round(this._freqToY(freq));
       ctx.fillStyle = '#ffe066';
       ctx.beginPath();
       ctx.arc(x, y, 3 * dpr, 0, Math.PI * 2);
@@ -253,6 +263,7 @@ export class FormantChartRenderer {
 
   clear() {
     this.data = [];
+    this._lastF0 = null;
     this.ctx.fillStyle = '#111';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
