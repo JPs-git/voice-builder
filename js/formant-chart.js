@@ -2,7 +2,7 @@ export class FormantChartRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
-    this.freqMax = 500;
+    this.freqMax = 5000;
     this.data = [];
     this.windowSeconds = 3;
     this._dotRadius = 2;
@@ -63,11 +63,15 @@ export class FormantChartRenderer {
     ctx.fillStyle = '#111';
     ctx.fillRect(w - 1, 0, 1, h);
 
-    const freq = formantFrame.f0;
-    if (freq != null && !isNaN(freq)) {
+    const keys = ['f0', 'f1', 'f2', 'f3', 'f4'];
+    const colors = { f0: '#ffffff', f1: '#ff4444', f2: '#4488ff', f3: '#44cc44', f4: '#ff8844' };
+
+    for (const key of keys) {
+      const freq = formantFrame[key];
+      if (freq == null || isNaN(freq)) continue;
       const y = Math.round(this._freqToY(freq));
-      ctx.fillStyle = '#ffffff';
-      if (this._lastF0 != null && !isNaN(this._lastF0)) {
+      ctx.fillStyle = colors[key];
+      if (key === 'f0' && this._lastF0 != null && !isNaN(this._lastF0)) {
         const lastY = Math.round(this._freqToY(this._lastF0));
         const minY = Math.min(lastY, y);
         const maxY = Math.max(lastY, y);
@@ -75,10 +79,8 @@ export class FormantChartRenderer {
       } else {
         ctx.fillRect(w - 1, y, 1, 1);
       }
-      this._lastF0 = freq;
-    } else {
-      this._lastF0 = null;
     }
+    this._lastF0 = formantFrame.f0 != null && !isNaN(formantFrame.f0) ? formantFrame.f0 : null;
   }
 
   showVerticalLine(x, frame) {
@@ -95,14 +97,24 @@ export class FormantChartRenderer {
     ctx.setLineDash([]);
 
     const dpr = this._dpr || 1;
-    const freq = frame.f0;
-    if (freq != null && !isNaN(freq)) {
+    const labels = [
+      { key: 'f0', color: '#ffe066' },
+      { key: 'f1', color: '#ff4444' },
+      { key: 'f2', color: '#4488ff' },
+      { key: 'f3', color: '#44cc44' },
+      { key: 'f4', color: '#ff8844' },
+    ];
+
+    for (const lbl of labels) {
+      const freq = frame[lbl.key];
+      if (freq == null || isNaN(freq)) continue;
       const y = Math.round(this._freqToY(freq));
-      ctx.fillStyle = '#ffe066';
+      ctx.fillStyle = lbl.color;
       ctx.beginPath();
       ctx.arc(x, y, 3 * dpr, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
 
     return freq;
   }

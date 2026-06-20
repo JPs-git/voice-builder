@@ -1,6 +1,6 @@
 import { Resampler } from './resampler.js'
 import { FrameProcessor } from './frame-processor.js'
-import { detectPitch } from './lpc.js'
+import { detectPitch, extractFormants } from './lpc.js'
 import { fftMagnitudes } from './fft.js'
 
 export class AudioEngine {
@@ -83,9 +83,19 @@ export class AudioEngine {
     this._frameProcessor = new FrameProcessor({ sampleRate: 16000, frameSize: 400, hopSize: 160 })
     this._frameProcessor.onFrame = (frame) => {
       const f0 = detectPitch(frame.samples, frame.sampleRate)
+      const result = extractFormants(frame.samples, frame.sampleRate)
+      const formants = result.formants
       const magnitudes = fftMagnitudes(frame.samples, 512)
       this._frameCount++
-      onFrame({ f0, time: this._frameCount * 0.01, magnitudes })
+      onFrame({
+        f0,
+        f1: formants[0]?.freq ?? null,
+        f2: formants[1]?.freq ?? null,
+        f3: formants[2]?.freq ?? null,
+        f4: formants[3]?.freq ?? null,
+        time: this._frameCount * 0.01,
+        magnitudes,
+      })
     }
 
     this._source = this._audioContext.createMediaStreamSource(this._stream)

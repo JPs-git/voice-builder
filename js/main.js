@@ -12,7 +12,29 @@ const spectrogram = new SpectrogramRenderer(spectrogramCanvas)
 const formantChart = new FormantChartRenderer(formantCanvas)
 
 const f0Label = document.getElementById('f0Label')
+const f1Label = document.getElementById('f1Label')
+const f2Label = document.getElementById('f2Label')
+const f3Label = document.getElementById('f3Label')
+const f4Label = document.getElementById('f4Label')
 const wavInfo = document.getElementById('wavInfo')
+
+function updateFormantLabels(f) {
+  if (!f) {
+    const els = [f0Label, f1Label, f2Label, f3Label, f4Label]
+    for (const el of els) {
+      if (el) el.textContent = '-- Hz'
+    }
+    return
+  }
+  const set = (el, val) => {
+    if (el) el.textContent = val != null ? `${Math.round(val)} Hz` : '-- Hz'
+  }
+  set(f0Label, f.f0)
+  set(f1Label, f.f1)
+  set(f2Label, f.f2)
+  set(f3Label, f.f3)
+  set(f4Label, f.f4)
+}
 
 btnRecord.addEventListener('click', async () => {
   if (audioEngine.running) {
@@ -26,13 +48,13 @@ btnRecord.addEventListener('click', async () => {
     formantChart.clear()
     formantChart.clearWavTrace()
     wavInfo.textContent = ''
-    f0Label.textContent = 'F0: -- Hz'
+    updateFormantLabels(null)
 
     try {
-      await audioEngine.startStream(({ f0, time, magnitudes }) => {
-        spectrogram.pushFrame(magnitudes, time)
-        formantChart.pushFrame({ f0 }, time)
-        f0Label.textContent = f0 != null ? `F0: ${Math.round(f0)} Hz` : 'F0: -- Hz'
+      await audioEngine.startStream((frame) => {
+        spectrogram.pushFrame(frame.magnitudes, frame.time)
+        formantChart.pushFrame(frame, frame.time)
+        updateFormantLabels(frame)
       })
       btnRecord.textContent = '停止'
     } catch (err) {
@@ -59,7 +81,7 @@ formantCanvas.addEventListener('click', (e) => {
     formantChart.ctx.putImageData(formantChart._canvasSnapshot, 0, 0)
   }
   formantChart.showVerticalLine(clickX, frame)
-  f0Label.textContent = frame.f0 != null ? `F0: ${Math.round(frame.f0)} Hz` : 'F0: -- Hz'
+  updateFormantLabels(frame)
 })
 
 document.getElementById('wavInput').addEventListener('change', async (e) => {
