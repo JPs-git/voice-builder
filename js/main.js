@@ -14,27 +14,14 @@ const formantChart = new FormantChartRenderer(formantCanvas)
 const f0Label = document.getElementById('f0Label')
 const wavInfo = document.getElementById('wavInfo')
 
-formantCanvas.addEventListener('click', (e) => {
-  const data = formantChart.data
-  if (data.length < 2) return
-  const rect = formantCanvas.getBoundingClientRect()
-  const dpr = window.devicePixelRatio || 1
-  const clickX = Math.round((e.clientX - rect.left) * dpr)
-  const w = formantChart.canvas.width
-  const lastIdx = data.length - 1
-  const idx = Math.max(0, lastIdx - (w - 1 - clickX))
-  const frame = data[Math.min(idx, lastIdx)]
-  if (frame) {
-    f0Label.textContent = frame.f0 != null ? `F0: ${Math.round(frame.f0)} Hz` : 'F0: -- Hz'
-    formantChart.showVerticalLine(clickX, frame)
-  }
-})
-
 btnRecord.addEventListener('click', async () => {
   if (audioEngine.running) {
     audioEngine.stopStream()
+    formantChart._canvasSnapshot = formantChart.ctx.getImageData(
+      0, 0, formantChart.canvas.width, formantChart.canvas.height)
     btnRecord.textContent = '录制'
   } else {
+    formantChart._canvasSnapshot = null
     spectrogram.clear()
     formantChart.clear()
     formantChart.clearWavTrace()
@@ -53,6 +40,26 @@ btnRecord.addEventListener('click', async () => {
       console.error('Stream start failed:', err)
     }
   }
+})
+
+formantCanvas.addEventListener('click', (e) => {
+  const data = formantChart.data
+  if (data.length < 2) return
+
+  const rect = formantCanvas.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+  const clickX = Math.round((e.clientX - rect.left) * dpr)
+  const w = formantChart.canvas.width
+  const lastIdx = data.length - 1
+  const idx = Math.max(0, lastIdx - (w - 1 - clickX))
+  const frame = data[Math.min(idx, lastIdx)]
+  if (!frame) return
+
+  if (formantChart._canvasSnapshot) {
+    formantChart.ctx.putImageData(formantChart._canvasSnapshot, 0, 0)
+  }
+  formantChart.showVerticalLine(clickX, frame)
+  f0Label.textContent = frame.f0 != null ? `F0: ${Math.round(frame.f0)} Hz` : 'F0: -- Hz'
 })
 
 document.getElementById('wavInput').addEventListener('change', async (e) => {
