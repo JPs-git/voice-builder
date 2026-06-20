@@ -9,6 +9,8 @@ export class FormantChartRenderer {
     this._wavMode = false;
     this._wavData = [];
     this._hoverIdx = -1;
+    this._markerX = -1;
+    this._markerFrame = null;
 
     this._boundResize = () => this._resize();
     this._boundMove = (e) => this._onMouseMove(e);
@@ -79,6 +81,34 @@ export class FormantChartRenderer {
     } else {
       this._lastF0 = null;
     }
+
+    if (this._markerX >= 0) {
+      this._markerX -= 1;
+      if (this._markerX >= 0 && this._markerFrame) {
+        ctx.strokeStyle = 'rgba(255,255,200,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this._markerX, 0);
+        ctx.lineTo(this._markerX, h);
+        ctx.stroke();
+        const mfreq = this._markerFrame.f0;
+        if (mfreq != null && !isNaN(mfreq)) {
+          const my = Math.round(this._freqToY(mfreq));
+          ctx.fillStyle = '#ffe066';
+          ctx.beginPath();
+          ctx.arc(this._markerX, my, 3 * (this._dpr || 1), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        this._markerX = -1;
+        this._markerFrame = null;
+      }
+    }
+  }
+
+  setMarker(frame, x) {
+    this._markerX = x;
+    this._markerFrame = frame;
   }
 
   showVerticalLine(x, frame) {
@@ -266,6 +296,8 @@ export class FormantChartRenderer {
   clear() {
     this.data = [];
     this._lastF0 = null;
+    this._markerX = -1;
+    this._markerFrame = null;
     this.ctx.fillStyle = '#111';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }

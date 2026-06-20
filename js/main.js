@@ -14,6 +14,23 @@ const formantChart = new FormantChartRenderer(formantCanvas)
 const f0Label = document.getElementById('f0Label')
 const wavInfo = document.getElementById('wavInfo')
 
+formantCanvas.addEventListener('click', (e) => {
+  const data = formantChart.data
+  if (data.length < 2) return
+  const rect = formantCanvas.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+  const clickX = Math.round((e.clientX - rect.left) * dpr)
+  const w = formantChart.canvas.width
+  const lastIdx = data.length - 1
+  const idx = Math.max(0, lastIdx - (w - 1 - clickX))
+  const frame = data[Math.min(idx, lastIdx)]
+  if (frame) {
+    f0Label.textContent = frame.f0 != null ? `F0: ${Math.round(frame.f0)} Hz` : 'F0: -- Hz'
+    formantChart.showVerticalLine(clickX, frame)
+    formantChart.setMarker(frame, clickX)
+  }
+})
+
 btnRecord.addEventListener('click', async () => {
   if (audioEngine.running) {
     audioEngine.stopStream()
