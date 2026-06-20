@@ -113,6 +113,8 @@ export class FormantChartRenderer {
     this._wavFileName = fileName;
     this._wavDuration = duration;
     this._hoverIdx = -1;
+    this.canvas.removeEventListener('mousemove', this._boundMove);
+    this.canvas.removeEventListener('mouseleave', this._boundLeave);
     this.canvas.addEventListener('mousemove', this._boundMove);
     this.canvas.addEventListener('mouseleave', this._boundLeave);
     this._drawWavTrace();
