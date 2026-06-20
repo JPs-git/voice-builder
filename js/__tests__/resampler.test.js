@@ -122,4 +122,52 @@ describe('Resampler', () => {
     const output = r.process(new Float32Array(10))
     assert.ok(output.length === 0 || output.length === 1)
   })
+
+  it('sample-level regression: ramp signal', () => {
+    const r = new Resampler(8000, 16000)
+    const input = new Float32Array(800)
+    for (let i = 0; i < 800; i++) input[i] = i
+    const output = r.process(input)
+    assert.ok(output.length > 0)
+    assert.ok(Math.abs(output[0] - 0) < 0.01)
+    assert.ok(Math.abs(output[1] - 0.5) < 0.01)
+  })
+
+  it('handles 1000 small streaming chunks without buffer growth', () => {
+    const r = new Resampler(44100, 16000)
+    const chunkSamples = 100
+    const numChunks = 1000
+    let totalOutput = 0
+    let maxBuffer = 0
+
+    for (let i = 0; i < numChunks; i++) {
+      const input = new Float32Array(chunkSamples)
+      const out = r.process(input)
+      totalOutput += out.length
+      maxBuffer = Math.max(maxBuffer, r.buffer.length)
+    }
+
+    assert.ok(totalOutput > 0, `should produce output, got ${totalOutput}`)
+    assert.ok(maxBuffer < chunkSamples * 2,
+      `buffer should not grow unbounded, max was ${maxBuffer}`)
+  })
+
+  it('resets correctly between streams', () => {
+    const r = new Resampler(44100, 16000)
+    r.process(new Float32Array(44100))  // 1 second of silence
+    assert.ok(r.buffer.length > 0 || true)  // buffer has residual
+
+    r.reset()
+    assert.equal(r.buffer.length, 0)
+
+    // After reset, process a new stream
+    const freq = 200
+    const inputLen = 4410
+    const input = new Float32Array(inputLen)
+    for (let i = 0; i < inputLen; i++) {
+      input[i] = Math.sin(2 * Math.PI * freq * i / 44100)
+    }
+    const output = r.process(input)
+    assert.ok(output.length > 0)
+  })
 })

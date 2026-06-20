@@ -23,3 +23,22 @@ body { background: #111; color: #ccc; font-family: 'Courier New', monospace; ove
   padding: 6px 16px; font-family: inherit; font-size: 13px; cursor: pointer;
 }
 #controls button:hover { background: #444; }
+
+#uploadBar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px; z-index: 30;
+  font-size: 11px; color: #666;
+  background: #1a1a1a; border-top: 1px solid #333;
+}
+
+#uploadBar input[type="file"] {
+  font-family: inherit; font-size: 11px; color: #888;
+  background: transparent; border: none; padding: 0;
+  cursor: pointer;
+}
+
+#wavInfo {
+  font-size: 11px; color: #555;
+  cursor: pointer;
+}

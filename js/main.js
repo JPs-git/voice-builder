@@ -2,6 +2,7 @@ import { AudioEngine } from './audio-engine.js'
 import { SpectrogramRenderer } from './spectrogram.js'
 import { FormantChartRenderer } from './formant-chart.js'
 import { PlaybackManager } from './playback.js'
+import { analyzeWavF0 } from './wav-analyzer.js'
 
 const spectrogramCanvas = document.getElementById('spectrogram')
 const formantCanvas = document.getElementById('formantChart')
@@ -30,11 +31,31 @@ function updateFormantLabels(f) {
     if (el) el.textContent = val != null ? val.toFixed(0) + ' Hz' : '-- Hz'
   }
   set('f0Label', f.f0)
-  set('f1Label', f.f1)
-  set('f2Label', f.f2)
-  set('f3Label', f.f3)
-  set('f4Label', f.f4)
 }
+
+const wavInfo = document.getElementById('wavInfo')
+
+document.getElementById('wavInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+
+  wavInfo.textContent = '分析中...'
+  try {
+    const result = await analyzeWavF0(file)
+    formantChart.showWavF0Trace(result.f0Data, result.fileName, result.duration)
+    wavInfo.textContent = `${result.voicedFrames}/${result.totalFrames} voiced  [× 关闭]`
+  } catch (err) {
+    wavInfo.textContent = `错误: ${err.message}`
+    console.error('WAV analysis failed:', err)
+  }
+})
+
+wavInfo.addEventListener('click', () => {
+  if (formantChart._wavMode) {
+    formantChart.clearWavTrace()
+    wavInfo.textContent = ''
+  }
+})
 
 async function init() {
   try {

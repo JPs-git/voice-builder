@@ -4,6 +4,10 @@ export class Resampler {
     this.buffer = new Float32Array(0)
   }
 
+  reset() {
+    this.buffer = new Float32Array(0)
+  }
+
   process(input) {
     const combined = new Float32Array(this.buffer.length + input.length)
     combined.set(this.buffer, 0)
@@ -19,7 +23,7 @@ export class Resampler {
     }
 
     const outputLen = Math.ceil(combined.length * this.ratio) - 1
-    const maxInterp = Math.ceil(combined.length * this.ratio)
+    const maxInterp = outputLen + 1
     const output = new Float32Array(maxInterp)
 
     for (let i = 0; i < combined.length - 1; i++) {

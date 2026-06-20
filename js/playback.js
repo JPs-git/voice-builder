@@ -60,7 +60,11 @@ export class PlaybackManager {
       }
 
       this._restoreSnapshot()
-      chart.showVerticalLine(canvasX, data[idx])
+      const f0 = chart.showVerticalLine(canvasX, data[idx])
+      const labelEl = document.getElementById('f0Label')
+      if (labelEl) {
+        labelEl.textContent = f0 != null ? `F0: ${Math.round(f0)} Hz` : 'F0: -- Hz'
+      }
     }
 
     this.formantChart.canvas.addEventListener('click', this._boundClick)

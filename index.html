@@ -15,16 +15,25 @@
       <canvas id="formantChart"></canvas>
       <div id="formantValues">
         <span class="f0" id="f0Label">F0: -- Hz</span>
+        <!-- F1-F4 temporarily hidden for F0 debug
         <span class="f1" id="f1Label">F1: -- Hz</span>
         <span class="f2" id="f2Label">F2: -- Hz</span>
         <span class="f3" id="f3Label">F3: -- Hz</span>
         <span class="f4" id="f4Label">F4: -- Hz</span>
+        -->
       </div>
     </div>
     <div id="controls">
       <button id="btnPause">暂停</button>
     </div>
   </div>
+
+  <div id="uploadBar">
+    <span>WAV: </span>
+    <input type="file" id="wavInput" accept=".wav">
+    <span id="wavInfo"></span>
+  </div>
+
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
