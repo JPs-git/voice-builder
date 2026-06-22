@@ -3,27 +3,123 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>伪声训练器</title>
+  <title>VoiceBuilder · 伪声训练器</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div id="app">
-    <div class="panel panel-spectrogram">
-      <div id="powerSpectrum"></div>
-    </div>
-    <div class="panel panel-formants">
-      <div id="formantChart"></div>
-    </div>
-    <div id="controls">
-      <button id="btnRecord">录制</button>
-    </div>
+    <!-- 顶栏 -->
+    <header class="toolbar">
+      <div class="toolbar-brand">
+        <span class="logo" aria-hidden="true">🎙️</span>
+        <span class="title">VoiceBuilder</span>
+        <span class="subtitle">伪声训练器</span>
+      </div>
+      <div class="toolbar-actions">
+        <button id="btnRecord" class="btn btn-primary">
+          <span class="btn-icon">●</span>
+          <span class="btn-label">开始录音</span>
+        </button>
+        <button id="btnImport" class="btn btn-ghost">
+          <span class="btn-icon">📁</span>
+          <span class="btn-label">导入 WAV</span>
+        </button>
+        <button id="btnClear" class="btn btn-ghost">
+          <span class="btn-icon">↺</span>
+          <span class="btn-label">清空</span>
+        </button>
+        <button id="btnHelp" class="btn btn-ghost">
+          <span class="btn-icon">?</span>
+          <span class="btn-label">帮助</span>
+        </button>
+        <input type="file" id="wavInput" accept=".wav" hidden>
+      </div>
+    </header>
+
+    <!-- 主区域 -->
+    <main class="content">
+      <!-- 卡片 1:语谱图 -->
+      <section class="card">
+        <div class="chart-wrapper">
+          <div class="chart-header">
+            <h2 class="card-title">声音频谱</h2>
+          </div>
+          <div class="chart-area">
+            <div id="powerSpectrum"></div>
+            <div class="empty-state" id="spectrumEmpty">
+              <div class="empty-state-title">还没有声音数据</div>
+              <div class="empty-state-desc">🎤 点击顶栏"开始录音"试试</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 卡片 2:共振峰曲线 -->
+      <section class="card">
+        <div class="chart-wrapper">
+          <div class="chart-header">
+            <h2 class="card-title">共振峰</h2>
+            <div class="card-legend" id="formantLegend" aria-label="图例">
+              <button class="legend-item" data-key="f0" data-active="true"><i style="background:#1F2937"></i>F0</button>
+              <button class="legend-item" data-key="f1" data-active="true"><i style="background:#E23E57"></i>F1</button>
+              <button class="legend-item" data-key="f2" data-active="true"><i style="background:#3B82F6"></i>F2</button>
+              <button class="legend-item" data-key="f3" data-active="true"><i style="background:#10B981"></i>F3</button>
+              <button class="legend-item" data-key="f4" data-active="true"><i style="background:#F59E0B"></i>F4</button>
+            </div>
+          </div>
+          <div class="chart-area">
+            <div id="formantChart"></div>
+            <div class="empty-state" id="formantEmpty">
+              <div class="empty-state-title">曲线待生成</div>
+              <div class="empty-state-desc">录音或导入音频后显示共振峰曲线</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
   </div>
 
-  <div id="uploadBar">
-    <span>WAV: </span>
-    <input type="file" id="wavInput" accept=".wav">
-    <span id="wavInfo"></span>
-  </div>
+  <!-- 帮助抽屉 -->
+  <aside class="drawer" id="helpDrawer" hidden>
+    <div class="drawer-mask" data-close></div>
+    <div class="drawer-panel">
+      <header class="drawer-header">
+        <h3>使用说明</h3>
+        <button class="drawer-close" data-close aria-label="关闭">×</button>
+      </header>
+      <div class="drawer-body">
+        <section>
+          <h4>如何开始</h4>
+          <p>点击顶部"开始录音"，或点击"导入 WAV"选择已有音频文件。首次使用浏览器会询问麦克风权限。</p>
+        </section>
+        <section>
+          <h4>声音频谱</h4>
+          <p>纵向是频率(Hz)，横向是时间(秒)。颜色越亮代表该频率能量越大，可观察到基频及其谐波形成的"条带"。</p>
+        </section>
+        <section>
+          <h4>共振峰</h4>
+          <p>F0 是基频（决定声音高低），F1/F2 决定音色。绿色区间为目标区间，进入该区间时对应数值会高亮显示。</p>
+        </section>
+        <section>
+          <h4>目标区间含义(伪女声参考)</h4>
+          <ul>
+            <li>F0: <b>180–250 Hz</b></li>
+            <li>F1: <b>400–700 Hz</b></li>
+            <li>F2: <b>1500–2300 Hz</b></li>
+          </ul>
+        </section>
+        <section>
+          <h4>常见问题</h4>
+          <ul>
+            <li>麦克风没反应?请检查浏览器地址栏的权限图标。</li>
+            <li>曲线过于抖动?说话尽量持续、平稳会更稳定。</li>
+            <li>看不到任何图像?刷新页面并重新开始录音。</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </aside>
 
   <script type="module" src="js/main.js"></script>
 </body>

@@ -1,33 +1,394 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #111; color: #ccc; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; }
+/* =========================================================
+   VoiceBuilder · 简洁实用工具风格 (Light Theme)
+   ========================================================= */
 
-#app { display: flex; flex-direction: column; height: 100vh; }
+:root {
+  /* 颜色 */
+  --bg: #F5F7FA;
+  --panel: #FFFFFF;
+  --border: #E4E7EC;
+  --border-strong: #D0D5DD;
+  --text: #1F2937;
+  --text-soft: #475467;
+  --text-mute: #98A2B3;
 
-.panel { position: relative; flex: 1; min-height: 0; border-bottom: 1px solid #333; }
-#formantChart, #powerSpectrum { display: block; width: 100%; height: 100%; }
+  /* 强调色 */
+  --primary: #E23E57;          /* 主按钮 / 录音 */
+  --primary-hover: #C52E45;
+  --primary-soft: #FFE8EC;
+  --hit: #10B981;               /* 命中目标 */
+  --hit-soft: #D1FAE5;
+  --warn: #F59E0B;
+  --warn-soft: #FEF3C7;
+  --info: #3B82F6;
+  --info-soft: #DBEAFE;
 
-#controls { position: fixed; bottom: 12px; right: 12px; z-index: 20; }
-#controls button {
-  background: #333; color: #ccc; border: 1px solid #555;
-  padding: 6px 16px; font-family: inherit; font-size: 13px; cursor: pointer;
+  /* 阴影 */
+  --shadow-card: 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06);
+  --shadow-hover: 0 4px 12px rgba(16,24,40,0.08);
+
+  /* 圆角 & 间距 */
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  /* 共振峰曲线颜色 (与 formant-chart.js / 图例保持一致) */
+  --c-f0: #1F2937;
+  --c-f1: #E23E57;
+  --c-f2: #3B82F6;
+  --c-f3: #10B981;
+  --c-f4: #F59E0B;
+
+  /* 字体 */
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, Menlo, monospace;
 }
-#controls button:hover { background: #444; }
 
-#uploadBar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  display: flex; align-items: center; gap: 8px;
-  padding: 4px 12px; z-index: 30;
-  font-size: 11px; color: #666;
-  background: #1a1a1a; border-top: 1px solid #333;
+/* ---------- 基础 reset ---------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-#uploadBar input[type="file"] {
-  font-family: inherit; font-size: 11px; color: #888;
-  background: transparent; border: none; padding: 0;
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------- 顶栏 Toolbar ---------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.toolbar-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.toolbar-brand .logo {
+  font-size: 20px;
+  line-height: 1;
+}
+.toolbar-brand .title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.toolbar-brand .subtitle {
+  font-size: 13px;
+  color: var(--text-mute);
+  font-weight: 500;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- 按钮 Button ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .05s ease;
+  white-space: nowrap;
+}
+.btn:hover { background: #F9FAFB; }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+.btn-icon { font-size: 14px; line-height: 1; }
+
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.btn-primary.is-recording {
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(226,62,87,0.15);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(226,62,87,0.15); }
+  50%      { box-shadow: 0 0 0 8px rgba(226,62,87,0.08); }
 }
 
-#wavInfo {
-  font-size: 11px; color: #555;
+.btn-ghost {
+  background: var(--panel);
+  border-color: var(--border-strong);
+  color: var(--text-soft);
+}
+.btn-ghost:hover {
+  background: #F9FAFB;
+  color: var(--text);
+}
+
+/* ---------- 常驻引导条 ---------- */
+.help-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  background: var(--warn-soft);
+  border-left: 4px solid var(--warn);
+  color: #92400E;
+  font-size: 13px;
+}
+.help-bar-icon { font-size: 16px; line-height: 1; }
+.help-bar-text { flex: 1; }
+.help-bar-close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #92400E;
   cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.help-bar-close:hover { background: rgba(0,0,0,0.05); }
+
+/* ---------- 主内容区(紧凑:两张图同一视口) ---------- */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 20px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ---------- 卡片 Card(无头部,节省纵向空间) ---------- */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  flex: 1;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 图表容器 (flex 纵向布局: header 占顶部, chart-area 占据剩余) */
+.chart-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: calc(100% - 20px);
+  height: min(42vh, 420px);
+  min-height: 280px;
+  background: #FAFBFC;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 10px;
+  padding: 8px 10px;
+}
+
+/* 图表头: 标题 + 图例，完全不占据绘制区 */
+.chart-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.chart-header .card-title {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 图表绘制区 */
+.chart-area {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow: hidden;
+}
+
+#powerSpectrum, #formantChart {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 空状态（相对 chart-area 定位） */
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-mute);
+  pointer-events: none;
+  text-align: center;
+  padding: 0 16px;
+}
+.empty-state-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+.empty-state-desc { font-size: 13px; }
+.empty-state.hidden { display: none; }
+
+
+/* ---------- 共振峰卡片图例 ---------- */
+.card-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: #F9FAFB;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s ease, background .15s ease;
+}
+.legend-item:hover { background: #F3F4F6; }
+.legend-item[data-active="false"] { opacity: 0.35; }
+.legend-item i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ---------- 帮助抽屉 ---------- */
+.drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+}
+.drawer[hidden] { display: none; }
+.drawer-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(16,24,40,0.35);
+  animation: fade .2s ease;
+}
+.drawer-panel {
+  position: relative;
+  width: min(460px, 100%);
+  height: 100%;
+  background: var(--panel);
+  box-shadow: -8px 0 24px rgba(16,24,40,0.12);
+  display: flex;
+  flex-direction: column;
+  animation: slide .2s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.drawer-close {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-mute);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.drawer-close:hover { background: #F3F4F6; color: var(--text); }
+
+.drawer-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.drawer-body section + section { margin-top: 16px; }
+.drawer-body h4 {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.drawer-body p, .drawer-body li {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 0;
+}
+.drawer-body ul { margin: 0; padding-left: 18px; }
+.drawer-body li { margin: 2px 0; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 768px) {
+  .toolbar { padding: 10px 16px; gap: 12px; }
+  .toolbar-brand .subtitle { display: none; }
+  .help-bar { padding: 10px 16px; font-size: 12px; }
+  .content { padding: 16px; gap: 16px; }
+  .chart-wrapper { height: 280px; }
+  .card-header, .card-body { padding-left: 14px; padding-right: 14px; }
+  .btn-label { display: none; }
+  .btn { height: 38px; padding: 0 12px; }
+}
+@media (max-width: 540px) {
+  .toolbar-actions { width: 100%; justify-content: flex-end; }
 }
