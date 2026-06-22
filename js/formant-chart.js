@@ -25,14 +25,17 @@ export class FormantChartRenderer {
     this._chart.setOption({
       animation: false,
       grid: { left: 50, right: 16, top: 16, bottom: 24 },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'cross' },
-        formatter: (params) =>
-          params.map(p =>
-            `${p.marker} ${p.seriesName}: ${p.value[1] != null ? Math.round(p.value[1]) + ' Hz' : '-- Hz'}`
-          ).join('<br/>'),
-      },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'cross' },
+          formatter: (params) => {
+            const colorMap = { F0: '#cccccc', F1: '#ff4444', F2: '#4488ff', F3: '#44cc44', F4: '#ff8844' }
+            return params.map(p =>
+              `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorMap[p.seriesName] || p.color};box-shadow:0 0 0 1px rgba(255,255,255,0.5);margin-right:4px;vertical-align:middle"></span>` +
+              `${p.seriesName}: ${p.value[1] != null ? Math.round(p.value[1]) + ' Hz' : '-- Hz'}`
+            ).join('<br/>')
+          },
+        },
       xAxis: {
         type: 'value',
         min: -WINDOW,
@@ -49,7 +52,7 @@ export class FormantChartRenderer {
       },
       series: [
         { name: 'F0', type: 'line', data: [], connectNulls: false,
-          symbol: 'none', lineStyle: { color: '#ffffff', width: 1.5 } },
+          symbol: 'none', lineStyle: { color: '#cccccc', width: 1.5 } },
         { name: 'F1', type: 'line', data: [], connectNulls: false,
           symbol: 'none', lineStyle: { color: '#ff4444', width: 1.5 } },
         { name: 'F2', type: 'line', data: [], connectNulls: false,
