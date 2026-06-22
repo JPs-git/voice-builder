@@ -16,8 +16,7 @@ export class AnalysisPipeline {
   }
 
   pushChunk(samples, inputSampleRate) {
-    if (!this._resampler) {
-      this._resampler = new Resampler(inputSampleRate, TARGET_RATE)
+    if (!this._frameProcessor) {
       this._frameProcessor = new FrameProcessor({ sampleRate: TARGET_RATE, frameSize: FRAME_SIZE, hopSize: HOP_SIZE })
       this._frameProcessor.onFrame = (frame) => {
         const f0 = detectPitch(frame.samples, frame.sampleRate)
@@ -36,10 +35,13 @@ export class AnalysisPipeline {
         }
         if (this.onFrame) this.onFrame(output)
       }
+      if (inputSampleRate !== TARGET_RATE) {
+        this._resampler = new Resampler(inputSampleRate, TARGET_RATE)
+      }
     }
-    const resampled = this._resampler.process(samples)
-    if (resampled.length > 0) {
-      this._frameProcessor.push(resampled)
+    const data = this._resampler ? this._resampler.process(samples) : samples
+    if (data.length > 0) {
+      this._frameProcessor.push(data)
     }
   }
 

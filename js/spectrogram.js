@@ -80,9 +80,10 @@ export class SpectrogramRenderer {
   _renderWindow() {
     const w = this.canvas.width;
     const h = this.canvas.height;
-    if (w === 0 || h === 0 || this._frames.length === 0) return;
+    const frameCount = this._frames.length;
+    if (w === 0 || h === 0 || frameCount === 0) return;
 
-    const currentTime = this._frames[this._frames.length - 1].time;
+    const currentTime = this._frames[frameCount - 1].time;
     const windowStart = currentTime - this._windowDuration;
     const binCount = this._frames[0].magnitudes.length;
     const nyquist = this.sampleRate / 2;
@@ -90,8 +91,9 @@ export class SpectrogramRenderer {
     const imageData = this.ctx.createImageData(w, h);
     const pixels = imageData.data;
 
+    // Time-based column positioning matching ECharts' xAxis range [time-10, time]
+    // Linear interpolation between adjacent frames eliminates hard boundaries
     let frameIdx = 0;
-    const frameCount = this._frames.length;
 
     for (let x = 0; x < w; x++) {
       const colTime = windowStart + (x / w) * this._windowDuration;
@@ -100,23 +102,16 @@ export class SpectrogramRenderer {
         frameIdx++;
       }
 
-      let bestIdx = frameIdx;
-      if (frameIdx + 1 < frameCount) {
-        const dCur = Math.abs(this._frames[frameIdx].time - colTime);
-        const dNext = Math.abs(this._frames[frameIdx + 1].time - colTime);
-        if (dNext < dCur) bestIdx = frameIdx + 1;
-      } else if (frameIdx > 0) {
-        const dCur = Math.abs(this._frames[frameIdx].time - colTime);
-        const dPrev = Math.abs(this._frames[frameIdx - 1].time - colTime);
-        if (dPrev < dCur) bestIdx = frameIdx - 1;
-      }
+      const frameA = this._frames[frameIdx];
+      const frameB = frameIdx + 1 < frameCount ? this._frames[frameIdx + 1] : frameA;
 
-      const mags = this._frames[bestIdx].magnitudes;
+      const dt = frameB.time - frameA.time;
+      const interpT = dt > 0 ? Math.max(0, Math.min(1, (colTime - frameA.time) / dt)) : 0;
 
       for (let y = 0; y < h; y++) {
         const freq = this.freqMax - (y / h) * this.freqMax;
         const bin = Math.round(Math.min((freq / nyquist) * binCount, binCount - 1));
-        const db = mags[bin];
+        const db = frameA.magnitudes[bin] + interpT * (frameB.magnitudes[bin] - frameA.magnitudes[bin]);
         let t = Math.max(0, Math.min(1, (db + this.dynamicRange) / this.dynamicRange));
         const ci = Math.round(t * 255);
         const off = (y * w + x) * 4;

@@ -11,7 +11,7 @@ export class AudioEngine {
     if (this.running) return
 
     this._stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    this._audioContext = new AudioContext()
+    this._audioContext = new AudioContext({ sampleRate: 16000 })
     await this._audioContext.resume()
 
     this._source = this._audioContext.createMediaStreamSource(this._stream)
