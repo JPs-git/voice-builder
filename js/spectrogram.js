@@ -85,6 +85,36 @@ export class SpectrogramRenderer {
     this.ctx.putImageData(imageData, w - 1, 0);
   }
 
+  displayAll(frames) {
+    if (frames.length === 0) return;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    if (w === 0 || h === 0) return;
+
+    const binCount = frames[0].magnitudes.length;
+    const imageData = this.ctx.createImageData(w, h);
+    const pixels = imageData.data;
+    const nyquist = this.sampleRate / 2;
+
+    for (let x = 0; x < w; x++) {
+      const frameIdx = Math.floor((x / w) * frames.length);
+      const mags = frames[frameIdx].magnitudes;
+      for (let y = 0; y < h; y++) {
+        const freq = this.freqMax - (y / h) * this.freqMax;
+        const bin = Math.round(Math.min((freq / nyquist) * binCount, binCount - 1));
+        const db = mags[bin];
+        let t = Math.max(0, Math.min(1, (db + this.dynamicRange) / this.dynamicRange));
+        const ci = Math.round(t * 255);
+        const off = (y * w + x) * 4;
+        pixels[off] = this.colorMap[ci * 4];
+        pixels[off + 1] = this.colorMap[ci * 4 + 1];
+        pixels[off + 2] = this.colorMap[ci * 4 + 2];
+        pixels[off + 3] = 255;
+      }
+    }
+    this.ctx.putImageData(imageData, 0, 0);
+  }
+
   clear() {
     this.ctx.fillStyle = '#000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);

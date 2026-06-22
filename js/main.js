@@ -1,7 +1,8 @@
 import { AudioEngine } from './audio-engine.js'
+import { AnalysisPipeline } from './analysis-pipeline.js'
 import { SpectrogramRenderer } from './spectrogram.js'
 import { FormantChartRenderer } from './formant-chart.js'
-import { analyzeWavF0 } from './wav-analyzer.js'
+import { parseWav } from './wav-parser.js'
 
 const spectrogramCanvas = document.getElementById('spectrogram')
 const formantCanvas = document.getElementById('formantChart')
@@ -17,6 +18,8 @@ const f2Label = document.getElementById('f2Label')
 const f3Label = document.getElementById('f3Label')
 const f4Label = document.getElementById('f4Label')
 const wavInfo = document.getElementById('wavInfo')
+
+let livePipeline = null
 
 function updateFormantLabels(f) {
   const labels = [
@@ -36,26 +39,32 @@ function updateFormantLabels(f) {
   }
 }
 
+function clearAll() {
+  if (livePipeline) { livePipeline.reset(); livePipeline = null }
+  spectrogram.clear()
+  formantChart.clear()
+  wavInfo.textContent = ''
+  updateFormantLabels(null)
+}
+
 btnRecord.addEventListener('click', async () => {
   if (audioEngine.running) {
     audioEngine.stopStream()
-    formantChart._canvasSnapshot = formantChart.ctx.getImageData(
-      0, 0, formantChart.canvas.width, formantChart.canvas.height)
+    if (livePipeline) { livePipeline.flush(); livePipeline.reset(); livePipeline = null }
+    formantChart.saveSnapshot()
     btnRecord.textContent = '录制'
   } else {
-    formantChart._canvasSnapshot = null
-    spectrogram.clear()
-    formantChart.clear()
-    formantChart.clearWavTrace()
-    wavInfo.textContent = ''
-    updateFormantLabels(null)
-
-    try {
-      await audioEngine.startStream((frame) => {
+    clearAll()
+    livePipeline = new AnalysisPipeline({
+      onFrame: (frame) => {
         spectrogram.pushFrame(frame.magnitudes, frame.time)
         formantChart.pushFrame(frame, frame.time)
         updateFormantLabels(frame)
-      })
+      },
+    })
+
+    try {
+      await audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate))
       btnRecord.textContent = '停止'
     } catch (err) {
       f0Label.textContent = '麦克风初始化失败'
@@ -72,14 +81,23 @@ formantCanvas.addEventListener('click', (e) => {
   const dpr = window.devicePixelRatio || 1
   const clickX = Math.round((e.clientX - rect.left) * dpr)
   const w = formantChart.canvas.width
-  const lastIdx = data.length - 1
-  const idx = Math.max(0, lastIdx - (w - 1 - clickX))
-  const frame = data[Math.min(idx, lastIdx)]
+
+  let idx
+  if (formantChart.batchMode) {
+    idx = Math.round((clickX / w) * data.length)
+    idx = Math.max(0, Math.min(idx, data.length - 1))
+  } else {
+    const dataStartX = w - data.length
+    if (clickX < dataStartX) return
+    idx = Math.min(clickX - dataStartX, data.length - 1)
+  }
+
+  const frame = data[idx]
   if (!frame) return
 
-  if (formantChart._canvasSnapshot) {
-    formantChart.ctx.putImageData(formantChart._canvasSnapshot, 0, 0)
-  }
+  console.log(`点击帧 id=${idx}  F0=${frame.f0}  F1=${frame.f1}  F2=${frame.f2}  F3=${frame.f3}  F4=${frame.f4}`)
+
+  formantChart.restoreSnapshot()
   formantChart.showVerticalLine(clickX, frame)
   updateFormantLabels(frame)
 })
@@ -88,11 +106,24 @@ document.getElementById('wavInput').addEventListener('change', async (e) => {
   const file = e.target.files[0]
   if (!file) return
 
+  if (audioEngine.running) {
+    audioEngine.stopStream()
+    btnRecord.textContent = '录制'
+  }
+
+  clearAll()
   wavInfo.textContent = '分析中...'
+
   try {
-    const result = await analyzeWavF0(file)
-    formantChart.showWavF0Trace(result.f0Data, result.fileName, result.duration)
-    wavInfo.textContent = `${result.voicedFrames}/${result.totalFrames} voiced  [× 关闭]`
+    const arrayBuffer = await file.arrayBuffer()
+    const parsed = parseWav(arrayBuffer)
+    const frames = AnalysisPipeline.analyze(parsed.samples, parsed.sampleRate)
+
+    spectrogram.displayAll(frames)
+    formantChart.displayAll(frames)
+
+    const voiced = frames.filter(f => f.f0 != null).length
+    wavInfo.textContent = `${voiced}/${frames.length} voiced  [× 关闭]`
   } catch (err) {
     wavInfo.textContent = `错误: ${err.message}`
     console.error('WAV analysis failed:', err)
@@ -100,8 +131,7 @@ document.getElementById('wavInput').addEventListener('change', async (e) => {
 })
 
 wavInfo.addEventListener('click', () => {
-  if (formantChart._wavMode) {
-    formantChart.clearWavTrace()
-    wavInfo.textContent = ''
+  if (formantChart.batchMode) {
+    clearAll()
   }
 })
