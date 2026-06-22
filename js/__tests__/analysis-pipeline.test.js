@@ -38,7 +38,7 @@ describe('AnalysisPipeline', () => {
     }
 
     const frames = AnalysisPipeline.analyze(samples, sampleRate)
-    const voiced = frames.filter(f => f.f0 != null)
+    const voiced = frames.filter(f => f.voiced)
     assert.ok(voiced.length > 0, 'should have voiced frames')
 
     const avgF0 = voiced.reduce((s, f) => s + f.f0, 0) / voiced.length

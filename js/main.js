@@ -97,7 +97,7 @@ document.getElementById('wavInput').addEventListener('change', async (e) => {
     spectrogram.displayAll(frames)
     formantChart.displayAll(frames)
 
-    const voiced = frames.filter(f => f.f0 != null).length
+    const voiced = frames.filter(f => f.voiced).length
     wavInfo.textContent = `${voiced}/${frames.length} voiced  [× 关闭]`
   } catch (err) {
     wavInfo.textContent = `错误: ${err.message}`
