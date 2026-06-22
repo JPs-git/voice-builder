@@ -30,7 +30,7 @@ export class FormantChartRenderer {
           axisPointer: { type: 'cross' },
           formatter: (params) => {
             const colorMap = { F0: '#cccccc', F1: '#ff4444', F2: '#4488ff', F3: '#44cc44', F4: '#ff8844' }
-            return params.map(p =>
+            return params.slice().reverse().map(p =>
               `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorMap[p.seriesName] || p.color};box-shadow:0 0 0 1px rgba(255,255,255,0.5);margin-right:4px;vertical-align:middle"></span>` +
               `${p.seriesName}: ${p.value[1] != null ? Math.round(p.value[1]) + ' Hz' : '-- Hz'}`
             ).join('<br/>')
