@@ -2,26 +2,33 @@ import { Resampler } from './resampler.js'
 import { FrameProcessor } from './frame-processor.js'
 import { fftMagnitudes } from './fft.js'
 import { detectPitch, extractFormants } from './lpc.js'
+import { VoiceActivityDetector } from './vad.js'
 
 const TARGET_RATE = 16000
 const FRAME_SIZE = 400
 const HOP_SIZE = 160
 
 export class AnalysisPipeline {
-  constructor({ onFrame } = {}) {
+  constructor({ onFrame, vadThreshold } = {}) {
     this._resampler = null
     this._frameProcessor = null
     this.onFrame = onFrame
     this._frameCount = 0
+    this._vad = new VoiceActivityDetector({ threshold: vadThreshold ?? 0.008 })
   }
 
   pushChunk(samples, inputSampleRate) {
     if (!this._frameProcessor) {
       this._frameProcessor = new FrameProcessor({ sampleRate: TARGET_RATE, frameSize: FRAME_SIZE, hopSize: HOP_SIZE })
       this._frameProcessor.onFrame = (frame) => {
-        const f0 = detectPitch(frame.samples, frame.sampleRate)
-        const result = extractFormants(frame.samples, frame.sampleRate)
-        const formants = result.formants
+        const { voiced } = this._vad.compute(frame.samples)
+        let f0 = null
+        let formants = []
+        if (voiced) {
+          f0 = detectPitch(frame.samples, frame.sampleRate)
+          const result = extractFormants(frame.samples, frame.sampleRate)
+          formants = result.formants
+        }
         const magnitudes = fftMagnitudes(frame.samples, 512)
         this._frameCount++
         const output = {
@@ -32,6 +39,7 @@ export class AnalysisPipeline {
           f4: formants[3]?.freq ?? null,
           time: this._frameCount * 0.01,
           magnitudes,
+          voiced,
         }
         if (this.onFrame) this.onFrame(output)
       }
