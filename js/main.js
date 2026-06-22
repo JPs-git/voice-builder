@@ -5,12 +5,12 @@ import { FormantChartRenderer } from './formant-chart.js'
 import { parseWav } from './wav-parser.js'
 
 const spectrogramCanvas = document.getElementById('spectrogram')
-const formantCanvas = document.getElementById('formantChart')
+const formantContainer = document.getElementById('formantChart')
 const btnRecord = document.getElementById('btnRecord')
 
 const audioEngine = new AudioEngine()
 const spectrogram = new SpectrogramRenderer(spectrogramCanvas)
-const formantChart = new FormantChartRenderer(formantCanvas)
+const formantChart = new FormantChartRenderer(formantContainer)
 
 const f0Label = document.getElementById('f0Label')
 const f1Label = document.getElementById('f1Label')
@@ -51,7 +51,6 @@ btnRecord.addEventListener('click', async () => {
   if (audioEngine.running) {
     audioEngine.stopStream()
     if (livePipeline) { livePipeline.flush(); livePipeline.reset(); livePipeline = null }
-    formantChart.saveSnapshot()
     btnRecord.textContent = '录制'
   } else {
     clearAll()
@@ -73,34 +72,10 @@ btnRecord.addEventListener('click', async () => {
   }
 })
 
-formantCanvas.addEventListener('click', (e) => {
-  const data = formantChart.data
-  if (data.length < 2) return
-
-  const rect = formantCanvas.getBoundingClientRect()
-  const dpr = window.devicePixelRatio || 1
-  const clickX = Math.round((e.clientX - rect.left) * dpr)
-  const w = formantChart.canvas.width
-
-  let idx
-  if (formantChart.batchMode) {
-    idx = Math.round((clickX / w) * data.length)
-    idx = Math.max(0, Math.min(idx, data.length - 1))
-  } else {
-    const dataStartX = w - data.length
-    if (clickX < dataStartX) return
-    idx = Math.min(clickX - dataStartX, data.length - 1)
-  }
-
-  const frame = data[idx]
-  if (!frame) return
-
-  console.log(`点击帧 id=${idx}  F0=${frame.f0}  F1=${frame.f1}  F2=${frame.f2}  F3=${frame.f3}  F4=${frame.f4}`)
-
-  formantChart.restoreSnapshot()
-  formantChart.showVerticalLine(clickX, frame)
+formantChart._onClick = (frame) => {
+  console.log(`点击帧 time=${frame.time.toFixed(2)}s  F0=${frame.f0}  F1=${frame.f1}  F2=${frame.f2}  F3=${frame.f3}  F4=${frame.f4}`)
   updateFormantLabels(frame)
-})
+}
 
 document.getElementById('wavInput').addEventListener('change', async (e) => {
   const file = e.target.files[0]

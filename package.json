@@ -4,10 +4,18 @@
   "description": "Web-based voice training tool with real-time spectrogram and formant analysis",
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "start": "/usr/bin/node server.js",
     "start:serve": "serve .",
     "start:py": "python3 -m http.server 3000",
     "test": "node --test js/__tests__/*.test.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "echarts": "^5.6.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.21"
+  }
 }

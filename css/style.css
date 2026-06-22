@@ -4,7 +4,7 @@ body { background: #111; color: #ccc; font-family: 'Courier New', monospace; ove
 #app { display: flex; flex-direction: column; height: 100vh; }
 
 .panel { position: relative; flex: 1; min-height: 0; border-bottom: 1px solid #333; }
-.panel canvas { display: block; width: 100%; height: 100%; }
+.panel canvas, #formantChart { display: block; width: 100%; height: 100%; }
 
 #formantValues {
   position: absolute; left: 8px; top: 8px;
