@@ -10,14 +10,17 @@ const FRAME_SIZE = 640
 const HOP_SIZE = 160
 
 export class AnalysisPipeline {
-  constructor({ onFrame, vadThreshold, formantMethod = 'cepstral' } = {}) {
+  constructor({ onFrame, vadThreshold, formantMethod = 'cepstral', frameOffset = 0 } = {}) {
     this._resampler = null
     this._frameProcessor = null
     this.onFrame = onFrame
     this._frameCount = 0
+    this._frameOffset = frameOffset
     this._vad = new VoiceActivityDetector({ threshold: vadThreshold ?? 0.008 })
     this._formantMethod = formantMethod
   }
+
+  get frameCount() { return this._frameCount }
 
   pushChunk(samples, inputSampleRate) {
     if (!this._frameProcessor) {
@@ -47,7 +50,7 @@ export class AnalysisPipeline {
           f2: formants[1]?.freq ?? null,
           f3: formants[2]?.freq ?? null,
           f4: formants[3]?.freq ?? null,
-          time: this._frameCount * 0.01,
+          time: (this._frameCount + this._frameOffset) * 0.01,
           magnitudes,
           voiced,
         }

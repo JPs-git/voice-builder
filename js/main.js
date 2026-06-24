@@ -46,6 +46,7 @@ const STATE = {
 }
 let state = STATE.IDLE
 let livePipeline = null
+let totalFrames = 0
 
 // ---- 工具 ----
 function fmtHz(v) { return v == null ? '-- Hz' : `${Math.round(v)} Hz` }
@@ -74,19 +75,20 @@ function setState(next) {
 async function onRecordToggle() {
   if (state === STATE.RECORDING) {
     audioEngine.stopStream()
-    if (livePipeline) { livePipeline.flush(); livePipeline.reset(); livePipeline = null }
+    if (livePipeline) { livePipeline.flush(); totalFrames += livePipeline.frameCount; livePipeline.reset(); livePipeline = null }
     setState(STATE.IDLE)
     return
   }
   try {
     setState(STATE.REQUESTING)
-    clearAll()
+    if (livePipeline) { livePipeline.reset(); livePipeline = null }
     livePipeline = new AnalysisPipeline({
       onFrame: (frame) => {
         spectrum.pushFrame(frame.magnitudes, frame.time)
         formantChart.pushFrame(frame, frame.time)
       },
       formantMethod,
+      frameOffset: totalFrames,
     })
     await audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate))
     setState(STATE.RECORDING)
@@ -111,6 +113,7 @@ function clearAll() {
   if (audioEngine.running) audioEngine.stopStream()
   spectrum.clear()
   formantChart.clear()
+  totalFrames = 0
   setEmptyVisible(true)
   setState(STATE.IDLE)
 }
