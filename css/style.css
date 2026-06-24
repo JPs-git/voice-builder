@@ -157,6 +157,16 @@ body {
   color: var(--text);
 }
 
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn:disabled:hover {
+  background: var(--panel);
+  color: var(--text-soft);
+}
+
 /* ---------- 常驻引导条 ---------- */
 .help-bar {
   display: flex;
