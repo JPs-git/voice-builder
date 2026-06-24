@@ -89,6 +89,8 @@ function setState(next) {
 
 function startNewRecording() {
   if (livePipeline) { livePipeline.reset(); livePipeline = null }
+  spectrum.setLiveMode()
+  formantChart.setLiveMode()
   livePipeline = new AnalysisPipeline({
     onFrame: (frame) => {
       sessionFrames.push(frame)
@@ -112,6 +114,7 @@ async function onRecordToggle() {
       livePipeline.reset()
       livePipeline = null
     }
+    spectrum.displayAll(sessionFrames)
     setState(STATE.PAUSED)
     return
   }

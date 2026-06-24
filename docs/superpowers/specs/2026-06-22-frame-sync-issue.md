@@ -134,3 +134,21 @@ displayAll(frames):
 - 不要尝试像素级对齐不同渲染引擎的图表
 - RAF 限流频率应一致（目前两者都限制到 ~30fps）
 - 帧的 `time` 字段由 `AnalysisPipeline` 统一生成，下游不修改
+
+## 后续调整记录 (2026-06-24)
+
+### Bug 1: 暂停时坐标归零
+
+**问题：** RECORDING→PAUSED 时共振峰图 xAxis 被重置为 `[0, lastTime]`，0 点出现在最左端，视觉跳跃。
+
+**原因：** 对两个图表都调用了 `displayAll(sessionFrames)`，共振峰图的 `_render()` 在 `_batchMode=true` 下使用全量数据范围 `[data[0].time, data[last].time]`，而非保留录音时的 10s 窗口 `[currentTime-10, currentTime]`。
+
+**修复：** RECORDING→PAUSED 时仅让语谱图切到全量视图 (`spectrum.displayAll`)，共振峰图保留 10s 窗口（不调用 `formantChart.displayAll`）。
+
+```js
+// 正确做法
+spectrum.displayAll(sessionFrames)   // 语谱图切到全量
+// 共振峰图不调用 displayAll，保持 10s 窗口
+```
+
+**教训：** 暂停不等于归零。录音过程中建立的 10s 时间窗口对共振峰图用户而言是自然的观察范围，强行展开到全量反而让用户丢失观察上下文。语谱图和共振峰图在 PAUSED 状态下可以有不同的视图策略——语谱图需要全量静态图像以便观察完整频谱，共振峰图保留 10s 窗口更适合实时趋势观察。

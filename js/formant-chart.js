@@ -65,6 +65,7 @@ export class FormantChartRenderer {
   constructor(container) {
     this._chart = echarts.init(container, null, { renderer: 'canvas' })
     this._data = []
+    this._batchMode = false
     this._cursorTime = -1
     this._seriesVisible = { f0: true, f1: true, f2: true, f3: true, f4: true }
     this._onFrameClick = null
@@ -79,6 +80,7 @@ export class FormantChartRenderer {
   }
 
   get data() { return this._data.slice() }
+  get batchMode() { return this._batchMode }
 
   setSeriesVisible(key, visible) {
     if (!(key in this._seriesVisible)) return
@@ -100,15 +102,27 @@ export class FormantChartRenderer {
       seriesData[k] = visible ? this._data.map(f => [f.time, f[k] ?? null]) : []
     }
 
-    // 始终显示从 0s 到最新的全量数据
     const hasData = this._data.length > 0
     let minTime, maxTime
-    if (hasData) {
-      minTime = this._data[0].time
-      maxTime = this._data[this._data.length - 1].time
+    if (this._batchMode) {
+      // batch 模式: 显示全量数据
+      if (hasData) {
+        minTime = this._data[0].time
+        maxTime = this._data[this._data.length - 1].time
+      } else {
+        minTime = 0
+        maxTime = WINDOW
+      }
     } else {
-      minTime = 0
-      maxTime = WINDOW
+      // live 模式: 10s 时间窗口
+      if (hasData) {
+        const currentTime = this._data[this._data.length - 1].time
+        minTime = currentTime - WINDOW
+        maxTime = currentTime
+      } else {
+        minTime = 0
+        maxTime = WINDOW
+      }
     }
 
     // tooltip:按 F4 在顶部、F0 在底部的顺序渲染,颜色与曲线完全一致
@@ -193,8 +207,13 @@ export class FormantChartRenderer {
   }
 
   pushFrame(frame, time) {
+    if (this._batchMode) return
     this._data.push({ ...frame, time })
     this._latestTime = time
+
+    // 10s 时间窗口裁剪
+    const cutoff = time - WINDOW
+    while (this._data.length > 0 && this._data[0].time < cutoff) this._data.shift()
 
     if (!this._throttled) {
       this._throttled = true
@@ -206,13 +225,20 @@ export class FormantChartRenderer {
   }
 
   displayAll(frames) {
+    this._batchMode = true
     this._data = frames
     if (frames.length > 0) this._latestTime = frames[frames.length - 1].time
     this._render(true)
   }
 
+  setLiveMode() {
+    this._batchMode = false
+    this._render(false)
+  }
+
   clear() {
     this._data = []
+    this._batchMode = false
     this._latestTime = 0
     this._throttled = false
     this._render(false)
@@ -235,6 +261,7 @@ export class FormantChartRenderer {
       return
     }
 
+    // batch 模式下 _data 含全量数据，live 模式下含 10s 窗口
     const tStart = this._data[0].time
     const tEnd = this._data[this._data.length - 1].time
     const ratio = (this._cursorTime - tStart) / (tEnd - tStart)

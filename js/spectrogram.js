@@ -152,6 +152,7 @@ export class PowerSpectrumRenderer {
 
     this._colorMap = buildViridisLUT()
     this._frames = []
+    this._batchMode = false
     this._throttled = false
 
     this._boundResize = () => this._resize()
@@ -186,7 +187,8 @@ export class PowerSpectrumRenderer {
 
     // 如果有数据立即重绘
     if (this._frames.length > 0) {
-      this._renderAll()
+      if (this._batchMode) this._renderStatic()
+      else this._renderWindow()
     }
     this._renderOverlay()
     if (this._cursorTime >= 0) this._renderCursor()
@@ -211,9 +213,57 @@ export class PowerSpectrumRenderer {
   }
 
   // ---------- 热图渲染 ----------
-  // 始终从 0s 到最新帧显示全量数据
-  _renderAll() {
-    const canvas = this._heatCanvas
+  // 时间窗口滚动 (live 模式): 基于时间定位帧, 保证与共振峰图同步
+  _renderWindow() {
+    const ctx = this._heatCtx
+    const { x, y, w: pw, h: ph } = this._plotRect()
+    if (pw === 0 || ph === 0) return
+
+    const frames = this._frames
+    if (frames.length < 2) return
+
+    const currentTime = frames[frames.length - 1].time
+    const windowStart = currentTime - this._windowDuration
+    const nyquist = this._sampleRate / 2
+    const imageData = ctx.createImageData(pw, ph)
+    const pixels = imageData.data
+
+    for (let px = 0; px < pw; px++) {
+      const colTime = windowStart + (px / pw) * this._windowDuration
+      let loIdx = 0
+      let hiIdx = frames.length - 1
+      if (frames[0].time <= colTime) {
+        let l = 0, r = frames.length - 1
+        while (l < r) {
+          const m = (l + r + 1) >> 1
+          if (frames[m].time <= colTime) l = m
+          else r = m - 1
+        }
+        loIdx = l
+        hiIdx = Math.min(l + 1, frames.length - 1)
+      }
+      const frameA = frames[loIdx]
+      const frameB = frames[hiIdx]
+      const dt = frameB.time - frameA.time
+      const frac = dt > 0 ? Math.max(0, Math.min(1, (colTime - frameA.time) / dt)) : 0
+
+      for (let py = 0; py < ph; py++) {
+        const freq = this._freqMax - (py / ph) * this._freqMax
+        const bin = Math.round(Math.min((freq / nyquist) * frameA.magnitudes.length, frameA.magnitudes.length - 1))
+        const db = frameA.magnitudes[bin] + frac * (frameB.magnitudes[bin] - frameA.magnitudes[bin])
+        const off = (py * pw + px) * 4
+        const ci = this._dbToIndex(db)
+        pixels[off] = this._colorMap[ci * 4]
+        pixels[off + 1] = this._colorMap[ci * 4 + 1]
+        pixels[off + 2] = this._colorMap[ci * 4 + 2]
+        pixels[off + 3] = 255
+      }
+    }
+    ctx.putImageData(imageData, x, y)
+  }
+
+  // 全量静态渲染 (batch 模式): 用于 PAUSED/WAV 上传
+  _renderStatic() {
     const ctx = this._heatCtx
     const { x, y, w: pw, h: ph } = this._plotRect()
     if (pw === 0 || ph === 0) return
@@ -227,13 +277,12 @@ export class PowerSpectrumRenderer {
 
     for (let px = 0; px < pw; px++) {
       const frameIdx = Math.min(Math.floor((px / pw) * frames.length), frames.length - 1)
-      const frame = frames[frameIdx]
-      const mags = frame.magnitudes
+      const mags = frames[frameIdx].magnitudes
       for (let py = 0; py < ph; py++) {
         const freq = this._freqMax - (py / ph) * this._freqMax
         const bin = Math.round(Math.min((freq / nyquist) * mags.length, mags.length - 1))
-        const ci = this._dbToIndex(mags[bin])
         const off = (py * pw + px) * 4
+        const ci = this._dbToIndex(mags[bin])
         pixels[off] = this._colorMap[ci * 4]
         pixels[off + 1] = this._colorMap[ci * 4 + 1]
         pixels[off + 2] = this._colorMap[ci * 4 + 2]
@@ -285,6 +334,7 @@ export class PowerSpectrumRenderer {
     ctx.clearRect(0, 0, fullW, fullH)
     if (this._cursorTime < 0 || this._frames.length < 2) return
 
+    // batch 模式下 _frames 含全量数据，live 模式下含 10s 窗口
     const tStart = this._frames[0].time
     const tEnd = this._frames[this._frames.length - 1].time
     const ratio = (this._cursorTime - tStart) / (tEnd - tStart)
@@ -304,24 +354,40 @@ export class PowerSpectrumRenderer {
     if (!magnitudes || magnitudes.length === 0) return
     this._frames.push({ magnitudes, time })
 
+    // 10s 时间窗口裁剪
+    const cutoff = time - this._windowDuration
+    while (this._frames.length > 0 && this._frames[0].time < cutoff) this._frames.shift()
+
     if (!this._throttled) {
       this._throttled = true
       requestAnimationFrame(() => {
-        this._renderAll()
+        this._renderWindow()
         this._renderOverlay()
         this._throttled = false
       })
     }
   }
 
+  setLiveMode() {
+    this._batchMode = false
+    this._cursorTime = -1
+    const ctx = this._heatCtx
+    ctx.fillStyle = '#FAFBFC'
+    ctx.fillRect(0, 0, this._heatCanvas.width, this._heatCanvas.height)
+    this._renderWindow()
+    this._renderOverlay()
+  }
+
   displayAll(frames) {
+    this._batchMode = true
     this._frames = frames
-    this._renderAll()
+    this._renderStatic()
     this._renderOverlay()
   }
 
   clear() {
     this._frames = []
+    this._batchMode = false
     const ctx = this._heatCtx
     ctx.fillStyle = '#FAFBFC'
     ctx.fillRect(0, 0, this._heatCanvas.width, this._heatCanvas.height)
