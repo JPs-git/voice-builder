@@ -178,7 +178,7 @@ export function rootsToFormants(roots, sampleRate) {
     const freq = Math.atan2(root.im, root.re) * sampleRate / (2 * Math.PI)
     const bw = -Math.log(Math.min(poleMag, 0.9999)) * sampleRate / Math.PI
 
-    if (freq > 50 && freq < 5000) {
+    if (freq > 50 && freq < 6500) {
       formants.push({ freq, bw })
     }
   }
@@ -220,14 +220,40 @@ export function detectPitch(signal, sampleRate) {
   return sampleRate / maxIdx
 }
 
+export function isHarmonicLocked(f0, freq, bw) {
+  if (f0 == null || f0 <= 0 || freq == null || freq <= 0) return false
+
+  // Bandwidth anomaly: formant bandwidth < 30Hz is unphysiologically narrow,
+  // almost certainly a harmonic peak rather than a true formant.
+  if (bw != null && bw < 30) return true
+
+  // F0-F1 similarity: if freq is within 15% of an integer multiple of F0 (1x-4x),
+  // it's likely LPC locking onto a harmonic instead of a formant.
+  const ratio = freq / f0
+  const nearestInt = Math.round(ratio)
+  if (nearestInt >= 1 && nearestInt <= 4) {
+    if (Math.abs(ratio - nearestInt) / nearestInt < 0.10) return true
+  }
+
+  return false
+}
+
 export function extractFormants(signal, sampleRate, maxFormants = 5) {
-  const order = Math.min(2 * maxFormants + 4, Math.floor(signal.length / 3), 20)
+  const order = Math.min(Math.max(2 * maxFormants + 4, 18), Math.floor(signal.length / 3), 20)
+
+  // Pre-emphasis: y[n] = x[n] - 0.99 * x[n-1] to reduce spectral tilt,
+  // helping LPC focus on formant peaks rather than the overall slope.
+  const n = signal.length
+  const emphasized = new Float32Array(n)
+  emphasized[0] = signal[0]
+  for (let i = 1; i < n; i++) {
+    emphasized[i] = signal[i] - 0.99 * signal[i - 1]
+  }
 
   // Apply Hamming window to improve numerical conditioning
-  const n = signal.length
   const windowed = new Float32Array(n)
   for (let i = 0; i < n; i++) {
-    windowed[i] = signal[i] * (0.54 - 0.46 * Math.cos(2 * Math.PI * i / (n - 1)))
+    windowed[i] = emphasized[i] * (0.54 - 0.46 * Math.cos(2 * Math.PI * i / (n - 1)))
   }
 
   const r = autocorrelate(windowed, order)

@@ -1,20 +1,22 @@
 import { Resampler } from './resampler.js'
 import { FrameProcessor } from './frame-processor.js'
 import { fftMagnitudes } from './fft.js'
-import { detectPitch, extractFormants } from './lpc.js'
+import { detectPitch, extractFormants, isHarmonicLocked } from './lpc.js'
+import { extractFormantsCepstral } from './cepstral.js'
 import { VoiceActivityDetector } from './vad.js'
 
 const TARGET_RATE = 16000
-const FRAME_SIZE = 400
+const FRAME_SIZE = 640
 const HOP_SIZE = 160
 
 export class AnalysisPipeline {
-  constructor({ onFrame, vadThreshold } = {}) {
+  constructor({ onFrame, vadThreshold, formantMethod = 'cepstral' } = {}) {
     this._resampler = null
     this._frameProcessor = null
     this.onFrame = onFrame
     this._frameCount = 0
     this._vad = new VoiceActivityDetector({ threshold: vadThreshold ?? 0.008 })
+    this._formantMethod = formantMethod
   }
 
   pushChunk(samples, inputSampleRate) {
@@ -26,10 +28,18 @@ export class AnalysisPipeline {
         let formants = []
         if (voiced) {
           f0 = detectPitch(frame.samples, frame.sampleRate)
-          const result = extractFormants(frame.samples, frame.sampleRate)
-          formants = result.formants
+          if (this._formantMethod === 'cepstral') {
+            const result = extractFormantsCepstral(frame.samples, frame.sampleRate)
+            formants = result.formants
+          } else {
+            const result = extractFormants(frame.samples, frame.sampleRate)
+            formants = result.formants
+            if (formants[0] && isHarmonicLocked(result.f0, formants[0].freq, formants[0].bw)) {
+              formants[0] = null
+            }
+          }
         }
-        const magnitudes = fftMagnitudes(frame.samples, 512)
+        const magnitudes = fftMagnitudes(frame.samples, 1024)
         this._frameCount++
         const output = {
           f0,

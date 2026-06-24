@@ -11,7 +11,7 @@
  *  - 可选绘制三条共振峰目标带 (F0/F1/F2)
  */
 
-const FREQ_MAX = 5000
+const FREQ_MAX = 6500
 const DYNAMIC_RANGE_DB = 80
 const WINDOW_SECONDS = 10
 const FONT_FAMILY = getComputedStyle(document.body).fontFamily || 'sans-serif'
@@ -297,7 +297,7 @@ export class PowerSpectrumRenderer {
     ctx.clearRect(0, 0, fullW, fullH)
 
     // 频率刻度 (左侧 padding 区)
-    const freqTicks = [0, 1000, 2000, 3000, 4000, 5000]
+    const freqTicks = [0, 1000, 2000, 3000, 4000, 5000, 6000]
     ctx.fillStyle = '#667085'
     ctx.font = `${Math.round(11 * dpr)}px ${FONT_FAMILY}`
     ctx.textAlign = 'left'

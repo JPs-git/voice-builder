@@ -9,22 +9,9 @@ function bitReverse(x, log2N) {
   return r
 }
 
-export function fftMagnitudes(signal, fftSize) {
-  const N = fftSize
+export function complexFft(data) {
+  const N = data.length
   const log2N = Math.round(Math.log2(N))
-
-  const data = new Array(N)
-  const sigLen = signal.length
-  let sumWindow = 0
-  for (let i = 0; i < sigLen; i++) {
-    // Hann window, store for energy normalization
-    const w = 0.5 * (1 - Math.cos(2 * Math.PI * i / (sigLen - 1)))
-    data[i] = new Complex(signal[i] * w, 0)
-    sumWindow += w
-  }
-  for (let i = sigLen; i < N; i++) {
-    data[i] = new Complex(0, 0)
-  }
 
   for (let i = 0; i < N; i++) {
     const j = bitReverse(i, log2N)
@@ -46,6 +33,31 @@ export function fftMagnitudes(signal, fftSize) {
       }
     }
   }
+}
+
+export function ifft(data) {
+  const N = data.length
+  for (let i = 0; i < N; i++) data[i] = data[i].conj()
+  complexFft(data)
+  for (let i = 0; i < N; i++) data[i] = new Complex(data[i].re / N, -data[i].im / N)
+}
+
+export function fftMagnitudes(signal, fftSize) {
+  const N = fftSize
+
+  const data = new Array(N)
+  const sigLen = signal.length
+  let sumWindow = 0
+  for (let i = 0; i < sigLen; i++) {
+    const w = 0.5 * (1 - Math.cos(2 * Math.PI * i / (sigLen - 1)))
+    data[i] = new Complex(signal[i] * w, 0)
+    sumWindow += w
+  }
+  for (let i = sigLen; i < N; i++) {
+    data[i] = new Complex(0, 0)
+  }
+
+  complexFft(data)
 
   const normFactor = sumWindow
   const bins = N / 2 + 1

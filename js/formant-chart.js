@@ -7,7 +7,7 @@ import * as echarts from 'echarts'
  */
 
 const WINDOW = 10
-const FREQ_MAX = 5000
+const FREQ_MAX = 6500
 
 // 目标区间 (伪女声参考, 与 index.html / spectrogram.js 目标带说明保持一致).
 // 颜色: 绿(F0)/蓝(F1)/橙(F2), 与上方功率谱的三色目标带对齐.

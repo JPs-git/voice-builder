@@ -19,7 +19,7 @@ describe('AnalysisPipeline', () => {
       assert.ok(typeof f.f0 === 'number' || f.f0 === null, 'f0 should be number or null')
       assert.ok(typeof f.time === 'number')
       assert.ok(f.magnitudes instanceof Float32Array)
-      assert.equal(f.magnitudes.length, 257, 'should have 257 FFT bins')
+      assert.equal(f.magnitudes.length, 513, 'should have 513 FFT bins')
       // f1-f4 should exist (may be null for simple sine)
       assert.ok('f1' in f)
       assert.ok('f2' in f)
