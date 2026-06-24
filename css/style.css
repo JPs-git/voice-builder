@@ -310,6 +310,41 @@ body {
   display: inline-block;
 }
 
+/* ---------- 配置抽屉(左侧) ---------- */
+.drawer--left {
+  justify-content: flex-start;
+}
+.drawer--left .drawer-panel {
+  box-shadow: 8px 0 24px rgba(16,24,40,0.12);
+  animation: slideLeft .2s ease;
+}
+@keyframes slideLeft { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ---------- 单选组 ---------- */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.radio-item:hover { background: #F9FAFB; border-color: var(--border-strong); }
+.radio-item input[type="radio"] {
+  margin: 0;
+  accent-color: var(--primary);
+}
+.radio-item span { font-size: 13px; color: var(--text); }
+.radio-item small { color: var(--text-mute); font-size: 12px; }
+.config-hint { font-size: 12px; color: var(--text-mute); margin: 8px 0 0 0; }
+
 /* ---------- 帮助抽屉 ---------- */
 .drawer {
   position: fixed;

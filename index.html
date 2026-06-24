@@ -28,6 +28,10 @@
           <span class="btn-icon">↺</span>
           <span class="btn-label">清空</span>
         </button>
+        <button id="btnConfig" class="btn btn-ghost" aria-label="配置">
+          <span class="btn-icon">⚙</span>
+          <span class="btn-label">配置</span>
+        </button>
         <button id="btnHelp" class="btn btn-ghost">
           <span class="btn-icon">?</span>
           <span class="btn-label">帮助</span>
@@ -79,6 +83,33 @@
     </main>
 
   </div>
+
+  <!-- 配置抽屉 -->
+  <aside class="drawer drawer--left" id="configDrawer" hidden>
+    <div class="drawer-mask" data-close></div>
+    <div class="drawer-panel">
+      <header class="drawer-header">
+        <h3>配置</h3>
+        <button class="drawer-close" data-close aria-label="关闭">×</button>
+      </header>
+      <div class="drawer-body">
+        <section>
+          <h4>共振峰算法</h4>
+          <div class="radio-group" id="formantMethodGroup">
+            <label class="radio-item">
+              <input type="radio" name="formantMethod" value="cepstral" checked>
+              <span>倒谱法 <small>（默认，高基频友好）</small></span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="formantMethod" value="lpc">
+              <span>LPC <small>（传统自回归）</small></span>
+            </label>
+          </div>
+          <p class="config-hint">生效于下次录音或导入</p>
+        </section>
+      </div>
+    </div>
+  </aside>
 
   <!-- 帮助抽屉 -->
   <aside class="drawer" id="helpDrawer" hidden>

@@ -75,11 +75,12 @@ export class AnalysisPipeline {
     this._frameCount = 0
   }
 
-  static analyze(samples, sampleRate) {
+  static analyze(samples, sampleRate, formantMethod) {
     if (samples.length === 0) return []
     const frames = []
     const pipeline = new AnalysisPipeline({
       onFrame: (frame) => frames.push(frame),
+      formantMethod,
     })
     pipeline.pushChunk(samples, sampleRate)
     pipeline.flush()

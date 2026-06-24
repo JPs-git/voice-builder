@@ -23,11 +23,14 @@ const formantContainer = $('#formantChart')
 const btnRecord = $('#btnRecord')
 const btnImport = $('#btnImport')
 const btnClear = $('#btnClear')
+const btnConfig = $('#btnConfig')
 const btnHelp = $('#btnHelp')
 const wavInput = $('#wavInput')
 const spectrumEmpty = $('#spectrumEmpty')
 const formantEmpty = $('#formantEmpty')
+const configDrawer = $('#configDrawer')
 const helpDrawer = $('#helpDrawer')
+let formantMethod = 'cepstral'
 
 // ---- 业务对象 ----
 const audioEngine = new AudioEngine()
@@ -83,6 +86,7 @@ async function onRecordToggle() {
         spectrum.pushFrame(frame.magnitudes, frame.time)
         formantChart.pushFrame(frame, frame.time)
       },
+      formantMethod,
     })
     await audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate))
     setState(STATE.RECORDING)
@@ -128,7 +132,7 @@ async function onWavSelected(e) {
   try {
     const buf = await file.arrayBuffer()
     const parsed = parseWav(buf)
-    const frames = AnalysisPipeline.analyze(parsed.samples, parsed.sampleRate)
+    const frames = AnalysisPipeline.analyze(parsed.samples, parsed.sampleRate, formantMethod)
     spectrum.displayAll(frames)
     formantChart.displayAll(frames)
     if (frames.length > 0) setEmptyVisible(false)
@@ -150,6 +154,32 @@ function initLegendToggle() {
       el.style.opacity = next ? '1' : '0.35'
       formantChart.setSeriesVisible(key, next)
     })
+  })
+}
+
+// ---- 配置抽屉 ----
+function initConfigDrawer() {
+  if (btnConfig) {
+    btnConfig.addEventListener('click', () => {
+      if (configDrawer) configDrawer.hidden = false
+    })
+  }
+  if (configDrawer) {
+    configDrawer.addEventListener('click', (e) => {
+      const t = e.target
+      if (t === configDrawer || t.classList.contains('drawer-mask') || t.classList.contains('drawer-close')) {
+        configDrawer.hidden = true
+      }
+    })
+    const radios = configDrawer.querySelectorAll('input[name="formantMethod"]')
+    for (const r of radios) {
+      r.addEventListener('change', () => {
+        if (r.checked) formantMethod = r.value
+      })
+    }
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && configDrawer && !configDrawer.hidden) configDrawer.hidden = true
   })
 }
 
@@ -180,5 +210,6 @@ btnClear.addEventListener('click', clearAll)
 wavInput.addEventListener('change', onWavSelected)
 
 initLegendToggle()
+initConfigDrawer()
 initHelpDrawer()
 setEmptyVisible(true)
