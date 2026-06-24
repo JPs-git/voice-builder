@@ -66,6 +66,7 @@ export class FormantChartRenderer {
     this._chart = echarts.init(container, null, { renderer: 'canvas' })
     this._data = []
     this._batchMode = false
+    this._cursorTime = -1
     this._seriesVisible = { f0: true, f1: true, f2: true, f3: true, f4: true }
     this._onFrameClick = null
     this._latestTime = 0
@@ -233,6 +234,47 @@ export class FormantChartRenderer {
   destroy() {
     window.removeEventListener('resize', this._boundResize)
     this._chart.dispose()
+  }
+
+  setCursorTime(time) {
+    this._cursorTime = time
+    this._renderCursor()
+  }
+
+  _renderCursor() {
+    if (!this._batchMode) return
+    const hasData = this._data.length > 1
+    if (this._cursorTime < 0 || !hasData) {
+      this._chart.setOption({ graphic: [] })
+      return
+    }
+
+    const tStart = this._data[0].time
+    const tEnd = this._data[this._data.length - 1].time
+    const ratio = (this._cursorTime - tStart) / (tEnd - tStart)
+    const grid = this._chart.getModel().getComponent('grid')
+    if (!grid) return
+    const rect = grid.coordinateSystem.getRect()
+    const cx = rect.x + ratio * rect.width
+
+    this._chart.setOption({
+      graphic: [{
+        type: 'line',
+        shape: { x1: cx, y1: rect.y, x2: cx, y2: rect.y + rect.height },
+        style: { stroke: '#E23E57', lineWidth: 2 },
+        z: 100,
+      }],
+    })
+  }
+
+  setLiveMode() {
+    this._batchMode = false
+    this._data = []
+    this._latestTime = 0
+    this._cursorTime = -1
+    this._throttled = false
+    this._chart.setOption({ graphic: [] })
+    this._render(false)
   }
 
   // 统计: 基于当前 this._data
