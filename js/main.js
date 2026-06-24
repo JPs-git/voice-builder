@@ -3,6 +3,8 @@ import { AnalysisPipeline } from './analysis-pipeline.js'
 import { PowerSpectrumRenderer } from './spectrogram.js'
 import { FormantChartRenderer } from './formant-chart.js'
 import { parseWav } from './wav-parser.js'
+import { PlaybackManager } from './playback.js'
+import { Resampler } from './resampler.js'
 
 /**
  * 伪声训练器 · UI 主入口
@@ -31,6 +33,7 @@ const formantEmpty = $('#formantEmpty')
 const configDrawer = $('#configDrawer')
 const helpDrawer = $('#helpDrawer')
 let formantMethod = 'cepstral'
+const btnPlayback = $('#btnPlayback')
 
 // ---- 业务对象 ----
 const audioEngine = new AudioEngine()
@@ -42,10 +45,13 @@ const STATE = {
   IDLE: 'idle',
   REQUESTING: 'requesting',
   RECORDING: 'recording',
+  PAUSED: 'paused',
   ANALYZING: 'analyzing',
 }
 let state = STATE.IDLE
 let livePipeline = null
+let sessionFrames = []
+let playbackManager = null
 let totalFrames = 0
 
 // ---- 工具 ----
@@ -65,33 +71,64 @@ function setState(next) {
     if (label) {
       if (next === STATE.REQUESTING) label.textContent = '麦克风授权中…'
       else if (next === STATE.RECORDING) label.textContent = '停止录音'
+      else if (next === STATE.PAUSED) label.textContent = '继续录音'
       else label.textContent = '开始录音'
     }
     btnRecord.disabled = next === STATE.REQUESTING
   }
+  if (btnPlayback) {
+    if (next === STATE.PAUSED) {
+      btnPlayback.disabled = false
+      const label = btnPlayback.querySelector('.btn-label')
+      if (label) label.textContent = '回放'
+    } else {
+      btnPlayback.disabled = true
+    }
+  }
+}
+
+function startNewRecording() {
+  if (livePipeline) { livePipeline.reset(); livePipeline = null }
+  livePipeline = new AnalysisPipeline({
+    onFrame: (frame) => {
+      sessionFrames.push(frame)
+      spectrum.pushFrame(frame.magnitudes, frame.time)
+      formantChart.pushFrame(frame, frame.time)
+    },
+    formantMethod,
+    frameOffset: totalFrames,
+  })
+  audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate))
+  spectrum.setLiveMode()
+  formantChart.setLiveMode()
+  setState(STATE.RECORDING)
 }
 
 // ---- 录音 ----
 async function onRecordToggle() {
   if (state === STATE.RECORDING) {
     audioEngine.stopStream()
-    if (livePipeline) { livePipeline.flush(); totalFrames += livePipeline.frameCount; livePipeline.reset(); livePipeline = null }
-    setState(STATE.IDLE)
+    if (livePipeline) {
+      livePipeline.flush()
+      totalFrames += livePipeline.frameCount
+      livePipeline.reset()
+      livePipeline = null
+    }
+    spectrum.displayAll(sessionFrames)
+    formantChart.displayAll(sessionFrames)
+    setState(STATE.PAUSED)
     return
   }
+
+  if (state === STATE.PAUSED) {
+    if (livePipeline) { livePipeline.reset(); livePipeline = null }
+    startNewRecording()
+    return
+  }
+
   try {
     setState(STATE.REQUESTING)
-    if (livePipeline) { livePipeline.reset(); livePipeline = null }
-    livePipeline = new AnalysisPipeline({
-      onFrame: (frame) => {
-        spectrum.pushFrame(frame.magnitudes, frame.time)
-        formantChart.pushFrame(frame, frame.time)
-      },
-      formantMethod,
-      frameOffset: totalFrames,
-    })
-    await audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate))
-    setState(STATE.RECORDING)
+    startNewRecording()
     setEmptyVisible(false)
   } catch (err) {
     console.error('Stream start failed:', err)
@@ -109,20 +146,42 @@ async function onRecordToggle() {
 
 // ---- 清空 ----
 function clearAll() {
+  if (playbackManager) playbackManager.stop()
   if (livePipeline) { livePipeline.reset(); livePipeline = null }
-  if (audioEngine.running) audioEngine.stopStream()
+  audioEngine.stopPlayback()
+  audioEngine.stopStream()
+  audioEngine.clearRecordedBuffer()
   spectrum.clear()
   formantChart.clear()
+  sessionFrames = []
   totalFrames = 0
   setEmptyVisible(true)
   setState(STATE.IDLE)
 }
 
+// ---- 回放 ----
+function onPlaybackToggle() {
+  if (state !== STATE.PAUSED || sessionFrames.length < 2) return
+  if (!playbackManager) {
+    playbackManager = new PlaybackManager(audioEngine, spectrum, formantChart)
+  }
+  if (audioEngine.isPlaying) {
+    playbackManager.stop()
+    setState(STATE.PAUSED)
+    return
+  }
+  const label = btnPlayback.querySelector('.btn-label')
+  if (label) label.textContent = '播放中…'
+  btnPlayback.disabled = true
+  playbackManager.start(sessionFrames, () => {
+    setState(STATE.PAUSED)
+  })
+}
+
 // ---- 导入 WAV ----
 function onImportClick() {
-  if (state === STATE.RECORDING) {
-    audioEngine.stopStream()
-    setState(STATE.IDLE)
+  if (state === STATE.RECORDING || state === STATE.PAUSED) {
+    clearAll()
   }
   if (!wavInput) return
   wavInput.value = ''
@@ -135,11 +194,22 @@ async function onWavSelected(e) {
   try {
     const buf = await file.arrayBuffer()
     const parsed = parseWav(buf)
-    const frames = AnalysisPipeline.analyze(parsed.samples, parsed.sampleRate, formantMethod)
+    let samples = parsed.samples
+    let rate = parsed.sampleRate
+    if (rate !== 16000) {
+      const r = new Resampler(rate, 16000)
+      samples = r.process(samples)
+      rate = 16000
+    }
+    audioEngine.setImportedBuffer(samples)
+    audioEngine._recordingSampleRate = rate
+    const frames = AnalysisPipeline.analyze(samples, rate, formantMethod)
+    sessionFrames = frames
+    totalFrames = frames.length
     spectrum.displayAll(frames)
     formantChart.displayAll(frames)
     if (frames.length > 0) setEmptyVisible(false)
-    setState(STATE.IDLE)
+    setState(STATE.PAUSED)
   } catch (err) {
     console.error('WAV analysis failed:', err)
     setState(STATE.IDLE)
@@ -210,6 +280,7 @@ function initHelpDrawer() {
 btnRecord.addEventListener('click', onRecordToggle)
 btnImport.addEventListener('click', onImportClick)
 btnClear.addEventListener('click', clearAll)
+btnPlayback.addEventListener('click', onPlaybackToggle)
 wavInput.addEventListener('change', onWavSelected)
 
 initLegendToggle()
