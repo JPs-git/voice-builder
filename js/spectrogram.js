@@ -140,6 +140,16 @@ export class PowerSpectrumRenderer {
     container.appendChild(this._overlayCanvas)
     this._overlayCtx = this._overlayCanvas.getContext('2d')
 
+    this._cursorTime = -1
+    this._cursorCanvas = document.createElement('canvas')
+    this._cursorCanvas.style.position = 'absolute'
+    this._cursorCanvas.style.inset = '0'
+    this._cursorCanvas.style.width = '100%'
+    this._cursorCanvas.style.height = '100%'
+    this._cursorCanvas.style.pointerEvents = 'none'
+    container.appendChild(this._cursorCanvas)
+    this._cursorCtx = this._cursorCanvas.getContext('2d')
+
     this._colorMap = buildViridisLUT()
     this._frames = []
     this._batchMode = false
@@ -160,7 +170,7 @@ export class PowerSpectrumRenderer {
     const w = Math.max(1, Math.round(rect.width * dpr))
     const h = Math.max(1, Math.round(rect.height * dpr))
 
-    for (const c of [this._heatCanvas, this._overlayCanvas]) {
+    for (const c of [this._heatCanvas, this._overlayCanvas, this._cursorCanvas]) {
       c.width = w
       c.height = h
     }
@@ -181,6 +191,7 @@ export class PowerSpectrumRenderer {
       else this._renderWindow()
     }
     this._renderOverlay()
+    if (this._cursorTime >= 0) this._renderCursor()
   }
 
   // 绘图区几何 (内部用)
@@ -319,6 +330,44 @@ export class PowerSpectrumRenderer {
       ctx.textAlign = 'right'
       ctx.fillText(`${f} Hz`, px - Math.round(12 * dpr), y)
     }
+  }
+
+  setCursorTime(time) {
+    this._cursorTime = time
+    this._renderCursor()
+  }
+
+  _renderCursor() {
+    const ctx = this._cursorCtx
+    const { x, y, w: pw, h: ph, fullW, fullH } = this._plotRect()
+    ctx.clearRect(0, 0, fullW, fullH)
+    if (this._cursorTime < 0) return
+
+    if (this._batchMode && this._frames.length > 1) {
+      const tStart = this._frames[0].time
+      const tEnd = this._frames[this._frames.length - 1].time
+      const ratio = (this._cursorTime - tStart) / (tEnd - tStart)
+      const dpr = window.devicePixelRatio || 1
+      const cx = Math.round(x + ratio * pw)
+
+      ctx.strokeStyle = '#E23E57'
+      ctx.lineWidth = Math.max(1, Math.round(dpr * 1.5))
+      ctx.beginPath()
+      ctx.moveTo(cx, y)
+      ctx.lineTo(cx, y + ph)
+      ctx.stroke()
+    }
+  }
+
+  setLiveMode() {
+    this._batchMode = false
+    this._frames = []
+    this._cursorTime = -1
+    const ctx = this._heatCtx
+    ctx.fillStyle = '#FAFBFC'
+    ctx.fillRect(0, 0, this._heatCanvas.width, this._heatCanvas.height)
+    this._renderOverlay()
+    this._renderCursor()
   }
 
   // ---------- 公共 API ----------
