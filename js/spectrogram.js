@@ -152,7 +152,6 @@ export class PowerSpectrumRenderer {
 
     this._colorMap = buildViridisLUT()
     this._frames = []
-    this._batchMode = false
     this._throttled = false
 
     this._boundResize = () => this._resize()
@@ -187,8 +186,7 @@ export class PowerSpectrumRenderer {
 
     // 如果有数据立即重绘
     if (this._frames.length > 0) {
-      if (this._batchMode) this._renderStatic()
-      else this._renderWindow()
+      this._renderAll()
     }
     this._renderOverlay()
     if (this._cursorTime >= 0) this._renderCursor()
@@ -213,71 +211,15 @@ export class PowerSpectrumRenderer {
   }
 
   // ---------- 热图渲染 ----------
-  // 实时滚动: 按时间轴滚动, 不做逐列计算 (避免 flicker)
-  _renderWindow() {
-    const canvas = this._heatCanvas
-    const ctx = this._heatCtx
-    const { x, y, w: pw, h: ph, fullW, fullH } = this._plotRect()
-    if (pw === 0 || ph === 0) return
-
-    const frames = this._frames
-    if (frames.length === 0) return
-
-    // 时间窗口: [current - window, current]
-    const currentTime = frames[frames.length - 1].time
-    const windowStart = currentTime - this._windowDuration
-
-    const nyquist = this._sampleRate / 2
-    const imageData = ctx.createImageData(pw, ph)
-    const pixels = imageData.data
-
-    // 为每一列找到对应时间帧, 按 freqMax 截断到 y 轴
-    for (let px = 0; px < pw; px++) {
-      const colTime = windowStart + (px / pw) * this._windowDuration
-      // 最近帧线性插值
-      let loIdx = 0
-      let hiIdx = frames.length - 1
-      if (frames[0].time <= colTime) {
-        // 二分查找
-        let l = 0, r = frames.length - 1
-        while (l < r) {
-          const m = (l + r + 1) >> 1
-          if (frames[m].time <= colTime) l = m
-          else r = m - 1
-        }
-        loIdx = l
-        hiIdx = Math.min(l + 1, frames.length - 1)
-      }
-      const frameA = frames[loIdx]
-      const frameB = frames[hiIdx]
-      const dt = frameB.time - frameA.time
-      const frac = dt > 0 ? Math.max(0, Math.min(1, (colTime - frameA.time) / dt)) : 0
-
-      for (let py = 0; py < ph; py++) {
-        // py=0 在顶部 -> 最高频
-        const freq = this._freqMax - (py / ph) * this._freqMax
-        const bin = Math.round(Math.min((freq / nyquist) * frameA.magnitudes.length, frameA.magnitudes.length - 1))
-        const db = frameA.magnitudes[bin] + frac * (frameB.magnitudes[bin] - frameA.magnitudes[bin])
-        const ci = this._dbToIndex(db)
-
-        const off = (py * pw + px) * 4
-        pixels[off] = this._colorMap[ci * 4]
-        pixels[off + 1] = this._colorMap[ci * 4 + 1]
-        pixels[off + 2] = this._colorMap[ci * 4 + 2]
-        pixels[off + 3] = 255
-      }
-    }
-    ctx.putImageData(imageData, x, y)
-  }
-
-  _renderStatic() {
+  // 始终从 0s 到最新帧显示全量数据
+  _renderAll() {
     const canvas = this._heatCanvas
     const ctx = this._heatCtx
     const { x, y, w: pw, h: ph } = this._plotRect()
     if (pw === 0 || ph === 0) return
 
     const frames = this._frames
-    if (frames.length === 0) return
+    if (frames.length < 2) return
 
     const nyquist = this._sampleRate / 2
     const imageData = ctx.createImageData(pw, ph)
@@ -341,33 +283,20 @@ export class PowerSpectrumRenderer {
     const ctx = this._cursorCtx
     const { x, y, w: pw, h: ph, fullW, fullH } = this._plotRect()
     ctx.clearRect(0, 0, fullW, fullH)
-    if (this._cursorTime < 0) return
+    if (this._cursorTime < 0 || this._frames.length < 2) return
 
-    if (this._batchMode && this._frames.length > 1) {
-      const tStart = this._frames[0].time
-      const tEnd = this._frames[this._frames.length - 1].time
-      const ratio = (this._cursorTime - tStart) / (tEnd - tStart)
-      const dpr = window.devicePixelRatio || 1
-      const cx = Math.round(x + ratio * pw)
+    const tStart = this._frames[0].time
+    const tEnd = this._frames[this._frames.length - 1].time
+    const ratio = (this._cursorTime - tStart) / (tEnd - tStart)
+    const dpr = window.devicePixelRatio || 1
+    const cx = Math.round(x + ratio * pw)
 
-      ctx.strokeStyle = '#E23E57'
-      ctx.lineWidth = Math.max(1, Math.round(dpr * 1.5))
-      ctx.beginPath()
-      ctx.moveTo(cx, y)
-      ctx.lineTo(cx, y + ph)
-      ctx.stroke()
-    }
-  }
-
-  setLiveMode() {
-    this._batchMode = false
-    this._frames = []
-    this._cursorTime = -1
-    const ctx = this._heatCtx
-    ctx.fillStyle = '#FAFBFC'
-    ctx.fillRect(0, 0, this._heatCanvas.width, this._heatCanvas.height)
-    this._renderOverlay()
-    this._renderCursor()
+    ctx.strokeStyle = '#E23E57'
+    ctx.lineWidth = Math.max(1, Math.round(dpr * 1.5))
+    ctx.beginPath()
+    ctx.moveTo(cx, y)
+    ctx.lineTo(cx, y + ph)
+    ctx.stroke()
   }
 
   // ---------- 公共 API ----------
@@ -375,14 +304,10 @@ export class PowerSpectrumRenderer {
     if (!magnitudes || magnitudes.length === 0) return
     this._frames.push({ magnitudes, time })
 
-    // 滚动窗口裁剪
-    const cutoff = time - this._windowDuration
-    while (this._frames.length > 0 && this._frames[0].time < cutoff) this._frames.shift()
-
     if (!this._throttled) {
       this._throttled = true
       requestAnimationFrame(() => {
-        this._renderWindow()
+        this._renderAll()
         this._renderOverlay()
         this._throttled = false
       })
@@ -390,15 +315,13 @@ export class PowerSpectrumRenderer {
   }
 
   displayAll(frames) {
-    this._batchMode = true
     this._frames = frames
-    this._renderStatic()
+    this._renderAll()
     this._renderOverlay()
   }
 
   clear() {
     this._frames = []
-    this._batchMode = false
     const ctx = this._heatCtx
     ctx.fillStyle = '#FAFBFC'
     ctx.fillRect(0, 0, this._heatCanvas.width, this._heatCanvas.height)

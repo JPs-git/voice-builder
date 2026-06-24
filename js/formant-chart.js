@@ -65,7 +65,6 @@ export class FormantChartRenderer {
   constructor(container) {
     this._chart = echarts.init(container, null, { renderer: 'canvas' })
     this._data = []
-    this._batchMode = false
     this._cursorTime = -1
     this._seriesVisible = { f0: true, f1: true, f2: true, f3: true, f4: true }
     this._onFrameClick = null
@@ -79,7 +78,6 @@ export class FormantChartRenderer {
     window.addEventListener('resize', this._boundResize)
   }
 
-  get batchMode() { return this._batchMode }
   get data() { return this._data.slice() }
 
   setSeriesVisible(key, visible) {
@@ -102,17 +100,12 @@ export class FormantChartRenderer {
       seriesData[k] = visible ? this._data.map(f => [f.time, f[k] ?? null]) : []
     }
 
-    // 实时模式: [latestTime - WINDOW, latestTime] —— 新帧始终在右边缘
-    // 批量模式: [frames[0].time, frames[last].time]  —— 显示完整录音
-    // 空状态 (没有任何数据): 固定为 [0, WINDOW] —— 与上方语谱图视觉一致
+    // 始终显示从 0s 到最新的全量数据
     const hasData = this._data.length > 0
     let minTime, maxTime
-    if (this._batchMode && hasData) {
+    if (hasData) {
       minTime = this._data[0].time
       maxTime = this._data[this._data.length - 1].time
-    } else if (this._latestTime > 0) {
-      minTime = this._latestTime - WINDOW
-      maxTime = this._latestTime
     } else {
       minTime = 0
       maxTime = WINDOW
@@ -200,12 +193,8 @@ export class FormantChartRenderer {
   }
 
   pushFrame(frame, time) {
-    if (this._batchMode) return
     this._data.push({ ...frame, time })
     this._latestTime = time
-
-    const cutoff = time - WINDOW
-    while (this._data.length > 0 && this._data[0].time < cutoff) this._data.shift()
 
     if (!this._throttled) {
       this._throttled = true
@@ -217,7 +206,6 @@ export class FormantChartRenderer {
   }
 
   displayAll(frames) {
-    this._batchMode = true
     this._data = frames
     if (frames.length > 0) this._latestTime = frames[frames.length - 1].time
     this._render(true)
@@ -225,7 +213,6 @@ export class FormantChartRenderer {
 
   clear() {
     this._data = []
-    this._batchMode = false
     this._latestTime = 0
     this._throttled = false
     this._render(false)
@@ -242,7 +229,6 @@ export class FormantChartRenderer {
   }
 
   _renderCursor() {
-    if (!this._batchMode) return
     const hasData = this._data.length > 1
     if (this._cursorTime < 0 || !hasData) {
       this._chart.setOption({ graphic: [] })
@@ -265,16 +251,6 @@ export class FormantChartRenderer {
         z: 100,
       }],
     })
-  }
-
-  setLiveMode() {
-    this._batchMode = false
-    this._data = []
-    this._latestTime = 0
-    this._cursorTime = -1
-    this._throttled = false
-    this._chart.setOption({ graphic: [] })
-    this._render(false)
   }
 
   // 统计: 基于当前 this._data

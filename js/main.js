@@ -99,8 +99,6 @@ function startNewRecording() {
     frameOffset: totalFrames,
   })
   audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate))
-  spectrum.setLiveMode()
-  formantChart.setLiveMode()
   setState(STATE.RECORDING)
 }
 
@@ -114,8 +112,6 @@ async function onRecordToggle() {
       livePipeline.reset()
       livePipeline = null
     }
-    spectrum.displayAll(sessionFrames)
-    formantChart.displayAll(sessionFrames)
     setState(STATE.PAUSED)
     return
   }
