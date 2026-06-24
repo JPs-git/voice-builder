@@ -114,6 +114,14 @@ async function onRecordToggle() {
       livePipeline.reset()
       livePipeline = null
     }
+    // 裁剪到最近 10s，使回放时长与录音时的可视化窗口一致
+    const WINDOW_FRAMES = 1000
+    if (sessionFrames.length > WINDOW_FRAMES) {
+      const trimCount = sessionFrames.length - WINDOW_FRAMES
+      sessionFrames.splice(0, trimCount)
+      totalFrames = Math.round(sessionFrames[sessionFrames.length - 1].time / 0.01)
+      audioEngine.trimBufferToDuration(10)
+    }
     spectrum.displayAll(sessionFrames)
     setState(STATE.PAUSED)
     return

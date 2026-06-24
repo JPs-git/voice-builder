@@ -77,6 +77,27 @@ export class AudioEngine {
     this._recordingSampleRate = 16000
   }
 
+  trimBufferToDuration(durationSec) {
+    if (this._importedData) return
+    const targetSamples = Math.round(durationSec * this._recordingSampleRate)
+    let totalSamples = 0
+    for (const c of this._recordedChunks) totalSamples += c.length
+    if (totalSamples <= targetSamples) return
+    const toRemove = totalSamples - targetSamples
+    let removed = 0
+    while (removed < toRemove && this._recordedChunks.length > 0) {
+      const chunk = this._recordedChunks[0]
+      if (removed + chunk.length <= toRemove) {
+        removed += chunk.length
+        this._recordedChunks.shift()
+      } else {
+        const keepFrom = toRemove - removed
+        this._recordedChunks[0] = chunk.slice(keepFrom)
+        removed = toRemove
+      }
+    }
+  }
+
   clearRecordedBuffer() {
     this._recordedChunks = []
     this._importedData = null
