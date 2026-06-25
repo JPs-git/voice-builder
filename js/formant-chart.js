@@ -257,7 +257,7 @@ export class FormantChartRenderer {
   _renderCursor() {
     const hasData = this._data.length > 1
     if (this._cursorTime < 0 || !hasData) {
-      this._chart.setOption({ graphic: [] })
+      this._chart.setOption({ graphic: [] }, { replaceMerge: ['graphic'] })
       return
     }
 
@@ -265,19 +265,26 @@ export class FormantChartRenderer {
     const tStart = this._data[0].time
     const tEnd = this._data[this._data.length - 1].time
     const ratio = (this._cursorTime - tStart) / (tEnd - tStart)
+    if (ratio < 0 || ratio > 1) {
+      this._chart.setOption({ graphic: [] }, { replaceMerge: ['graphic'] })
+      return
+    }
     const grid = this._chart.getModel().getComponent('grid')
     if (!grid) return
     const rect = grid.coordinateSystem.getRect()
     const cx = rect.x + ratio * rect.width
 
-    this._chart.setOption({
-      graphic: [{
-        type: 'line',
-        shape: { x1: cx, y1: rect.y, x2: cx, y2: rect.y + rect.height },
-        style: { stroke: '#E23E57', lineWidth: 2 },
-        z: 100,
-      }],
-    })
+    this._chart.setOption(
+      {
+        graphic: [{
+          type: 'line',
+          shape: { x1: cx, y1: rect.y, x2: cx, y2: rect.y + rect.height },
+          style: { stroke: '#E23E57', lineWidth: 2 },
+          z: 100,
+        }],
+      },
+      { replaceMerge: ['graphic'] }
+    )
   }
 
   // 统计: 基于当前 this._data
