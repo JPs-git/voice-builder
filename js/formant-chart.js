@@ -261,10 +261,27 @@ export class FormantChartRenderer {
       return
     }
 
-    // batch 模式下 _data 含全量数据，live 模式下含 10s 窗口
-    const tStart = this._data[0].time
-    const tEnd = this._data[this._data.length - 1].time
-    const ratio = (this._cursorTime - tStart) / (tEnd - tStart)
+    // 数据时间范围: _data 中实际帧的时间跨度（可能小于轴范围）
+    const dataTStart = this._data[0].time
+    const dataTEnd = this._data[this._data.length - 1].time
+
+    // 图谱 x 轴范围: 与 _render() 保持一致
+    //   batch 模式: [dataTStart, dataTEnd]  — 全量数据，轴范围 == 数据范围
+    //   live  模式: [currentTime - WINDOW, currentTime] — 10s 滑动窗口，轴范围 >= 数据范围
+    const currentTime = this._latestTime
+    let axisMin, axisMax
+    if (this._batchMode) {
+      axisMin = dataTStart
+      axisMax = dataTEnd
+    } else {
+      axisMin = currentTime - WINDOW
+      axisMax = currentTime
+    }
+
+    // 游标位置按 x 轴范围计算，确保与曲线绘制位置对齐。
+    // 不要用 dataTStart/dataTEnd：当录音时长不足 WINDOW 时，数据范围 < 轴范围，
+    // 若按数据范围定位，游标会偏左（例如 5s 录音 + 10s 轴 → 游标起点在 0% 而非 50%）。
+    const ratio = (this._cursorTime - axisMin) / (axisMax - axisMin)
     if (ratio < 0 || ratio > 1) {
       this._chart.setOption({ graphic: [] }, { replaceMerge: ['graphic'] })
       return

@@ -122,7 +122,7 @@ async function onRecordToggle() {
       totalFrames = Math.round(sessionFrames[sessionFrames.length - 1].time / 0.01)
       audioEngine.trimBufferToDuration(10)
     }
-    spectrum.displayAll(sessionFrames)
+    // 保持 live 模式，与 formantChart 行为一致，使游标在不足 10s 时对齐图谱 x 轴
     setState(STATE.PAUSED)
     return
   }

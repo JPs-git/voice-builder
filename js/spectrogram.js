@@ -334,10 +334,26 @@ export class PowerSpectrumRenderer {
     ctx.clearRect(0, 0, fullW, fullH)
     if (this._cursorTime < 0 || this._frames.length < 2) return
 
-    // batch 模式下 _frames 含全量数据，live 模式下含 10s 窗口
-    const tStart = this._frames[0].time
-    const tEnd = this._frames[this._frames.length - 1].time
-    const ratio = (this._cursorTime - tStart) / (tEnd - tStart)
+    // 数据时间范围: _frames 中实际帧的时间跨度（可能小于轴范围）
+    const dataTStart = this._frames[0].time
+    const dataTEnd = this._frames[this._frames.length - 1].time
+
+    // 图谱 x 轴范围（与 _renderWindow / _renderStatic 保持一致）
+    //   batch 模式: [dataTStart, dataTEnd]  — 全量数据，轴范围 == 数据范围
+    //   live  模式: [currentTime - windowDuration, currentTime] — 滑动窗口，轴范围 >= 数据范围
+    const currentTime = dataTEnd
+    let axisStart, axisEnd
+    if (this._batchMode) {
+      axisStart = dataTStart
+      axisEnd = dataTEnd
+    } else {
+      axisStart = currentTime - this._windowDuration
+      axisEnd = currentTime
+    }
+
+    // 游标位置按 x 轴范围计算，确保与热图绘制位置对齐
+    const ratio = (this._cursorTime - axisStart) / (axisEnd - axisStart)
+    if (ratio < 0 || ratio > 1) return  // 游标在可见范围外，不绘制
     const dpr = window.devicePixelRatio || 1
     const cx = Math.round(x + ratio * pw)
 
