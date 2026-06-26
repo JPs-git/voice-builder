@@ -3,3 +3,4 @@
 - 频谱图加hover提示
 - 帧率有点低
 - formant padding
+- 回放再次点击可以停止

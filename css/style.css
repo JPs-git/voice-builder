@@ -192,17 +192,165 @@ body {
 }
 .help-bar-close:hover { background: rgba(0,0,0,0.05); }
 
-/* ---------- 主内容区(紧凑:两张图同一视口) ---------- */
+/* ---------- 目标带配置栏(左栏,不占额外垂直空间) ---------- */
+.preset-bar {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 14px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-self: start;       /* 保持在顶部,不拉伸 */
+  position: sticky;        /* 滚动时保持可见 */
+  top: 64px;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+}
+.preset-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.preset-label {
+  font-size: 12px;
+  color: var(--text-soft);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.preset-select {
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  width: 100%;
+}
+.preset-select:hover { border-color: var(--border-strong); }
+.preset-select:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 1px;
+}
+
+/* 元音卡片按钮(2行3列,紧凑) */
+.preset-vowels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+.vowel-btn {
+  height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all .15s ease;
+  font-family: var(--font-sans);
+}
+.vowel-btn:hover {
+  background: #F9FAFB;
+  border-color: var(--border-strong);
+}
+.vowel-btn.is-active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.vowel-btn:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 1px;
+}
+
+/* 三对输入框(垂直排列,每个 band 占一行) */
+.preset-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+.band-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+}
+.band-input[data-band="f0"] { border-left: 3px solid var(--hit); }
+.band-input[data-band="f1"] { border-left: 3px solid var(--info); }
+.band-input[data-band="f2"] { border-left: 3px solid var(--warn); }
+.band-key {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-soft);
+  min-width: 20px;
+}
+.band-lo,
+.band-hi {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text);
+  text-align: center;
+  outline: none;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.band-lo:focus,
+.band-hi:focus {
+  background: #F4F7FB;
+  box-shadow: inset 0 0 0 1px var(--info);
+}
+.band-dash {
+  font-size: 10px;
+  color: var(--text-mute);
+}
+.band-unit {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-left: 2px;
+  min-width: 18px;
+}
+
+/* ---------- 主内容区(左栏 + 右栏两张图谱,不再额外占用垂直空间) ---------- */
 .content {
   flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 16px;
+  padding: 16px 20px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* ---------- 右栏:两张图谱上下堆叠 ---------- */
+.charts-column {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px 20px;
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
+  min-width: 0;
 }
+.charts-column .card { margin: 0; }
 
 /* ---------- 卡片 Card(无头部,节省纵向空间) ---------- */
 .card {
@@ -428,7 +576,19 @@ body {
   .toolbar { padding: 10px 16px; gap: 12px; }
   .toolbar-brand .subtitle { display: none; }
   .help-bar { padding: 10px 16px; font-size: 12px; }
-  .content { padding: 16px; gap: 16px; }
+  .content {
+    grid-template-columns: 1fr;
+    padding: 14px;
+    gap: 14px;
+  }
+  .preset-bar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .preset-vowels {
+    grid-template-columns: repeat(6, 1fr);
+  }
   .chart-wrapper { height: 280px; }
   .card-header, .card-body { padding-left: 14px; padding-right: 14px; }
   .btn-label { display: none; }

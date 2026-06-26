@@ -9,9 +9,9 @@ import * as echarts from 'echarts'
 const WINDOW = 10
 const FREQ_MAX = 6500
 
-// 目标区间 (伪女声参考, 与 index.html / spectrogram.js 目标带说明保持一致).
+// 目标区间 (可变, 默认综合训练预设值, 可通过 setTargetBand 动态调整).
 // 颜色: 绿(F0)/蓝(F1)/橙(F2), 与上方功率谱的三色目标带对齐.
-const TARGET_BANDS = {
+let TARGET_BANDS = {
   f0: { range: [180, 250], color: '#10B981' },
   f1: { range: [400, 700], color: '#3B82F6' },
   f2: { range: [1500, 2300], color: '#F59E0B' },
@@ -86,6 +86,38 @@ export class FormantChartRenderer {
     if (!(key in this._seriesVisible)) return
     this._seriesVisible[key] = !!visible
     this._render(true)
+  }
+
+  // ---- 目标带动态设置 ----
+  //  key: 'f0' | 'f1' | 'f2'
+  //  range: [lo, hi] (Hz), 当 null 时清除该目标带
+  setTargetBand(key, range) {
+    if (!TARGET_BANDS[key]) return
+    if (range == null) {
+      delete TARGET_BANDS[key]
+    } else {
+      const [lo, hi] = range
+      if (lo == null || hi == null || Number.isNaN(+lo) || Number.isNaN(+hi)) return
+      if (+lo >= +hi) return
+      TARGET_BANDS[key].range = [+lo, +hi]
+    }
+    this._render(true)
+  }
+
+  // 批量设置, bands = { f0:[lo,hi], f1:[lo,hi], f2:[lo,hi] }
+  setTargetBands(bands) {
+    if (!bands) return
+    for (const k of ['f0', 'f1', 'f2']) {
+      if (bands[k] && Array.isArray(bands[k]) && bands[k].length === 2) {
+        const [lo, hi] = bands[k]
+        if (+lo < +hi) TARGET_BANDS[k].range = [+lo, +hi]
+      }
+    }
+    this._render(true)
+  }
+
+  getTargetBands() {
+    return JSON.parse(JSON.stringify(TARGET_BANDS))
   }
 
   setFrameClickCallback(cb) { this._onFrameClick = cb }

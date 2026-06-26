@@ -41,7 +41,70 @@ const audioEngine = new AudioEngine()
 const spectrum = new PowerSpectrumRenderer(spectrumContainer)
 const formantChart = new FormantChartRenderer(formantContainer)
 
-// 状态
+// ---- 目标带预设 ----
+// 各目标值参考:女性普通话元音 / 语音学教材常用区间的折中值
+const PRESETS = {
+  balanced: { label: '综合训练', f0: [180, 250], f1: [400, 700], f2: [1500, 2300] },
+  'vowel-a': { label: '元音 a', f0: [200, 260], f1: [800, 1100], f2: [1200, 1500] },
+  'vowel-o': { label: '元音 o', f0: [190, 250], f1: [500, 750], f2: [900, 1100] },
+  'vowel-e': { label: '元音 e', f0: [190, 250], f1: [500, 800], f2: [1700, 2200] },
+  'vowel-i': { label: '元音 i', f0: [200, 260], f1: [250, 450], f2: [2100, 2800] },
+  'vowel-u': { label: '元音 u', f0: [190, 250], f1: [280, 500], f2: [700, 900] },
+  'vowel-yu': { label: '元音 ü', f0: [190, 260], f1: [300, 500], f2: [1200, 1800] },
+}
+
+// 配置栏 DOM 引用
+const presetSelect = $('#presetSelect')
+const vowelButtons = document.querySelectorAll('.vowel-btn')
+const bandInputs = document.querySelectorAll('.band-input')
+
+// 应用某个预设
+function applyPreset(name) {
+  const preset = PRESETS[name]
+  if (!preset) return
+  formantChart.setTargetBands({
+    f0: preset.f0,
+    f1: preset.f1,
+    f2: preset.f2,
+  })
+  // 同步输入框
+  for (const wrap of bandInputs) {
+    const key = wrap.dataset.band
+    const rng = preset[key]
+    if (!rng) continue
+    wrap.querySelector('.band-lo').value = Math.round(rng[0])
+    wrap.querySelector('.band-hi').value = Math.round(rng[1])
+  }
+  // 高亮:下拉框 + 元音卡片
+  if (presetSelect) {
+    const opt = [...presetSelect.options].find(o => o.value === name)
+    if (opt) presetSelect.value = name
+  }
+  for (const btn of vowelButtons) {
+    btn.classList.toggle('is-active', btn.dataset.preset === name)
+  }
+}
+
+// 应用输入框中的当前值（三对一起提交）
+function applyCustomFromInputs() {
+  const bands = {}
+  let anyValid = false
+  for (const wrap of bandInputs) {
+    const key = wrap.dataset.band
+    const lo = parseFloat(wrap.querySelector('.band-lo').value)
+    const hi = parseFloat(wrap.querySelector('.band-hi').value)
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo >= hi) continue
+    bands[key] = [lo, hi]
+    anyValid = true
+  }
+  if (!anyValid) { console.warn('所有目标区间输入无效（下限 ≥ 上限或无法解析）'); return }
+  formantChart.setTargetBands(bands)
+  // 下拉框切到"自定义"
+  if (presetSelect) presetSelect.value = 'custom'
+  for (const btn of vowelButtons) btn.classList.remove('is-active')
+}
+
+// ---- 状态 ----
 const STATE = {
   IDLE: 'idle',
   REQUESTING: 'requesting',
@@ -298,6 +361,30 @@ btnImport.addEventListener('click', onImportClick)
 btnClear.addEventListener('click', clearAll)
 btnPlayback.addEventListener('click', onPlaybackToggle)
 wavInput.addEventListener('change', onWavSelected)
+
+// ---- 目标带配置栏: 预设切换、元音卡片点击、输入框提交 ----
+if (presetSelect) {
+  presetSelect.addEventListener('change', () => {
+    const name = presetSelect.value
+    if (name && name !== 'custom') applyPreset(name)
+  })
+}
+for (const btn of vowelButtons) {
+  btn.addEventListener('click', () => applyPreset(btn.dataset.preset))
+}
+for (const wrap of bandInputs) {
+  const lo = wrap.querySelector('.band-lo')
+  const hi = wrap.querySelector('.band-hi')
+  if (!lo || !hi) continue
+  // 在输入框 blur / Enter 时提交 (三对一起刷新一次)
+  lo.addEventListener('blur', applyCustomFromInputs)
+  hi.addEventListener('blur', applyCustomFromInputs)
+  lo.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyCustomFromInputs() } })
+  hi.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyCustomFromInputs() } })
+}
+
+// ---- 初始化: 默认应用综合训练预设 (与初始 DOM value 一致) ----
+applyPreset('balanced')
 
 initLegendToggle()
 initConfigDrawer()

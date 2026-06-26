@@ -46,44 +46,95 @@
 
     <!-- 主区域 -->
     <main class="content">
-      <!-- 卡片 1:语谱图 -->
-      <section class="card">
-        <div class="chart-wrapper">
-          <div class="chart-header">
-            <h2 class="card-title">声音频谱</h2>
+      <!-- 左栏: 目标带配置 -->
+      <section class="preset-bar" aria-label="共振峰目标区间">
+        <div class="preset-row">
+          <label class="preset-label">目标区间</label>
+          <select id="presetSelect" class="preset-select" aria-label="预设选择">
+            <option value="balanced">综合训练</option>
+            <option value="vowel-a">元音 a</option>
+            <option value="vowel-o">元音 o</option>
+            <option value="vowel-e">元音 e</option>
+            <option value="vowel-i">元音 i</option>
+            <option value="vowel-u">元音 u</option>
+            <option value="vowel-yu">元音 ü</option>
+            <option value="custom" disabled>自定义</option>
+          </select>
+        </div>
+        <div class="preset-vowels" role="group" aria-label="元音预设">
+          <button type="button" class="vowel-btn" data-preset="vowel-a">a</button>
+          <button type="button" class="vowel-btn" data-preset="vowel-o">o</button>
+          <button type="button" class="vowel-btn" data-preset="vowel-e">e</button>
+          <button type="button" class="vowel-btn" data-preset="vowel-i">i</button>
+          <button type="button" class="vowel-btn" data-preset="vowel-u">u</button>
+          <button type="button" class="vowel-btn" data-preset="vowel-yu">ü</button>
+        </div>
+        <div class="preset-inputs">
+          <div class="band-input" data-band="f0">
+            <span class="band-key">F0</span>
+            <input type="number" min="20" max="600" step="5" class="band-lo" value="180" aria-label="F0下限">
+            <span class="band-dash">—</span>
+            <input type="number" min="20" max="600" step="5" class="band-hi" value="250" aria-label="F0上限">
+            <span class="band-unit">Hz</span>
           </div>
-          <div class="chart-area">
-            <div id="powerSpectrum"></div>
-            <div class="empty-state" id="spectrumEmpty">
-              <div class="empty-state-title">还没有声音数据</div>
-              <div class="empty-state-desc">🎤 点击顶栏"开始录音"试试</div>
-            </div>
+          <div class="band-input" data-band="f1">
+            <span class="band-key">F1</span>
+            <input type="number" min="100" max="2000" step="10" class="band-lo" value="400" aria-label="F1下限">
+            <span class="band-dash">—</span>
+            <input type="number" min="100" max="2000" step="10" class="band-hi" value="700" aria-label="F1上限">
+            <span class="band-unit">Hz</span>
+          </div>
+          <div class="band-input" data-band="f2">
+            <span class="band-key">F2</span>
+            <input type="number" min="500" max="3500" step="10" class="band-lo" value="1500" aria-label="F2下限">
+            <span class="band-dash">—</span>
+            <input type="number" min="500" max="3500" step="10" class="band-hi" value="2300" aria-label="F2上限">
+            <span class="band-unit">Hz</span>
           </div>
         </div>
       </section>
 
-      <!-- 卡片 2:共振峰曲线 -->
-      <section class="card">
-        <div class="chart-wrapper">
-          <div class="chart-header">
-            <h2 class="card-title">共振峰</h2>
-            <div class="card-legend" id="formantLegend" aria-label="图例">
-              <button class="legend-item" data-key="f0" data-active="true"><i style="background:#1F2937"></i>F0</button>
-              <button class="legend-item" data-key="f1" data-active="true"><i style="background:#E23E57"></i>F1</button>
-              <button class="legend-item" data-key="f2" data-active="true"><i style="background:#3B82F6"></i>F2</button>
-              <button class="legend-item" data-key="f3" data-active="true"><i style="background:#10B981"></i>F3</button>
-              <button class="legend-item" data-key="f4" data-active="true"><i style="background:#F59E0B"></i>F4</button>
+      <!-- 右栏: 两张图谱 -->
+      <div class="charts-column">
+        <!-- 卡片 1:语谱图 -->
+        <section class="card">
+          <div class="chart-wrapper">
+            <div class="chart-header">
+              <h2 class="card-title">声音频谱</h2>
+            </div>
+            <div class="chart-area">
+              <div id="powerSpectrum"></div>
+              <div class="empty-state" id="spectrumEmpty">
+                <div class="empty-state-title">还没有声音数据</div>
+                <div class="empty-state-desc">🎤 点击顶栏"开始录音"试试</div>
+              </div>
             </div>
           </div>
-          <div class="chart-area">
-            <div id="formantChart"></div>
-            <div class="empty-state" id="formantEmpty">
-              <div class="empty-state-title">曲线待生成</div>
-              <div class="empty-state-desc">录音或导入音频后显示共振峰曲线</div>
+        </section>
+
+        <!-- 卡片 2:共振峰曲线 -->
+        <section class="card">
+          <div class="chart-wrapper">
+            <div class="chart-header">
+              <h2 class="card-title">共振峰</h2>
+              <div class="card-legend" id="formantLegend" aria-label="图例">
+                <button class="legend-item" data-key="f0" data-active="true"><i style="background:#1F2937"></i>F0</button>
+                <button class="legend-item" data-key="f1" data-active="true"><i style="background:#E23E57"></i>F1</button>
+                <button class="legend-item" data-key="f2" data-active="true"><i style="background:#3B82F6"></i>F2</button>
+                <button class="legend-item" data-key="f3" data-active="true"><i style="background:#10B981"></i>F3</button>
+                <button class="legend-item" data-key="f4" data-active="true"><i style="background:#F59E0B"></i>F4</button>
+              </div>
+            </div>
+            <div class="chart-area">
+              <div id="formantChart"></div>
+              <div class="empty-state" id="formantEmpty">
+                <div class="empty-state-title">曲线待生成</div>
+                <div class="empty-state-desc">录音或导入音频后显示共振峰曲线</div>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
 
   </div>
