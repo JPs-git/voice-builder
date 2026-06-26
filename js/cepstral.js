@@ -3,10 +3,10 @@ import { complexFft, ifft } from './fft.js'
 import { detectPitch } from './lpc.js'
 
 const PRE_EMPHASIS = 0.99
-const FFT_SIZE = 1024
-const LIFTER_CUTOFF = 25
+const FFT_SIZE = 2048
+const LIFTER_CUTOFF = 35
 const MIN_FORMANT_FREQ = 50
-const MAX_FORMANT_FREQ = 6500
+const MAX_FORMANT_FREQ = 3500
 const BW_DROP = 0.5 * Math.log(2)
 
 function applyPreEmphasis(signal, coeff) {

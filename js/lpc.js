@@ -178,7 +178,7 @@ export function rootsToFormants(roots, sampleRate) {
     const freq = Math.atan2(root.im, root.re) * sampleRate / (2 * Math.PI)
     const bw = -Math.log(Math.min(poleMag, 0.9999)) * sampleRate / Math.PI
 
-    if (freq > 50 && freq < 6500) {
+    if (freq > 50 && freq < 3500) {
       formants.push({ freq, bw })
     }
   }
@@ -223,15 +223,23 @@ export function detectPitch(signal, sampleRate) {
 export function isHarmonicLocked(f0, freq, bw) {
   if (f0 == null || f0 <= 0 || freq == null || freq <= 0) return false
 
+  const ratio = freq / f0
+
+  // If freq is too close to F0 (< 1.5x), it's F1 itself not a harmonic.
+  // F1 can have very narrow bandwidth when it almost coincides with F0.
+  if (ratio < 1.5) return false
+
   // Bandwidth anomaly: formant bandwidth < 30Hz is unphysiologically narrow,
   // almost certainly a harmonic peak rather than a true formant.
   if (bw != null && bw < 30) return true
 
-  // F0-F1 similarity: if freq is within 15% of an integer multiple of F0 (1x-4x),
-  // it's likely LPC locking onto a harmonic instead of a formant.
-  const ratio = freq / f0
+  // If bandwidth is available and normal (>30Hz), it's a real formant regardless of ratio.
+  if (bw != null && bw >= 30) return false
+
+  // Fallback when bandwidth is unavailable: check if freq is within 10% of an
+  // integer multiple of F0 (2x-4x) — likely a harmonic.
   const nearestInt = Math.round(ratio)
-  if (nearestInt >= 1 && nearestInt <= 4) {
+  if (nearestInt >= 2 && nearestInt <= 4) {
     if (Math.abs(ratio - nearestInt) / nearestInt < 0.10) return true
   }
 
@@ -239,7 +247,7 @@ export function isHarmonicLocked(f0, freq, bw) {
 }
 
 export function extractFormants(signal, sampleRate, maxFormants = 5) {
-  const order = Math.min(Math.max(2 * maxFormants + 4, 18), Math.floor(signal.length / 3), 20)
+  const order = Math.min(16, Math.floor(signal.length / 3), Math.floor(sampleRate / 1000 + 4))
 
   // Pre-emphasis: y[n] = x[n] - 0.99 * x[n-1] to reduce spectral tilt,
   // helping LPC focus on formant peaks rather than the overall slope.

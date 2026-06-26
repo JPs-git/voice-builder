@@ -7,7 +7,7 @@ import * as echarts from 'echarts'
  */
 
 const WINDOW = 10
-const FREQ_MAX = 6500
+const FREQ_MAX = 3500
 
 // 目标区间 (可变, 默认综合训练预设值, 可通过 setTargetBand 动态调整).
 // 颜色: 绿(F0)/蓝(F1)/橙(F2), 与上方功率谱的三色目标带对齐.
@@ -31,8 +31,6 @@ const COLORS = {
   f0: '#1F2937',
   f1: '#E23E57',
   f2: '#3B82F6',
-  f3: '#10B981',
-  f4: '#F59E0B',
 }
 
 function buildMarkArea(band) {
@@ -67,7 +65,7 @@ export class FormantChartRenderer {
     this._data = []
     this._batchMode = false
     this._cursorTime = -1
-    this._seriesVisible = { f0: true, f1: true, f2: true, f3: true, f4: true }
+    this._seriesVisible = { f0: true, f1: true, f2: true }
     this._onFrameClick = null
     this._latestTime = 0
     this._throttled = false
@@ -128,7 +126,7 @@ export class FormantChartRenderer {
 
   _render(useAnimation) {
     const seriesData = {}
-    const keys = ['f0', 'f1', 'f2', 'f3', 'f4']
+    const keys = ['f0', 'f1', 'f2']
     for (const k of keys) {
       const visible = this._seriesVisible[k]
       seriesData[k] = visible ? this._data.map(f => [f.time, f[k] ?? null]) : []
@@ -158,7 +156,7 @@ export class FormantChartRenderer {
     }
 
     // tooltip:按 F4 在顶部、F0 在底部的顺序渲染,颜色与曲线完全一致
-    const tooltipKeys = ['f4', 'f3', 'f2', 'f1', 'f0']
+    const tooltipKeys = ['f2', 'f1', 'f0']
 
     this._chart.setOption({
       animation: !!useAnimation,

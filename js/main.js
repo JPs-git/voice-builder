@@ -32,7 +32,7 @@ const spectrumEmpty = $('#spectrumEmpty')
 const formantEmpty = $('#formantEmpty')
 const configDrawer = $('#configDrawer')
 const helpDrawer = $('#helpDrawer')
-let formantMethod = 'cepstral'
+let formantMethod = 'hybrid'
 let formantSmoothing = true
 const btnPlayback = $('#btnPlayback')
 
@@ -282,10 +282,40 @@ async function onWavSelected(e) {
     formantChart.displayAll(frames)
     if (frames.length > 0) setEmptyVisible(false)
     setState(STATE.PAUSED)
+    printFormantSummary(frames)
   } catch (err) {
     console.error('WAV analysis failed:', err)
     setState(STATE.IDLE)
   }
+}
+
+function printFormantSummary(frames) {
+  const valid = frames.filter(f => f.f1 > 0 && f.f2 > 0)
+  if (valid.length === 0) { console.log('无有效共振峰帧'); return }
+  const mF1 = valid.reduce((s, f) => s + f.f1, 0) / valid.length
+  const mF2 = valid.reduce((s, f) => s + f.f2, 0) / valid.length
+  const sF1 = Math.sqrt(valid.reduce((s, f) => s + (f.f1 - mF1) ** 2, 0) / valid.length)
+  const sF2 = Math.sqrt(valid.reduce((s, f) => s + (f.f2 - mF2) ** 2, 0) / valid.length)
+
+  const sorted = [...valid].sort((a, b) => a.time - b.time)
+  const n = sorted.length
+  const stable = sorted.slice(Math.floor(n * 0.2), Math.floor(n * 0.9))
+  const smF1 = stable.reduce((s, f) => s + f.f1, 0) / stable.length
+  const smF2 = stable.reduce((s, f) => s + f.f2, 0) / stable.length
+
+  console.log('')
+  console.log('=== 共振峰分析结果 ===')
+  console.log(`算法: ${formantMethod}  平滑: ${formantSmoothing}`)
+  console.log(`总帧数: ${frames.length}  有效帧: ${valid.length}`)
+  console.log(`全段均值: F1 = ${mF1.toFixed(1)} ± ${sF1.toFixed(1)} Hz  F2 = ${mF2.toFixed(1)} ± ${sF2.toFixed(1)} Hz`)
+  console.log(`稳定段均值(去首尾过渡): F1 = ${smF1.toFixed(1)} Hz  F2 = ${smF2.toFixed(1)} Hz`)
+  console.log(`稳定段范围: F1 [${stable[0].f1.toFixed(0)}-${stable[stable.length-1].f1.toFixed(0)}]  F2 [${stable[0].f2.toFixed(0)}-${stable[stable.length-1].f2.toFixed(0)}]`)
+  console.log('')
+  console.log('Time_s\tF1_Hz\tF2_Hz')
+  for (const f of valid) {
+    console.log(`${f.time.toFixed(6)}\t${f.f1.toFixed(1)}\t${f.f2.toFixed(1)}`)
+  }
+  console.log(`共 ${valid.length} 帧`)
 }
 
 // ---- 图例点击切换 ----

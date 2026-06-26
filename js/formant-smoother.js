@@ -4,14 +4,14 @@ const DEAD_ZONE = 50
 export class FormantSmoother {
   constructor(windowSize = 5) {
     this._windowSize = windowSize
-    this._buffers = { f0: [], f1: [], f2: [], f3: [], f4: [] }
+    this._buffers = { f0: [], f1: [], f2: [] }
     this._lastOutput = {}
     this._lastFrame = undefined
   }
 
   push(frame) {
     const out = { ...frame }
-    for (const key of ['f0', 'f1', 'f2', 'f3', 'f4']) {
+    for (const key of ['f0', 'f1', 'f2']) {
       const value = frame[key]
       if (value == null) {
         this._buffers[key] = []
@@ -50,7 +50,7 @@ export class FormantSmoother {
     }
 
     if (this._lastFrame !== undefined) {
-      const keys = ['f0', 'f1', 'f2', 'f3', 'f4']
+      const keys = ['f0', 'f1', 'f2']
       let ordered = true
       for (let i = 0; i < keys.length - 1; i++) {
         const a = out[keys[i]]
@@ -71,11 +71,11 @@ export class FormantSmoother {
       }
     }
 
-    for (const key of ['f0', 'f1', 'f2', 'f3', 'f4']) {
+    for (const key of ['f0', 'f1', 'f2']) {
       if (out[key] != null) this._lastOutput[key] = out[key]
     }
-    if (out.f0 != null && out.f1 != null && out.f2 != null && out.f3 != null && out.f4 != null) {
-      this._lastFrame = { f0: out.f0, f1: out.f1, f2: out.f2, f3: out.f3, f4: out.f4 }
+    if (out.f0 != null && out.f1 != null && out.f2 != null) {
+      this._lastFrame = { f0: out.f0, f1: out.f1, f2: out.f2 }
     }
     return out
   }

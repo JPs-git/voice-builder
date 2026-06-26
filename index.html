@@ -121,8 +121,7 @@
                 <button class="legend-item" data-key="f0" data-active="true"><i style="background:#1F2937"></i>F0</button>
                 <button class="legend-item" data-key="f1" data-active="true"><i style="background:#E23E57"></i>F1</button>
                 <button class="legend-item" data-key="f2" data-active="true"><i style="background:#3B82F6"></i>F2</button>
-                <button class="legend-item" data-key="f3" data-active="true"><i style="background:#10B981"></i>F3</button>
-                <button class="legend-item" data-key="f4" data-active="true"><i style="background:#F59E0B"></i>F4</button>
+                
               </div>
             </div>
             <div class="chart-area">
@@ -152,12 +151,16 @@
           <h4>共振峰算法</h4>
           <div class="radio-group" id="formantMethodGroup">
             <label class="radio-item">
-              <input type="radio" name="formantMethod" value="cepstral" checked>
-              <span>倒谱法 <small>（默认，高基频友好）</small></span>
+              <input type="radio" name="formantMethod" value="hybrid" checked>
+              <span>混合法 <small>（LPC+倒谱回退，推荐）</small></span>
             </label>
             <label class="radio-item">
               <input type="radio" name="formantMethod" value="lpc">
-              <span>LPC <small>（传统自回归）</small></span>
+              <span>纯 LPC <small>（自回归，可能找不到低 F1）</small></span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="formantMethod" value="cepstral">
+              <span>纯倒谱法 <small>（封闭元音 F2 偏大）</small></span>
             </label>
           </div>
           <p class="config-hint">生效于下次录音或导入</p>

@@ -16,12 +16,22 @@ No linter, formatter, or typecheck configured.
 ## Entrypoint & Architecture
 
 - `index.html` → `js/main.js` (app entry, DOM wiring, AudioContext lifecycle)
-- `js/analysis-pipeline.js` — orchestrates frame processing (AudioWorklet shim via `frame-processor.js`)
-- `js/cepstral.js` — default formant extractor (LIFTER_CUTOFF = 25, FFT 1024, 16kHz)
-- `js/lpc.js` — alternative formant extractor (toggled in config drawer)
+- `js/analysis-pipeline.js` — orchestrates frame processing (AudioWorklet shim via `frame-processor.js`); FRAME_SIZE = 800 (50ms), HOP_SIZE = 160. Three methods: `hybrid` (default, LPC primary + cepstral fallback in two cases), `lpc` (pure LPC), `cepstral` (pure cepstral)
+- `js/cepstral.js` — cepstral formant extractor (LIFTER_CUTOFF = 35, FFT 2048, MAX_FORMANT_FREQ = 3500)
+- `js/lpc.js` — LPC formant extractor (order = min(16, len/3, fs/1000+4), MAX_FORMANT_FREQ = 3500)
 - `js/formant-smoother.js` — post-processing (5-frame median, 300Hz jump clamp, 50Hz dead zone, F0<F1<F2<F3<F4 ordering)
 - `js/wav-parser.js` — WAV import
 - `index.html` has the config drawer (checkbox for `formantSmoothing`, radio for `formantMethod`)
+
+### Hybrid Method (default)
+
+`AnalysisPipeline._prevGoodF1` tracks the previous frame's output F1 (from whichever method was used) across frames. In the hybrid branch:
+
+1. LPC finds 2+ formants → check if F1 jumped >300Hz from previous and F1 >600Hz (LPC likely skipped the real F1, reporting F2 as F1).
+   - Jump detected → run cepstral verification. If cepstral also finds 2+ formants, use cepstral result (applying `isHarmonicLocked`). If cepstral's F1 also jumps, the LPC fallback is still handled by the formant smoother's 300Hz clamp.
+   - If cepstral verification fails (<2 formants), `isHarmonicLocked` is applied to the original LPC result before falling back to smoother clamping.
+   - No jump → normal LPC path with `isHarmonicLocked` check.
+2. LPC finds <2 formants → cepstral fallback (with `isHarmonicLocked` on F1).
 
 Config is wired via global state in `main.js` and read at recording/import start. Changes do not take effect mid-recording.
 
