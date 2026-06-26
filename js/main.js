@@ -33,6 +33,7 @@ const formantEmpty = $('#formantEmpty')
 const configDrawer = $('#configDrawer')
 const helpDrawer = $('#helpDrawer')
 let formantMethod = 'cepstral'
+let formantSmoothing = true
 const btnPlayback = $('#btnPlayback')
 
 // ---- 业务对象 ----
@@ -98,6 +99,7 @@ function startNewRecording() {
       formantChart.pushFrame(frame, frame.time)
     },
     formantMethod,
+    formantSmoothing,
     frameOffset: totalFrames,
   })
   audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate))
@@ -210,7 +212,7 @@ async function onWavSelected(e) {
     }
     audioEngine.setImportedBuffer(samples)
     audioEngine._recordingSampleRate = rate
-    const frames = AnalysisPipeline.analyze(samples, rate, formantMethod)
+    const frames = AnalysisPipeline.analyze(samples, rate, formantMethod, formantSmoothing)
     sessionFrames = frames
     totalFrames = frames.length
     spectrum.displayAll(frames)
@@ -255,6 +257,13 @@ function initConfigDrawer() {
     for (const r of radios) {
       r.addEventListener('change', () => {
         if (r.checked) formantMethod = r.value
+      })
+    }
+    const smoothCb = configDrawer.querySelector('#formantSmoothing')
+    if (smoothCb) {
+      smoothCb.checked = formantSmoothing
+      smoothCb.addEventListener('change', () => {
+        formantSmoothing = smoothCb.checked
       })
     }
   }

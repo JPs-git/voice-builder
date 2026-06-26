@@ -4,13 +4,14 @@ import { fftMagnitudes } from './fft.js'
 import { detectPitch, extractFormants, isHarmonicLocked } from './lpc.js'
 import { extractFormantsCepstral } from './cepstral.js'
 import { VoiceActivityDetector } from './vad.js'
+import { FormantSmoother } from './formant-smoother.js'
 
 const TARGET_RATE = 16000
 const FRAME_SIZE = 640
 const HOP_SIZE = 160
 
 export class AnalysisPipeline {
-  constructor({ onFrame, vadThreshold, formantMethod = 'cepstral', frameOffset = 0 } = {}) {
+  constructor({ onFrame, vadThreshold, formantMethod = 'cepstral', frameOffset = 0, formantSmoothing = true } = {}) {
     this._resampler = null
     this._frameProcessor = null
     this.onFrame = onFrame
@@ -18,6 +19,7 @@ export class AnalysisPipeline {
     this._frameOffset = frameOffset
     this._vad = new VoiceActivityDetector({ threshold: vadThreshold ?? 0.008 })
     this._formantMethod = formantMethod
+    this._smoother = formantSmoothing ? new FormantSmoother() : null
   }
 
   get frameCount() { return this._frameCount }
@@ -44,7 +46,7 @@ export class AnalysisPipeline {
         }
         const magnitudes = fftMagnitudes(frame.samples, 1024)
         this._frameCount++
-        const output = {
+        let output = {
           f0,
           f1: formants[0]?.freq ?? null,
           f2: formants[1]?.freq ?? null,
@@ -53,6 +55,9 @@ export class AnalysisPipeline {
           time: (this._frameCount + this._frameOffset) * 0.01,
           magnitudes,
           voiced,
+        }
+        if (this._smoother) {
+          output = this._smoother.push(output)
         }
         if (this.onFrame) this.onFrame(output)
       }
@@ -75,15 +80,17 @@ export class AnalysisPipeline {
   reset() {
     if (this._resampler) this._resampler.reset()
     if (this._frameProcessor) this._frameProcessor.reset()
+    if (this._smoother) this._smoother.reset()
     this._frameCount = 0
   }
 
-  static analyze(samples, sampleRate, formantMethod) {
+  static analyze(samples, sampleRate, formantMethod, formantSmoothing = true) {
     if (samples.length === 0) return []
     const frames = []
     const pipeline = new AnalysisPipeline({
       onFrame: (frame) => frames.push(frame),
       formantMethod,
+      formantSmoothing,
     })
     pipeline.pushChunk(samples, sampleRate)
     pipeline.flush()
