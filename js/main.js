@@ -1,6 +1,6 @@
 import { AudioEngine } from './audio-engine.js'
 import { AnalysisPipeline } from './analysis-pipeline.js'
-import { PowerSpectrumRenderer } from './spectrogram.js'
+import { F0ChartRenderer } from './f0-chart.js'
 import { FormantChartRenderer } from './formant-chart.js'
 import { parseWav } from './wav-parser.js'
 import { PlaybackManager } from './playback.js'
@@ -20,7 +20,7 @@ import { Resampler } from './resampler.js'
 
 // ---- DOM 引用 ----
 const $ = (sel) => document.querySelector(sel)
-const spectrumContainer = $('#powerSpectrum')
+const f0Container = $('#f0Chart')
 const formantContainer = $('#formantChart')
 const btnRecord = $('#btnRecord')
 const btnImport = $('#btnImport')
@@ -28,7 +28,7 @@ const btnClear = $('#btnClear')
 const btnConfig = $('#btnConfig')
 const btnHelp = $('#btnHelp')
 const wavInput = $('#wavInput')
-const spectrumEmpty = $('#spectrumEmpty')
+const f0Empty = $('#f0Empty')
 const formantEmpty = $('#formantEmpty')
 const configDrawer = $('#configDrawer')
 const helpDrawer = $('#helpDrawer')
@@ -38,7 +38,7 @@ const btnPlayback = $('#btnPlayback')
 
 // ---- 业务对象 ----
 const audioEngine = new AudioEngine()
-const spectrum = new PowerSpectrumRenderer(spectrumContainer)
+const f0Chart = new F0ChartRenderer(f0Container)
 const formantChart = new FormantChartRenderer(formantContainer)
 
 // ---- 目标带预设 ----
@@ -122,7 +122,7 @@ let totalFrames = 0
 function fmtHz(v) { return v == null ? '-- Hz' : `${Math.round(v)} Hz` }
 
 function setEmptyVisible(visible) {
-  if (spectrumEmpty) spectrumEmpty.classList.toggle('hidden', !visible)
+  if (f0Empty) f0Empty.classList.toggle('hidden', !visible)
   if (formantEmpty) formantEmpty.classList.toggle('hidden', !visible)
 }
 
@@ -153,12 +153,12 @@ function setState(next) {
 
 function startNewRecording() {
   if (livePipeline) { livePipeline.reset(); livePipeline = null }
-  spectrum.setLiveMode()
+  f0Chart.setLiveMode()
   formantChart.setLiveMode()
   livePipeline = new AnalysisPipeline({
     onFrame: (frame) => {
       sessionFrames.push(frame)
-      spectrum.pushFrame(frame.magnitudes, frame.time)
+      f0Chart.pushFrame(frame)
       formantChart.pushFrame(frame, frame.time)
     },
     formantMethod,
@@ -223,7 +223,7 @@ function clearAll() {
   audioEngine.stopPlayback()
   audioEngine.stopStream()
   audioEngine.clearRecordedBuffer()
-  spectrum.clear()
+  f0Chart.clear()
   formantChart.clear()
   sessionFrames = []
   totalFrames = 0
@@ -235,7 +235,7 @@ function clearAll() {
 function onPlaybackToggle() {
   if (state !== STATE.PAUSED || sessionFrames.length < 2) return
   if (!playbackManager) {
-    playbackManager = new PlaybackManager(audioEngine, spectrum, formantChart)
+    playbackManager = new PlaybackManager(audioEngine, f0Chart, formantChart)
   }
   if (audioEngine.isPlaying) {
     playbackManager.stop()
@@ -278,7 +278,7 @@ async function onWavSelected(e) {
     const frames = AnalysisPipeline.analyze(samples, rate, formantMethod, formantSmoothing)
     sessionFrames = frames
     totalFrames = frames.length
-    spectrum.displayAll(frames)
+    f0Chart.displayAll(frames)
     formantChart.displayAll(frames)
     if (frames.length > 0) setEmptyVisible(false)
     setState(STATE.PAUSED)
