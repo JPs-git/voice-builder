@@ -3,7 +3,7 @@
 
 实时分析语音音高, 共振峰, 专为伪音练习设计.
 
-<img alt="Logo" src="assets/logo-with-text.png" width="80%">
+<img alt="Logo" src="assets/logo-with-text.png" width="60%">
 
 ## Quick Start
 
@@ -32,7 +32,8 @@
 - Echarts
 
 ## Screenshots
-
+<img alt="Logo" src="assets/screen_shot.png" width="80%">
+<img alt="Logo" src="assets/screen_shot_2.png" width="80%">
 
 ## License
 
