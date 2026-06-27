@@ -221,24 +221,6 @@ body {
   font-weight: 600;
   letter-spacing: 0.3px;
 }
-.preset-select {
-  height: 30px;
-  padding: 0 8px;
-  font-size: 12px;
-  color: var(--text);
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-family: var(--font-sans);
-  width: 100%;
-}
-.preset-select:hover { border-color: var(--border-strong); }
-.preset-select:focus-visible {
-  outline: 2px solid var(--info);
-  outline-offset: 1px;
-}
-
 /* 元音卡片按钮(2行3列,紧凑) */
 .preset-vowels {
   display: grid;

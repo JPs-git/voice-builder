@@ -44,7 +44,6 @@ const formantChart = new FormantChartRenderer(formantContainer)
 // ---- 目标带预设 ----
 // 各目标值参考:女性普通话元音 / 语音学教材常用区间的折中值
 const PRESETS = {
-  balanced: { label: '综合训练', f0: [200, 290], f1: [400, 750], f2: [1200, 2200] },
   'vowel-a': { label: '元音 a', f0: [200, 280], f1: [800, 1000], f2: [1100, 1400] },
   'vowel-o': { label: '元音 o', f0: [200, 280], f1: [480, 620], f2: [700, 1000] },
   'vowel-e': { label: '元音 e', f0: [200, 280], f1: [500, 660], f2: [1000, 1300] },
@@ -54,7 +53,6 @@ const PRESETS = {
 }
 
 // 配置栏 DOM 引用
-const presetSelect = $('#presetSelect')
 const vowelButtons = document.querySelectorAll('.vowel-btn')
 const bandInputs = document.querySelectorAll('.band-input')
 
@@ -75,11 +73,7 @@ function applyPreset(name) {
     wrap.querySelector('.band-lo').value = Math.round(rng[0])
     wrap.querySelector('.band-hi').value = Math.round(rng[1])
   }
-  // 高亮:下拉框 + 元音卡片
-  if (presetSelect) {
-    const opt = [...presetSelect.options].find(o => o.value === name)
-    if (opt) presetSelect.value = name
-  }
+  // 高亮:元音卡片
   for (const btn of vowelButtons) {
     btn.classList.toggle('is-active', btn.dataset.preset === name)
   }
@@ -99,8 +93,6 @@ function applyCustomFromInputs() {
   }
   if (!anyValid) { console.warn('所有目标区间输入无效（下限 ≥ 上限或无法解析）'); return }
   formantChart.setTargetBands(bands)
-  // 下拉框切到"自定义"
-  if (presetSelect) presetSelect.value = 'custom'
   for (const btn of vowelButtons) btn.classList.remove('is-active')
 }
 
@@ -392,13 +384,7 @@ btnClear.addEventListener('click', clearAll)
 btnPlayback.addEventListener('click', onPlaybackToggle)
 wavInput.addEventListener('change', onWavSelected)
 
-// ---- 目标带配置栏: 预设切换、元音卡片点击、输入框提交 ----
-if (presetSelect) {
-  presetSelect.addEventListener('change', () => {
-    const name = presetSelect.value
-    if (name && name !== 'custom') applyPreset(name)
-  })
-}
+// ---- 目标带配置栏: 元音卡片点击、输入框提交 ----
 for (const btn of vowelButtons) {
   btn.addEventListener('click', () => applyPreset(btn.dataset.preset))
 }
@@ -413,8 +399,8 @@ for (const wrap of bandInputs) {
   hi.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyCustomFromInputs() } })
 }
 
-// ---- 初始化: 默认应用综合训练预设 (与初始 DOM value 一致) ----
-applyPreset('balanced')
+// ---- 初始化: 默认应用元音 a ----
+applyPreset('vowel-a')
 
 initLegendToggle()
 initConfigDrawer()
