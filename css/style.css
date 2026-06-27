@@ -193,7 +193,7 @@ body {
 }
 .help-bar-close:hover { background: rgba(0,0,0,0.05); }
 
-/* ---------- 目标带配置栏(左栏,不占额外垂直空间) ---------- */
+/* ---------- 目标带配置栏(absolute定位,偏左于charts-column) ---------- */
 .preset-bar {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -203,9 +203,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  align-self: start;       /* 保持在顶部,不拉伸 */
-  position: sticky;        /* 滚动时保持可见 */
-  top: 64px;
+  position: absolute;
+  top: 16px;
+  right: calc(50% + 466px);
+  width: 220px;
   max-height: calc(100vh - 88px);
   overflow-y: auto;
 }
@@ -313,25 +314,23 @@ body {
   min-width: 18px;
 }
 
-/* ---------- 主内容区(左栏 + 右栏两张图谱,不再额外占用垂直空间) ---------- */
+/* ---------- 主内容区(charts-column居中, preset-bar偏左) ---------- */
 .content {
   flex: 1;
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 16px;
+  position: relative;
   padding: 16px 20px;
-  max-width: 1400px;
   width: 100%;
-  margin: 0 auto;
-  align-items: start;
 }
 
-/* ---------- 右栏:两张图谱上下堆叠 ---------- */
+/* ---------- 右栏:两张图谱上下堆叠,居中显示 ---------- */
 .charts-column {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
 }
 .charts-column .card { margin: 0; }
 
@@ -582,14 +581,14 @@ body {
   .toolbar-brand .logo { width: 30px; height: 30px; }
   .help-bar { padding: 10px 16px; font-size: 12px; }
   .content {
-    grid-template-columns: 1fr;
     padding: 14px;
-    gap: 14px;
   }
   .preset-bar {
     position: static;
+    width: 100%;
     max-height: none;
     overflow: visible;
+    margin-bottom: 14px;
   }
   .preset-vowels {
     grid-template-columns: repeat(6, 1fr);
