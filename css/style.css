@@ -78,12 +78,13 @@ body {
 }
 .toolbar-brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
 }
 .toolbar-brand .logo {
-  font-size: 20px;
-  line-height: 1;
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
 }
 .toolbar-brand .title {
   font-size: 18px;
@@ -596,6 +597,7 @@ body {
 @media (max-width: 768px) {
   .toolbar { padding: 10px 16px; gap: 12px; }
   .toolbar-brand .subtitle { display: none; }
+  .toolbar-brand .logo { width: 30px; height: 30px; }
   .help-bar { padding: 10px 16px; font-size: 12px; }
   .content {
     grid-template-columns: 1fr;
