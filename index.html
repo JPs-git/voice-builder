@@ -72,23 +72,23 @@
         <div class="preset-inputs">
           <div class="band-input" data-band="f0">
             <span class="band-key">F0</span>
-            <input type="number" min="20" max="600" step="5" class="band-lo" value="180" aria-label="F0下限">
+            <input type="number" min="20" max="600" step="5" class="band-lo" value="200" aria-label="F0下限">
             <span class="band-dash">—</span>
-            <input type="number" min="20" max="600" step="5" class="band-hi" value="250" aria-label="F0上限">
+            <input type="number" min="20" max="600" step="5" class="band-hi" value="290" aria-label="F0上限">
             <span class="band-unit">Hz</span>
           </div>
           <div class="band-input" data-band="f1">
             <span class="band-key">F1</span>
             <input type="number" min="100" max="2000" step="10" class="band-lo" value="400" aria-label="F1下限">
             <span class="band-dash">—</span>
-            <input type="number" min="100" max="2000" step="10" class="band-hi" value="700" aria-label="F1上限">
+            <input type="number" min="100" max="2000" step="10" class="band-hi" value="750" aria-label="F1上限">
             <span class="band-unit">Hz</span>
           </div>
           <div class="band-input" data-band="f2">
             <span class="band-key">F2</span>
-            <input type="number" min="500" max="3500" step="10" class="band-lo" value="1500" aria-label="F2下限">
+            <input type="number" min="500" max="3500" step="10" class="band-lo" value="1200" aria-label="F2下限">
             <span class="band-dash">—</span>
-            <input type="number" min="500" max="3500" step="10" class="band-hi" value="2300" aria-label="F2上限">
+            <input type="number" min="500" max="3500" step="10" class="band-hi" value="2200" aria-label="F2上限">
             <span class="band-unit">Hz</span>
           </div>
         </div>
@@ -199,12 +199,18 @@
           <p>F0 是基频（决定声音高低），F1/F2 决定音色。绿色区间为目标区间，进入该区间时对应数值会高亮显示。</p>
         </section>
         <section>
-          <h4>目标区间含义(伪女声参考)</h4>
-          <ul>
-            <li>F0: <b>180–250 Hz</b></li>
-            <li>F1: <b>400–700 Hz</b></li>
-            <li>F2: <b>1500–2300 Hz</b></li>
-          </ul>
+          <h4>目标区间含义(女声普通话参考)</h4>
+          <table class="ref-table">
+            <thead><tr><th>元音</th><th>F0 (Hz)</th><th>F1 (Hz)</th><th>F2 (Hz)</th><th>F3 (Hz)</th><th>F4 (Hz)</th></tr></thead>
+            <tbody>
+              <tr><td>a</td><td>200–280</td><td>800–1000</td><td>1100–1400</td><td>2700–3100</td><td>3800–4200</td></tr>
+              <tr><td>o</td><td>200–280</td><td>480–620</td><td>700–1000</td><td>2700–3100</td><td>3700–4100</td></tr>
+              <tr><td>e</td><td>200–280</td><td>500–660</td><td>1000–1300</td><td>2700–3200</td><td>3800–4200</td></tr>
+              <tr><td>i</td><td>220–300</td><td>280–380</td><td>2500–3000</td><td>3200–3600</td><td>4000–4400</td></tr>
+              <tr><td>u</td><td>200–280</td><td>300–400</td><td>600–900</td><td>2500–3000</td><td>3600–4000</td></tr>
+              <tr><td>ü</td><td>220–300</td><td>280–380</td><td>1800–2200</td><td>2400–2900</td><td>3800–4200</td></tr>
+            </tbody>
+          </table>
         </section>
         <section>
           <h4>常见问题</h4>

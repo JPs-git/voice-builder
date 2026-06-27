@@ -571,6 +571,27 @@ body {
 .drawer-body ul { margin: 0; padding-left: 18px; }
 .drawer-body li { margin: 2px 0; }
 
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.ref-table th, .ref-table td {
+  border: 1px solid #E5E7EB;
+  padding: 3px 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+.ref-table th {
+  background: #F9FAFB;
+  font-weight: 600;
+  color: var(--text);
+}
+.ref-table td {
+  color: var(--text-soft);
+}
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 768px) {
   .toolbar { padding: 10px 16px; gap: 12px; }

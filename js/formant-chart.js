@@ -12,9 +12,9 @@ const FREQ_MAX = 3500
 // 目标区间 (可变, 默认综合训练预设值, 可通过 setTargetBand 动态调整).
 // 颜色: 绿(F0)/蓝(F1)/橙(F2), 与上方功率谱的三色目标带对齐.
 let TARGET_BANDS = {
-  f0: { range: [180, 250], color: '#10B981' },
-  f1: { range: [400, 700], color: '#3B82F6' },
-  f2: { range: [1500, 2300], color: '#F59E0B' },
+  f0: { range: [200, 290], color: '#10B981' },
+  f1: { range: [400, 750], color: '#3B82F6' },
+  f2: { range: [1200, 2200], color: '#F59E0B' },
 }
 
 // 简易 #RRGGBB → rgba(r,g,b,a)
