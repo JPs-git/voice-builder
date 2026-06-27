@@ -9,7 +9,7 @@
 | `npm test -- --test-name-pattern "FormantSmoother"` | Run a single test file |
 | `node --test js/__tests__/analysis-pipeline.test.js` | Run a single test file directly |
 | `npm run build` | Build to `dist/` |
-| `npm start` | Production static server on port 3000 |
+| `npm start` | Vite preview server (production build) on port 3000 |
 
 No linter, formatter, or typecheck configured.
 

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "/usr/bin/node server.js",
+    "start": "vite preview --port 3000",
     "start:serve": "serve .",
     "start:py": "python3 -m http.server 3000",
     "test": "node --test js/__tests__/*.test.js"
