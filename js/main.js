@@ -7,7 +7,7 @@ import { PlaybackManager } from './playback.js'
 import { Resampler } from './resampler.js'
 
 /**
- * 伪声训练器 · UI 主入口
+ * 在线声音训练 · UI 主入口
  *
  * 负责:
  *  - 顶栏按钮(开始录音 / 导入 WAV / 清空 / 帮助) 的点击逻辑
