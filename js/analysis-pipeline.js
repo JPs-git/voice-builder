@@ -17,7 +17,7 @@ export class AnalysisPipeline {
     this.onFrame = onFrame
     this._frameCount = 0
     this._frameOffset = frameOffset
-    this._vad = new VoiceActivityDetector({ threshold: vadThreshold ?? 0.008 })
+    this._vad = new VoiceActivityDetector({ threshold: vadThreshold })
     this._formantMethod = formantMethod
     this._prevGoodF1 = null
     this._smoother = formantSmoothing ? new FormantSmoother() : null

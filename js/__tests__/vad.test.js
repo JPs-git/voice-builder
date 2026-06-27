@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { VoiceActivityDetector } from '../vad.js'
+import { VoiceActivityDetector, DEFAULT_VAD_THRESHOLD } from '../vad.js'
 
 describe('VoiceActivityDetector', () => {
   it('returns voiced=false for silence (all zeros)', () => {
@@ -39,7 +39,7 @@ describe('VoiceActivityDetector', () => {
 
   it('uses default threshold of 0.008', () => {
     const vad = new VoiceActivityDetector()
-    assert.equal(vad._threshold, 0.008)
+    assert.equal(vad._threshold, DEFAULT_VAD_THRESHOLD)
   })
 
   it('accepts custom threshold', () => {

@@ -1,5 +1,7 @@
+export const DEFAULT_VAD_THRESHOLD = 0.05
+
 export class VoiceActivityDetector {
-  constructor({ threshold = 0.008 } = {}) {
+  constructor({ threshold = DEFAULT_VAD_THRESHOLD } = {}) {
     this._threshold = threshold
   }
 
