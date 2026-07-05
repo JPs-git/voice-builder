@@ -108,6 +108,7 @@ const STATE = {
 let state = STATE.IDLE
 let livePipeline = null
 let sessionFrames = []
+const WINDOW_FRAMES = 1000
 let playbackManager = null
 let totalFrames = 0
 
@@ -146,11 +147,13 @@ function setState(next) {
 
 function startNewRecording() {
   if (livePipeline) { livePipeline.reset(); livePipeline = null }
+  audioEngine.clearRecordedBuffer()
   f0Chart.setLiveMode()
   formantChart.setLiveMode()
   livePipeline = new AnalysisPipeline({
     onFrame: (frame) => {
       sessionFrames.push(frame)
+      if (sessionFrames.length > WINDOW_FRAMES) sessionFrames.shift()
       f0Chart.pushFrame(frame)
       formantChart.pushFrame(frame, frame.time)
     },
@@ -158,7 +161,7 @@ function startNewRecording() {
     formantSmoothing,
     frameOffset: totalFrames,
   })
-  audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate))
+  audioEngine.startStream((chunk, rate) => livePipeline.pushChunk(chunk, rate), 10)
   setState(STATE.RECORDING)
 }
 
@@ -173,11 +176,10 @@ async function onRecordToggle() {
       livePipeline = null
     }
     // 裁剪到最近 10s，使回放时长与录音时的可视化窗口一致
-    const WINDOW_FRAMES = 1000
     if (sessionFrames.length > WINDOW_FRAMES) {
-      const trimCount = sessionFrames.length - WINDOW_FRAMES
-      sessionFrames.splice(0, trimCount)
-      totalFrames = Math.round(sessionFrames[sessionFrames.length - 1].time / 0.01)
+      sessionFrames.splice(0, sessionFrames.length - WINDOW_FRAMES)
+      const last = sessionFrames[sessionFrames.length - 1]
+      totalFrames = Math.round((last?.time ?? 0) / 0.01)
       audioEngine.trimBufferToDuration(10)
     }
     // 保持 live 模式，与 formantChart 行为一致，使游标在不足 10s 时对齐图谱 x 轴

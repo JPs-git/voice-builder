@@ -13,9 +13,10 @@ export class AudioEngine {
     this.running = false
   }
 
-  async startStream(onChunk) {
+  async startStream(onChunk, maxDurationSec = 0) {
     if (this.running) return
 
+    this._maxDurationSec = maxDurationSec
     this._stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     if (!this._audioContext) {
       this._audioContext = new AudioContext({ sampleRate: 16000 })
@@ -27,6 +28,7 @@ export class AudioEngine {
     this._processor.onaudioprocess = (event) => {
       const chunk = event.inputBuffer.getChannelData(0)
       this._recordedChunks.push(new Float32Array(chunk))
+      if (this._maxDurationSec > 0) this.trimBufferToDuration(this._maxDurationSec)
       onChunk(chunk, this._audioContext.sampleRate)
     }
     this._source.connect(this._processor)
@@ -37,6 +39,7 @@ export class AudioEngine {
 
   stopStream() {
     this.running = false
+    this._maxDurationSec = 0
 
     if (this._processor) {
       this._processor.disconnect()
