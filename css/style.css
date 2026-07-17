@@ -369,7 +369,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  margin: 10px;
+  margin: 10px auto;
   padding: 8px 10px;
 }
 
@@ -378,6 +378,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+.chart-header.has-legend {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 }
 .chart-header .card-title {
   font-size: 14px;

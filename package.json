@@ -10,7 +10,9 @@
     "start": "vite preview --port 3000",
     "start:serve": "serve .",
     "start:py": "python3 -m http.server 3000",
-    "test": "node --test js/__tests__/*.test.js"
+    "test": "node --test js/__tests__/*.test.js && npx vitest run",
+    "test:unit": "npx vitest run",
+    "test:dsp": "node --test js/__tests__/*.test.js"
   },
   "dependencies": {
     "echarts": "^5.6.0",
@@ -19,10 +21,14 @@
     "react-router-dom": "^7.18.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
+    "jsdom": "^25.0.1",
     "typescript": "^6.0.3",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
   }
 }

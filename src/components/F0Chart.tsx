@@ -1,4 +1,4 @@
-import { useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useCallback, forwardRef, useImperativeHandle, useEffect } from 'react'
 import { useECharts } from '../hooks/useECharts'
 import type { AnalysisFrame, ChartHandles } from '../types'
 
@@ -41,9 +41,12 @@ function buildMarkLineData(zones: typeof TARGET_ZONES) {
   })
 }
 
-export const F0Chart = forwardRef<ChartHandles, {
+interface F0ChartProps {
   batchMode?: boolean
-}>(({ batchMode = false }, ref) => {
+}
+
+export const F0Chart = forwardRef<ChartHandles, F0ChartProps>((props, ref) => {
+  const batchMode = props.batchMode ?? false
   const { chartRef, setOption } = useECharts()
   const dataRef = useRef<AnalysisFrame[]>([])
   const isBatchRef = useRef(batchMode)
@@ -111,19 +114,38 @@ export const F0Chart = forwardRef<ChartHandles, {
         splitLine: { lineStyle: { color: '#F2F4F7' } },
       },
       color: ['#1F2937'],
-      series: [{
-        name: 'F0',
-        type: 'line',
-        showSymbol: false,
-        connectNulls: false,
-        lineStyle: { color: '#1F2937', width: 2 },
-        itemStyle: { color: '#1F2937' },
-        markArea: { silent: true, data: buildMarkAreas(TARGET_ZONES) },
-        markLine: { silent: true, symbol: 'none', data: buildMarkLineData(TARGET_ZONES) },
-        data: seriesData,
-      }],
+      series: [
+        {
+          name: 'F0',
+          type: 'line' as const,
+          showSymbol: false,
+          connectNulls: false,
+          lineStyle: { color: '#1F2937', width: 2 },
+          itemStyle: { color: '#1F2937' },
+          markArea: { silent: true, data: buildMarkAreas(TARGET_ZONES) },
+          markLine: { silent: true, symbol: 'none', data: buildMarkLineData(TARGET_ZONES) },
+          data: seriesData,
+        },
+        {
+          name: '__cursor',
+          type: 'line' as const,
+          showSymbol: false,
+          data: [],
+          markLine: cursorTimeRef.current >= 0 ? {
+            silent: true,
+            symbol: 'none',
+            lineStyle: { color: '#E23E57', width: 2, type: 'solid' as const },
+            label: { show: false },
+            data: [{ xAxis: cursorTimeRef.current }],
+          } : undefined,
+        },
+      ],
     } as any)
   }, [setOption])
+
+  useEffect(() => {
+    render(false)
+  }, [render])
 
   useImperativeHandle(ref, () => ({
     pushFrame(frame: AnalysisFrame) {
@@ -153,18 +175,20 @@ export const F0Chart = forwardRef<ChartHandles, {
     setTargetBands() {},
     setCursorTime(time: number) {
       cursorTimeRef.current = time
+      render(false)
     },
     clear() {
       dataRef.current = []
       isBatchRef.current = false
       latestTimeRef.current = 0
       throttledRef.current = false
+      cursorTimeRef.current = -1
       render(false)
     },
   }), [render])
 
   return (
-    <div style={{ height: '42vh', minHeight: 280, position: 'relative' }} ref={chartRef} />
+    <div id="f0Chart" ref={chartRef} />
   )
 })
 

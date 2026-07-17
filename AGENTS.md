@@ -5,9 +5,9 @@
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Vite dev server with HMR |
-| `npm test` | Run all 47+ tests via `node --test` |
-| `npm test -- --test-name-pattern "FormantSmoother"` | Run a single test file |
-| `node --test js/__tests__/analysis-pipeline.test.js` | Run a single test file directly |
+| `npm test` | Run all tests (DSP + React) |
+| `npm run test:dsp` | Run DSP tests only (`node --test`) |
+| `npm run test:unit` | Run React unit tests only (Vitest) |
 | `npm run build` | Build to `dist/` |
 | `npm start` | Vite preview server (production build) on port 3000 |
 
@@ -15,13 +15,32 @@ No linter, formatter, or typecheck configured.
 
 ## Entrypoint & Architecture
 
-- `index.html` → `js/main.js` (app entry, DOM wiring, AudioContext lifecycle)
+- `index.html` → `src/main.tsx` (React entry, renders `<App />`)
+- `src/App.tsx` — root component: `BrowserRouter` > `AnalysisProvider` > `Routes`
+- `src/routes/AnalysisPage.tsx` — main orchestrator page, wires all components + AudioEngine + AnalysisPipeline
+- `src/contexts/AnalysisContext.tsx` — Context + `useReducer` state management (phase, config, preset, bands, frames, stats)
+- `src/components/` — React UI components:
+  - `Toolbar.tsx` — record/import/playback/clear/config/help buttons
+  - `TargetPresetBar.tsx` — vowel preset selector + F0/F1/F2 range inputs
+  - `F0Chart.tsx` — F0 chart wrapping ECharts
+  - `FormantChart.tsx` — formant chart wrapping ECharts with target bands
+  - `StatusBar.tsx` — bottom status bar (F0/F1/F2 values)
+  - `ConfigDrawer.tsx` — formant method + smoothing toggle
+  - `HelpDrawer.tsx` — usage instructions
+  - `TipWidget.tsx` — rotating tips widget
+  - `EmptyState.tsx` — empty state placeholder for charts
+- `src/hooks/useECharts.ts` — custom hook for ECharts instance lifecycle
+- `src/types/index.ts` — shared TypeScript type definitions
+
+### DSP Layer (vanilla JS, unchanged)
+
 - `js/analysis-pipeline.js` — orchestrates frame processing (AudioWorklet shim via `frame-processor.js`); FRAME_SIZE = 800 (50ms), HOP_SIZE = 160. Three methods: `hybrid` (default, LPC primary + cepstral fallback in two cases), `lpc` (pure LPC), `cepstral` (pure cepstral)
 - `js/cepstral.js` — cepstral formant extractor (LIFTER_CUTOFF = 35, FFT 2048, MAX_FORMANT_FREQ = 3500)
 - `js/lpc.js` — LPC formant extractor (order = min(16, len/3, fs/1000+4), MAX_FORMANT_FREQ = 3500)
 - `js/formant-smoother.js` — post-processing (5-frame median, 300Hz jump clamp, 50Hz dead zone, F0<F1<F2<F3<F4 ordering)
 - `js/wav-parser.js` — WAV import
-- `index.html` has the config drawer (checkbox for `formantSmoothing`, radio for `formantMethod`)
+- `js/audio-engine.js` — AudioContext + mic stream + playback
+- `js/resampler.js` — sample rate conversion
 
 ### Hybrid Method (default)
 
@@ -33,13 +52,13 @@ No linter, formatter, or typecheck configured.
    - No jump → normal LPC path with `isHarmonicLocked` check.
 2. LPC finds <2 formants → cepstral fallback (with `isHarmonicLocked` on F1).
 
-Config is wired via global state in `main.js` and read at recording/import start. Changes do not take effect mid-recording.
+Config is wired via React Context and read at recording/import start. Changes do not take effect mid-recording.
 
 ## Testing
 
-- Plain `node --test` (no Jest/Vitest). Tests are in `js/__tests__/*.test.js`.
+- **DSP tests**: Plain `node --test` in `js/__tests__/*.test.js`
+- **React tests**: Vitest + @testing-library/react in `src/__tests__/*.test.tsx`
 - Test mocks live in `js/__tests__/mocks/`.
-- No snapshot tests, no integration test services needed.
 - All tests pass: `npm test`.
 
 ## Formant Smoother Details
@@ -52,6 +71,6 @@ Config is wired via global state in `main.js` and read at recording/import start
 
 ## Other
 
-- `vite.config.js` only sets `base: './'` (for relative asset paths in dist).
+- `vite.config.ts` sets `base: './'` and Vitest config (`environment: 'jsdom'`, `include: src/__tests__`).
 - No CI, no pre-commit hooks, no lint staged.
 - The `.worktrees/` directory is in `.gitignore`.

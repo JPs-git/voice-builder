@@ -1,6 +1,7 @@
-import { useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useCallback, forwardRef, useImperativeHandle, useEffect } from 'react'
 import { useECharts } from '../hooks/useECharts'
 import type { AnalysisFrame, ChartHandles, TargetBands } from '../types'
+import { VOWEL_PRESETS } from '../types'
 
 const WINDOW = 10
 const FREQ_MAX = 3500
@@ -11,10 +12,11 @@ const COLORS = {
   f2: '#3B82F6',
 }
 
+const vowelA = VOWEL_PRESETS['vowel-a']
 const DEFAULT_BANDS: TargetBands = {
-  f0: { range: [200, 290], color: '#10B981' },
-  f1: { range: [400, 750], color: '#3B82F6' },
-  f2: { range: [1200, 2200], color: '#F59E0B' },
+  f0: { range: vowelA.f0, color: '#10B981' },
+  f1: { range: vowelA.f1, color: '#3B82F6' },
+  f2: { range: vowelA.f2, color: '#F59E0B' },
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -43,10 +45,14 @@ function buildMarkLine(band: { range: [number, number]; color: string }, name: s
   }
 }
 
-export const FormantChart = forwardRef<ChartHandles, {
+interface FormantChartProps {
   batchMode?: boolean
   onFrameClick?: (frame: AnalysisFrame) => void
-}>(({ batchMode = false, onFrameClick }, ref) => {
+}
+
+export const FormantChart = forwardRef<ChartHandles, FormantChartProps>((props, ref) => {
+  const batchMode = props.batchMode ?? false
+  const onFrameClick = props.onFrameClick
   const { chartRef, setOption, getInstance } = useECharts()
   const dataRef = useRef<AnalysisFrame[]>([])
   const isBatchRef = useRef(batchMode)
@@ -132,20 +138,39 @@ export const FormantChart = forwardRef<ChartHandles, {
         splitLine: { lineStyle: { color: '#F2F4F7' } },
       },
       color: keys.map(k => COLORS[k]),
-      series: keys.map(k => ({
-        name: k.toUpperCase(),
-        type: 'line',
-        showSymbol: false,
-        connectNulls: false,
-        color: COLORS[k],
-        lineStyle: { color: COLORS[k], width: k === 'f0' ? 2 : 1.5 },
-        itemStyle: { color: COLORS[k] },
-        markArea: bands[k] ? { silent: true, data: buildMarkArea(bands[k]) } : undefined,
-        markLine: (k === 'f0' || k === 'f1' || k === 'f2') ? buildMarkLine(bands[k], `${k.toUpperCase()} \u76EE\u6807`) : undefined,
-        data: seriesData[k],
-      })),
+      series: [
+        ...keys.map(k => ({
+          name: k.toUpperCase(),
+          type: 'line' as const,
+          showSymbol: false,
+          connectNulls: false,
+          color: COLORS[k],
+          lineStyle: { color: COLORS[k], width: k === 'f0' ? 2 : 1.5 },
+          itemStyle: { color: COLORS[k] },
+          markArea: bands[k] ? { silent: true, data: buildMarkArea(bands[k]) } : undefined,
+          markLine: (k === 'f0' || k === 'f1' || k === 'f2') ? buildMarkLine(bands[k], `${k.toUpperCase()} \u76EE\u6807`) : undefined,
+          data: seriesData[k],
+        })),
+        {
+          name: '__cursor',
+          type: 'line' as const,
+          showSymbol: false,
+          data: [],
+          markLine: cursorTimeRef.current >= 0 ? {
+            silent: true,
+            symbol: 'none',
+            lineStyle: { color: '#E23E57', width: 2, type: 'solid' as const },
+            label: { show: false },
+            data: [{ xAxis: cursorTimeRef.current }],
+          } : undefined,
+        },
+      ],
     } as any)
   }, [setOption])
+
+  useEffect(() => {
+    render(false)
+  }, [render])
 
   const handleChartClick = useCallback((params: any) => {
     if (!onFrameClick) return
@@ -197,18 +222,20 @@ export const FormantChart = forwardRef<ChartHandles, {
     },
     setCursorTime(time: number) {
       cursorTimeRef.current = time
+      render(false)
     },
     clear() {
       dataRef.current = []
       isBatchRef.current = false
       latestTimeRef.current = 0
       throttledRef.current = false
+      cursorTimeRef.current = -1
       render(false)
     },
   }), [render])
 
   return (
-    <div style={{ position: 'relative', flex: 1, minHeight: 280 }} ref={chartRef} />
+    <div id="formantChart" ref={chartRef} />
   )
 })
 

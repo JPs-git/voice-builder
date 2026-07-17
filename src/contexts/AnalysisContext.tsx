@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, type ReactNode } from 'react'
 import type { AppPhase, AppConfig, TargetBands, AnalysisFrame, AnalysisStats } from '../types'
-import { DEFAULT_CONFIG } from '../types'
+import { DEFAULT_CONFIG, VOWEL_PRESETS } from '../types'
 
 interface AnalysisState {
   phase: AppPhase
@@ -26,10 +26,11 @@ type Action =
   | { type: 'SET_HELP_DRAWER'; open: boolean }
   | { type: 'RESET' }
 
+const vowelA = VOWEL_PRESETS['vowel-a']
 const DEFAULT_BANDS: TargetBands = {
-  f0: { range: [200, 290], color: '#10B981' },
-  f1: { range: [400, 750], color: '#3B82F6' },
-  f2: { range: [1200, 2200], color: '#F59E0B' },
+  f0: { range: vowelA.f0, color: '#10B981' },
+  f1: { range: vowelA.f1, color: '#3B82F6' },
+  f2: { range: vowelA.f2, color: '#F59E0B' },
 }
 
 function reducer(state: AnalysisState, action: Action): AnalysisState {

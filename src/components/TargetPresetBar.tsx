@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { VOWEL_PRESETS } from '../types'
 import type { TargetBands } from '../types'
 
@@ -9,57 +9,105 @@ interface TargetPresetBarProps {
   onBandsChange: (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => void
 }
 
+const BAND_COLORS: Record<'f0' | 'f1' | 'f2', string> = {
+  f0: '#10B981',
+  f1: '#3B82F6',
+  f2: '#F59E0B',
+}
+
+function bandKeyToId(key: 'f0' | 'f1' | 'f2', index: 0 | 1): string {
+  return `${key}-${index}`
+}
+
 export function TargetPresetBar({ activePreset, bands, onPresetSelect, onBandsChange }: TargetPresetBarProps) {
+  const [localValues, setLocalValues] = useState<Record<string, string>>(() => ({
+    [bandKeyToId('f0', 0)]: String(bands.f0.range[0]),
+    [bandKeyToId('f0', 1)]: String(bands.f0.range[1]),
+    [bandKeyToId('f1', 0)]: String(bands.f1.range[0]),
+    [bandKeyToId('f1', 1)]: String(bands.f1.range[1]),
+    [bandKeyToId('f2', 0)]: String(bands.f2.range[0]),
+    [bandKeyToId('f2', 1)]: String(bands.f2.range[1]),
+  }))
+
+  useEffect(() => {
+    setLocalValues({
+      [bandKeyToId('f0', 0)]: String(bands.f0.range[0]),
+      [bandKeyToId('f0', 1)]: String(bands.f0.range[1]),
+      [bandKeyToId('f1', 0)]: String(bands.f1.range[0]),
+      [bandKeyToId('f1', 1)]: String(bands.f1.range[1]),
+      [bandKeyToId('f2', 0)]: String(bands.f2.range[0]),
+      [bandKeyToId('f2', 1)]: String(bands.f2.range[1]),
+    })
+  }, [bands])
+
   const handleInputChange = useCallback((key: 'f0' | 'f1' | 'f2', index: 0 | 1, value: string) => {
-    const num = parseFloat(value)
-    if (!Number.isFinite(num)) return
+    setLocalValues(prev => ({ ...prev, [bandKeyToId(key, index)]: value }))
+  }, [])
+
+  const handleInputBlur = useCallback((key: 'f0' | 'f1' | 'f2', index: 0 | 1) => {
+    const id = bandKeyToId(key, index)
+    const num = parseFloat(localValues[id])
+    if (!Number.isFinite(num)) {
+      setLocalValues(prev => ({ ...prev, [id]: String(bands[key].range[index]) }))
+      return
+    }
     const current = bands[key].range
     const next: [number, number] = index === 0 ? [num, current[1]] : [current[0], num]
-    onBandsChange({ [key]: next })
-  }, [bands, onBandsChange])
+    if (next[0] < next[1]) {
+      onBandsChange({ [key]: next })
+    } else {
+      setLocalValues(prev => ({ ...prev, [id]: String(bands[key].range[index]) }))
+    }
+  }, [localValues, bands, onBandsChange])
+
+  const vowelKeys = Object.keys(VOWEL_PRESETS) as (keyof typeof VOWEL_PRESETS)[]
 
   return (
-    <section style={{ width: 180, flexShrink: 0 }} aria-label="共振峰目标区间">
-      <div style={{ marginBottom: 8 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, color: '#4B5563' }}>目标区间</label>
+    <section className="preset-bar" aria-label="共振峰目标区间">
+      <div className="preset-row">
+        <label className="preset-label">目标区间</label>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
-        {Object.entries(VOWEL_PRESETS).map(([name, preset]) => (
+      <div className="preset-vowels" role="group" aria-label="元音预设">
+        {vowelKeys.map((name) => (
           <button
             key={name}
+            type="button"
+            className={`vowel-btn${activePreset === name ? ' is-active' : ''}`}
+            data-preset={name}
             onClick={() => onPresetSelect(name)}
-            style={{
-              padding: '4px 8px', borderRadius: 6, border: '1px solid #E5E7EB',
-              background: activePreset === name ? '#E23E57' : '#FFF',
-              color: activePreset === name ? '#FFF' : '#1F2937',
-              cursor: 'pointer', fontSize: 13, fontWeight: activePreset === name ? 600 : 400,
-              textAlign: 'left', transition: 'all 0.15s',
-            }}
           >
-            {preset.label}
+            {VOWEL_PRESETS[name].label.replace('元音 ', '')}
           </button>
         ))}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="preset-inputs">
         {(['f0', 'f1', 'f2'] as const).map((key) => (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
-            <span style={{ width: 24, fontWeight: 600, color: '#4B5563' }}>
-              {key.toUpperCase()}
-            </span>
+          <div key={key} className="band-input" data-band={key}>
+            <span className="band-key">{key.toUpperCase()}</span>
             <input
-              type="number" min={key === 'f0' ? 20 : 100} max={key === 'f0' ? 600 : 3500} step={key === 'f0' ? 5 : 10}
-              value={bands[key].range[0]}
+              type="number"
+              min={key === 'f0' ? 20 : 100}
+              max={key === 'f0' ? 600 : 3500}
+              step={key === 'f0' ? 5 : 10}
+              className="band-lo"
+              value={localValues[bandKeyToId(key, 0)]}
               onChange={e => handleInputChange(key, 0, e.target.value)}
-              style={{ width: 52, padding: '2px 4px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 12 }}
+              onBlur={() => handleInputBlur(key, 0)}
+              aria-label={`${key.toUpperCase()}下限`}
             />
-            <span style={{ color: '#9CA3AF' }}>—</span>
+            <span className="band-dash">—</span>
             <input
-              type="number" min={key === 'f0' ? 20 : 100} max={key === 'f0' ? 600 : 3500} step={key === 'f0' ? 5 : 10}
-              value={bands[key].range[1]}
+              type="number"
+              min={key === 'f0' ? 20 : 100}
+              max={key === 'f0' ? 600 : 3500}
+              step={key === 'f0' ? 5 : 10}
+              className="band-hi"
+              value={localValues[bandKeyToId(key, 1)]}
               onChange={e => handleInputChange(key, 1, e.target.value)}
-              style={{ width: 52, padding: '2px 4px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 12 }}
+              onBlur={() => handleInputBlur(key, 1)}
+              aria-label={`${key.toUpperCase()}上限`}
             />
-            <span style={{ color: '#9CA3AF', fontSize: 11 }}>Hz</span>
+            <span className="band-unit">Hz</span>
           </div>
         ))}
       </div>

@@ -2,8 +2,10 @@ import type { AppPhase } from '../types'
 
 interface ToolbarProps {
   phase: AppPhase
+  isPlaying: boolean
   onRecord: () => void
   onImport: () => void
+  onPlayback: () => void
   onClear: () => void
   onConfig: () => void
   onHelp: () => void
@@ -17,57 +19,53 @@ const LABELS: Record<AppPhase, string> = {
   analyzing: '分析中…',
 }
 
-export function Toolbar({ phase, onRecord, onImport, onClear, onConfig, onHelp }: ToolbarProps) {
+export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onClear, onConfig, onHelp }: ToolbarProps) {
   const label = LABELS[phase]
   const isRecording = phase === 'recording'
   const isRequesting = phase === 'requesting'
   const isPaused = phase === 'paused'
 
   return (
-    <header style={{
-      height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 16px', background: '#FFF', borderBottom: '1px solid #E5E7EB',
-      position: 'sticky', top: 0, zIndex: 20, flexShrink: 0,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <img src="assets/logo.png" alt="" style={{ width: 28, height: 28 }} />
-        <span style={{ fontSize: 18, fontWeight: 600 }}>在线声音训练</span>
-        <span style={{ fontSize: 13, color: '#6B7280' }}>「看见自己的声音」</span>
+    <header className="toolbar">
+      <div className="toolbar-brand">
+        <img src="assets/logo.png" className="logo" alt="" aria-hidden="true" />
+        <span className="title">在线声音训练</span>
+        <span className="subtitle">「看见自己的声音」</span>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button onClick={onRecord} disabled={isRequesting}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
-            border: 'none', cursor: isRequesting ? 'not-allowed' : 'pointer',
-            background: isRecording ? '#C81E37' : '#E23E57', color: '#FFF', fontSize: 14, fontWeight: 500,
-          }}>
-          <span>{isRecording ? '■' : '●'}</span>
-          <span>{label}</span>
+      <div className="toolbar-actions">
+        <button id="btnRecord" className={`btn btn-primary${isRecording ? ' is-recording' : ''}`} onClick={onRecord} disabled={isRequesting}>
+          <span className="btn-icon">{isRecording ? '■' : '●'}</span>
+          <span className="btn-label">{label}</span>
         </button>
 
-        <ActionButton label="导入 WAV" icon="📁" onClick={onImport} />
-        {isPaused && <ActionButton label="回放" icon="♫" onClick={() => {}} />}
-        <ActionButton label="清空" icon="↺" onClick={onClear} />
-        <ActionButton label="配置" icon="⚙" onClick={onConfig} />
-        <ActionButton label="帮助" icon="?" onClick={onHelp} />
+        <button id="btnImport" className="btn btn-ghost" onClick={onImport}>
+          <span className="btn-icon">📁</span>
+          <span className="btn-label">导入 WAV</span>
+        </button>
 
-        <input type="file" id="wavInput" accept=".wav" hidden />
+        {isPaused && (
+          <button id="btnPlayback" className="btn btn-ghost" onClick={onPlayback}>
+            <span className="btn-icon">{isPlaying ? '■' : '♫'}</span>
+            <span className="btn-label">{isPlaying ? '停止' : '回放'}</span>
+          </button>
+        )}
+
+        <button id="btnClear" className="btn btn-ghost" onClick={onClear}>
+          <span className="btn-icon">↺</span>
+          <span className="btn-label">清空</span>
+        </button>
+
+        <button id="btnConfig" className="btn btn-ghost" aria-label="配置" onClick={onConfig}>
+          <span className="btn-icon">⚙</span>
+          <span className="btn-label">配置</span>
+        </button>
+
+        <button id="btnHelp" className="btn btn-ghost" onClick={onHelp}>
+          <span className="btn-icon">?</span>
+          <span className="btn-label">帮助</span>
+        </button>
       </div>
     </header>
-  )
-}
-
-function ActionButton({ label, icon, onClick }: { label: string; icon: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8,
-        border: '1px solid #D1D5DB', background: '#FFF', cursor: 'pointer', fontSize: 14, color: '#4B5563',
-        fontWeight: 500,
-      }}>
-      <span>{icon}</span>
-      <span>{label}</span>
-    </button>
   )
 }

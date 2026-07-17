@@ -30,6 +30,14 @@ export function AnalysisPage() {
     audioRef.current = new AudioEngine()
   }, [])
 
+  useEffect(() => {
+    formantRef.current?.setTargetBands({
+      f0: state.bands.f0.range,
+      f1: state.bands.f1.range,
+      f2: state.bands.f2.range,
+    })
+  }, [])
+
   const onFrame = useCallback((frame: AnalysisFrame) => {
     sessionFramesRef.current.push(frame)
     if (sessionFramesRef.current.length > WINDOW_FRAMES) {
@@ -100,11 +108,14 @@ export function AnalysisPage() {
     if (!ae) return
     pipelineRef.current?.reset()
     pipelineRef.current = null
-    ae.stopPlayback?.()
+    ae.stopPlayback()
+    setIsPlaying(false)
     ae.stopStream()
     ae.clearRecordedBuffer()
     f0Ref.current?.clear()
     formantRef.current?.clear()
+    f0Ref.current?.setCursorTime(-1)
+    formantRef.current?.setCursorTime(-1)
     sessionFramesRef.current = []
     dispatch({ type: 'RESET' })
   }, [dispatch])
@@ -154,6 +165,30 @@ export function AnalysisPage() {
     formantRef.current?.setTargetBands({ f0: preset.f0, f1: preset.f1, f2: preset.f2 })
   }, [dispatch])
 
+  const onPlayback = useCallback(() => {
+    const ae = audioRef.current
+    if (!ae) return
+    if (ae.isPlaying) {
+      ae.stopPlayback()
+      f0Ref.current?.setCursorTime(-1)
+      formantRef.current?.setCursorTime(-1)
+      setIsPlaying(false)
+      return
+    }
+    ae.startPlayback(
+      (elapsed) => {
+        f0Ref.current?.setCursorTime(elapsed)
+        formantRef.current?.setCursorTime(elapsed)
+      },
+      () => {
+        f0Ref.current?.setCursorTime(-1)
+        formantRef.current?.setCursorTime(-1)
+        setIsPlaying(false)
+      }
+    )
+    setIsPlaying(true)
+  }, [])
+
   const onBandsChange = useCallback(
     (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => {
       dispatch({ type: 'SET_BANDS', bands })
@@ -163,23 +198,29 @@ export function AnalysisPage() {
   )
 
   const [hasData, setHasData] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
   useEffect(() => {
-    if (sessionFramesRef.current.length > 0) setHasData(true)
-    else setHasData(false)
-  }, [state.phase])
+    if (state.phase === 'recording' || state.phase === 'paused' || state.frameCount > 0) {
+      setHasData(true)
+    } else {
+      setHasData(false)
+    }
+  }, [state.phase, state.frameCount])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+    <div>
       <Toolbar
         phase={state.phase}
+        isPlaying={isPlaying}
         onRecord={onRecord}
         onImport={onImport}
+        onPlayback={onPlayback}
         onClear={clearAll}
         onConfig={() => dispatch({ type: 'SET_CONFIG_DRAWER', open: true })}
         onHelp={() => dispatch({ type: 'SET_HELP_DRAWER', open: true })}
       />
 
-      <main style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: 16, gap: 24 }}>
+      <main className="content">
         <TargetPresetBar
           activePreset={state.activePreset}
           bands={state.bands}
@@ -187,35 +228,41 @@ export function AnalysisPage() {
           onBandsChange={onBandsChange}
         />
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
-          <section style={{ background: '#FFF', borderRadius: 8, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #F3F4F6' }}>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>基频</h2>
-            </div>
-            <div style={{ position: 'relative' }}>
-              <F0Chart ref={f0Ref} batchMode={false} />
-              <EmptyState
-                title="还没有声音数据"
-                description="录音或导入音频后显示 F0 曲线"
-                visible={!hasData}
-              />
+        <div className="charts-column">
+          <section className="card">
+            <div className="chart-wrapper">
+              <div className="chart-header">
+                <h2 className="card-title">基频</h2>
+              </div>
+              <div className="chart-area">
+                <F0Chart ref={f0Ref} batchMode={false} />
+                <EmptyState
+                  title="还没有声音数据"
+                  description="🎤 点击顶栏'开始录音'试试"
+                  visible={!hasData}
+                />
+              </div>
             </div>
           </section>
 
-          <section style={{
-            flex: 1, background: '#FFF', borderRadius: 8, border: '1px solid #E5E7EB',
-            overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>共振峰</h2>
-            </div>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <FormantChart ref={formantRef} batchMode={false} />
-              <EmptyState
-                title="曲线待生成"
-                description="录音或导入音频后显示共振峰曲线"
-                visible={!hasData}
-              />
+          <section className="card">
+            <div className="chart-wrapper">
+              <div className="chart-header has-legend">
+                <h2 className="card-title">共振峰</h2>
+                <div className="card-legend" aria-label="图例">
+                  <button className="legend-item" data-key="f0" data-active="true"><i style={{ background: '#1F2937' }}></i>F0</button>
+                  <button className="legend-item" data-key="f1" data-active="true"><i style={{ background: '#E23E57' }}></i>F1</button>
+                  <button className="legend-item" data-key="f2" data-active="true"><i style={{ background: '#3B82F6' }}></i>F2</button>
+                </div>
+              </div>
+              <div className="chart-area">
+                <FormantChart ref={formantRef} batchMode={false} />
+                <EmptyState
+                  title="曲线待生成"
+                  description="录音或导入音频后显示共振峰曲线"
+                  visible={!hasData}
+                />
+              </div>
             </div>
           </section>
         </div>
