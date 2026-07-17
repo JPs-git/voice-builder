@@ -1,3 +1,4 @@
+import { inject } from '@vercel/analytics'
 import { AudioEngine } from './audio-engine.js'
 import { AnalysisPipeline } from './analysis-pipeline.js'
 import { F0ChartRenderer } from './f0-chart.js'
@@ -6,6 +7,9 @@ import { parseWav } from './wav-parser.js'
 import { PlaybackManager } from './playback.js'
 import { Resampler } from './resampler.js'
 import { TipWidget } from './tip-widget.js'
+
+// Initialize Vercel Web Analytics
+inject()
 
 /**
  * 在线声音训练 · UI 主入口
