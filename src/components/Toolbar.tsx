@@ -44,12 +44,10 @@ export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onCl
           <span className="btn-label">导入 WAV</span>
         </button>
 
-        {isPaused && (
-          <button id="btnPlayback" className="btn btn-ghost" onClick={onPlayback}>
-            <span className="btn-icon">{isPlaying ? '■' : '♫'}</span>
-            <span className="btn-label">{isPlaying ? '停止' : '回放'}</span>
-          </button>
-        )}
+        <button id="btnPlayback" className="btn btn-ghost" onClick={onPlayback} disabled={!isPaused}>
+          <span className="btn-icon">{isPlaying ? '■' : '♫'}</span>
+          <span className="btn-label">{isPlaying ? '停止' : '回放'}</span>
+        </button>
 
         <button id="btnClear" className="btn btn-ghost" onClick={onClear}>
           <span className="btn-icon">↺</span>

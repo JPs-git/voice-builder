@@ -48,10 +48,8 @@ export function AnalysisPage() {
     formantRef.current?.pushFrame(frame)
   }, [dispatch])
 
-  const startNewRecording = useCallback(async () => {
+  const startStream = useCallback(async () => {
     if (!audioRef.current) return
-    pipelineRef.current?.reset()
-    audioRef.current.clearRecordedBuffer()
     f0Ref.current?.setLiveMode()
     formantRef.current?.setLiveMode()
     pipelineRef.current = new (AnalysisPipeline as any)({
@@ -66,6 +64,13 @@ export function AnalysisPage() {
     )
     dispatch({ type: 'SET_PHASE', phase: 'recording' })
   }, [onFrame, state.config, state.frameCount, dispatch])
+
+  const startNewRecording = useCallback(async () => {
+    if (!audioRef.current) return
+    pipelineRef.current?.reset()
+    audioRef.current.clearRecordedBuffer()
+    await startStream()
+  }, [startStream])
 
   const onRecord = useCallback(async () => {
     if (!audioRef.current) return
@@ -90,7 +95,7 @@ export function AnalysisPage() {
     if (state.phase === 'paused') {
       pipelineRef.current?.reset()
       pipelineRef.current = null
-      await startNewRecording()
+      await startStream()
       return
     }
 
@@ -101,7 +106,7 @@ export function AnalysisPage() {
       console.error('Stream start failed:', err)
       dispatch({ type: 'SET_PHASE', phase: 'idle' })
     }
-  }, [state.phase, state.frameCount, startNewRecording, dispatch])
+  }, [state.phase, state.frameCount, startNewRecording, startStream, dispatch])
 
   const clearAll = useCallback(() => {
     const ae = audioRef.current
@@ -175,10 +180,26 @@ export function AnalysisPage() {
       setIsPlaying(false)
       return
     }
+    if (state.phase === 'recording') {
+      ae.stopStream()
+      if (pipelineRef.current) {
+        pipelineRef.current.flush()
+        const totalFrames = state.frameCount + pipelineRef.current.frameCount
+        dispatch({ type: 'SET_FRAME_COUNT', count: totalFrames })
+        pipelineRef.current.reset()
+        pipelineRef.current = null
+      }
+      if (sessionFramesRef.current.length > WINDOW_FRAMES) {
+        sessionFramesRef.current.splice(0, sessionFramesRef.current.length - WINDOW_FRAMES)
+        ae.trimBufferToDuration(10)
+      }
+      dispatch({ type: 'SET_PHASE', phase: 'paused' })
+    }
+    const firstTime = sessionFramesRef.current[0]?.time ?? 0
     ae.startPlayback(
       (elapsed) => {
-        f0Ref.current?.setCursorTime(elapsed)
-        formantRef.current?.setCursorTime(elapsed)
+        f0Ref.current?.setCursorTime(elapsed + firstTime)
+        formantRef.current?.setCursorTime(elapsed + firstTime)
       },
       () => {
         f0Ref.current?.setCursorTime(-1)
@@ -187,7 +208,7 @@ export function AnalysisPage() {
       }
     )
     setIsPlaying(true)
-  }, [])
+  }, [state.phase, state.frameCount, dispatch])
 
   const onBandsChange = useCallback(
     (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => {
