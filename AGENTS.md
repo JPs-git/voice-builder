@@ -24,9 +24,9 @@ No linter, formatter, or typecheck configured.
   - `TargetPresetBar.tsx` — vowel preset selector + F0/F1/F2 range inputs
   - `F0Chart.tsx` — F0 chart wrapping ECharts
   - `FormantChart.tsx` — formant chart wrapping ECharts with target bands
-  - `StatusBar.tsx` — bottom status bar (F0/F1/F2 values)
-  - `ConfigDrawer.tsx` — formant method + smoothing toggle
-  - `HelpDrawer.tsx` — usage instructions
+  - `Drawer.tsx` — shared right-side drawer shell (CSS module)
+  - `ConfigDrawer.tsx` — formant method + smoothing toggle (uses Drawer)
+  - `HelpDrawer.tsx` — usage instructions (uses Drawer)
   - `TipWidget.tsx` — rotating tips widget
   - `EmptyState.tsx` — empty state placeholder for charts
 - `src/hooks/useECharts.ts` — custom hook for ECharts instance lifecycle
