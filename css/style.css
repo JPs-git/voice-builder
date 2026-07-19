@@ -664,6 +664,14 @@ body {
   border-radius: var(--radius);
   box-shadow: var(--shadow-hover);
   padding: 14px 16px;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  pointer-events: auto;
+}
+
+.tip-card.is-hidden {
+  transform: translateX(calc(100% + 30px));
+  opacity: 0;
+  pointer-events: none;
 }
 
 .tip-close {
@@ -707,35 +715,7 @@ body {
   color: var(--text-soft);
 }
 
-.tip-card.slide-in {
-  animation: tipSlideInRight 0.35s ease forwards;
-}
 
-.tip-card.slide-out {
-  animation: tipSlideOutRight 0.35s ease forwards;
-}
-
-@keyframes tipSlideInRight {
-  from {
-    transform: translateX(calc(100% + 30px));
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes tipSlideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(calc(100% + 30px));
-    opacity: 0;
-  }
-}
 
 @media (max-width: 768px) {
   .tip-widget {
