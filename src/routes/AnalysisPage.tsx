@@ -289,7 +289,6 @@ export function AnalysisPage() {
         </div>
       </main>
 
-      <StatusBar latestFrame={state.latestFrame} frameCount={state.frameCount} />
       <TipWidget />
 
       <ConfigDrawer
