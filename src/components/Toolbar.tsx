@@ -1,4 +1,5 @@
 import type { AppPhase } from '../types'
+import logo from '../../assets/logo.png'
 
 interface ToolbarProps {
   phase: AppPhase
@@ -28,7 +29,7 @@ export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onCl
   return (
     <header className="toolbar">
       <div className="toolbar-brand">
-        <img src="assets/logo.png" className="logo" alt="" aria-hidden="true" />
+        <img src={logo} className="logo" alt="" aria-hidden="true" />
         <span className="title">在线声音训练</span>
         <span className="subtitle">「看见自己的声音」</span>
       </div>
