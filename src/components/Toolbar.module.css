@@ -1,7 +1,7 @@
 .toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 24px;
   padding: 12px 24px;
   background: var(--panel);
@@ -37,11 +37,33 @@
   flex-wrap: wrap;
 }
 
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.navItem {
+  background: transparent;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: var(--text-mute);
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.navItem:hover {
+  background: #F3F4F6;
+  color: var(--text);
+}
+
 @media (max-width: 768px) {
   .toolbar { padding: 10px 16px; gap: 12px; }
   .subtitle { display: none; }
   .logo { width: 30px; height: 30px; }
 }
 @media (max-width: 540px) {
-  .actions { width: 100%; justify-content: flex-end; }
+  .actions { justify-content: flex-end; }
 }

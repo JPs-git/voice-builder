@@ -12,6 +12,7 @@ interface ToolbarProps {
   onClear: () => void
   onConfig: () => void
   onHelp: () => void
+  onAbout: () => void
 }
 
 const LABELS: Record<AppPhase, string> = {
@@ -22,7 +23,7 @@ const LABELS: Record<AppPhase, string> = {
   analyzing: '分析中…',
 }
 
-export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onClear, onConfig, onHelp }: ToolbarProps) {
+export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onClear, onConfig, onHelp, onAbout }: ToolbarProps) {
   const label = LABELS[phase]
   const isRecording = phase === 'recording'
   const isRequesting = phase === 'requesting'
@@ -35,6 +36,10 @@ export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onCl
         <span className={styles.title}>在线声音训练</span>
         <span className={styles.subtitle}>「看见自己的声音」</span>
       </div>
+
+      <nav className={styles.nav}>
+        <button className={styles.navItem} onClick={onAbout}>关于</button>
+      </nav>
 
       <div className={styles.actions}>
         <Button id="btnRecord" variant="primary" icon={isRecording ? '■' : '●'} label={label} recording={isRecording} onClick={onRecord} disabled={isRequesting} />

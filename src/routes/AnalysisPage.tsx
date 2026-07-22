@@ -7,6 +7,7 @@ import { FormantChart } from '../components/FormantChart'
 import { EmptyState } from '../components/EmptyState'
 import { ConfigDrawer } from '../components/ConfigDrawer'
 import { HelpDrawer } from '../components/HelpDrawer'
+import { AboutModal } from '../components/AboutModal'
 import { TipWidget } from '../components/TipWidget'
 import { VOWEL_PRESETS } from '../types'
 import type { AnalysisFrame, ChartHandles } from '../types'
@@ -239,6 +240,7 @@ export function AnalysisPage() {
         onClear={clearAll}
         onConfig={() => dispatch({ type: 'SET_CONFIG_DRAWER', open: true })}
         onHelp={() => dispatch({ type: 'SET_HELP_DRAWER', open: true })}
+        onAbout={() => dispatch({ type: 'SET_ABOUT_MODAL', open: true })}
       />
 
       <main className={styles.content}>
@@ -301,6 +303,11 @@ export function AnalysisPage() {
       <HelpDrawer
         open={state.helpDrawerOpen}
         onClose={() => dispatch({ type: 'SET_HELP_DRAWER', open: false })}
+      />
+
+      <AboutModal
+        open={state.aboutModalOpen}
+        onClose={() => dispatch({ type: 'SET_ABOUT_MODAL', open: false })}
       />
 
       <input ref={wavInputRef} type="file" accept=".wav" hidden onChange={onWavSelected} />
