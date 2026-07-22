@@ -1,0 +1,60 @@
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalMask {
+  position: absolute;
+  inset: 0;
+  background: rgba(16,24,40,0.35);
+  animation: fade .2s ease;
+}
+
+.modalPanel {
+  position: relative;
+  width: min(520px, 90vw);
+  max-height: 80vh;
+  background: var(--panel);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(16,24,40,0.15);
+  display: flex;
+  flex-direction: column;
+  animation: scaleIn .2s ease;
+  overflow: hidden;
+}
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modalHeader h3 { margin: 0; font-size: 16px; font-weight: 700; }
+
+.modalClose {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-mute);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.modalClose:hover { background: #F3F4F6; color: var(--text); }
+
+.modalBody {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
