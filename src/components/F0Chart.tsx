@@ -36,6 +36,7 @@ function buildMarkLineData(zones: typeof TARGET_ZONES) {
         formatter: z.label,
         color: z.color,
         fontSize: 11,
+        position: 'insideEndTop',
       },
     }
   })

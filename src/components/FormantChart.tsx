@@ -40,7 +40,7 @@ function buildMarkLine(band: { range: [number, number]; color: string }, name: s
     silent: true,
     symbol: 'none',
     lineStyle: { color: hexToRgba(band.color, 0.55), type: 'dashed' as const, width: 1 },
-    label: { formatter: name, color: band.color, fontSize: 11 },
+    label: { formatter: name, color: band.color, fontSize: 11, position: 'insideEndTop' },
     data: [{ yAxis: mid }],
   }
 }
