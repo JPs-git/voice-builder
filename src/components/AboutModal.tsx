@@ -26,12 +26,12 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
 
       <section className={styles.section}>
         <h4>更新日志</h4>
-        <p style={{ color: 'var(--text-mute)', fontStyle: 'italic' }}>待补充…</p>
+        <p className={styles.placeholder}>待补充…</p>
       </section>
 
       <section className={styles.section}>
         <h4>作者 / 联系方式</h4>
-        <p style={{ color: 'var(--text-mute)', fontStyle: 'italic' }}>待补充…</p>
+        <p className={styles.placeholder}>待补充…</p>
       </section>
     </Modal>
   )

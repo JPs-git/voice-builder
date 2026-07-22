@@ -25,3 +25,8 @@
 .link:hover {
   text-decoration: underline;
 }
+
+.placeholder {
+  color: var(--text-mute);
+  font-style: italic;
+}
