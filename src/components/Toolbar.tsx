@@ -37,10 +37,6 @@ export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onCl
         <span className={styles.subtitle}>「看见自己的声音」</span>
       </div>
 
-      <nav className={styles.nav}>
-        <button className={styles.navItem} onClick={onAbout}>关于</button>
-      </nav>
-
       <div className={styles.actions}>
         <Button id="btnRecord" variant="primary" icon={isRecording ? '■' : '●'} label={label} recording={isRecording} onClick={onRecord} disabled={isRequesting} />
 
@@ -53,6 +49,8 @@ export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onCl
         <Button id="btnConfig" variant="ghost" icon="⚙" label="配置" aria-label="配置" onClick={onConfig} />
 
         <Button id="btnHelp" variant="ghost" icon="?" label="帮助" onClick={onHelp} />
+
+        <Button id="btnAbout" variant="ghost" icon="ⓘ" label="关于" onClick={onAbout} />
       </div>
     </header>
   )

@@ -1,7 +1,7 @@
 .toolbar {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 24px;
   padding: 12px 24px;
   background: var(--panel);
@@ -33,30 +33,9 @@
 .actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-wrap: wrap;
-}
-
-.nav {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-}
-
-.navItem {
-  background: transparent;
-  border: none;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  color: var(--text-mute);
-  cursor: pointer;
-  transition: background .15s;
-}
-
-.navItem:hover {
-  background: #F3F4F6;
-  color: var(--text);
 }
 
 @media (max-width: 768px) {
