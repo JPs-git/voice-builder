@@ -1,0 +1,27 @@
+.section + .section {
+  margin-top: 16px;
+}
+
+.section h4 {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.section p {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.link {
+  color: var(--accent, #3B82F6);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
