@@ -1,0 +1,19 @@
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-mute);
+  pointer-events: none;
+  text-align: center;
+  padding: 0 16px;
+}
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+.desc { font-size: 13px; }

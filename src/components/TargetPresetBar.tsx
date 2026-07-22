@@ -1,18 +1,13 @@
 import { useCallback, useState, useEffect } from 'react'
 import { VOWEL_PRESETS } from '../types'
 import type { TargetBands } from '../types'
+import styles from './TargetPresetBar.module.css'
 
 interface TargetPresetBarProps {
   activePreset: string | null
   bands: TargetBands
   onPresetSelect: (name: string) => void
   onBandsChange: (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => void
-}
-
-const BAND_COLORS: Record<'f0' | 'f1' | 'f2', string> = {
-  f0: '#10B981',
-  f1: '#3B82F6',
-  f2: '#F59E0B',
 }
 
 function bandKeyToId(key: 'f0' | 'f1' | 'f2', index: 0 | 1): string {
@@ -63,16 +58,16 @@ export function TargetPresetBar({ activePreset, bands, onPresetSelect, onBandsCh
   const vowelKeys = Object.keys(VOWEL_PRESETS) as (keyof typeof VOWEL_PRESETS)[]
 
   return (
-    <section className="preset-bar" aria-label="共振峰目标区间">
-      <div className="preset-row">
-        <label className="preset-label">目标区间</label>
+    <section className={styles.bar} aria-label="共振峰目标区间">
+      <div className={styles.row}>
+        <label className={styles.label}>目标区间</label>
       </div>
-      <div className="preset-vowels" role="group" aria-label="元音预设">
+      <div className={styles.vowels} role="group" aria-label="元音预设">
         {vowelKeys.map((name) => (
           <button
             key={name}
             type="button"
-            className={`vowel-btn${activePreset === name ? ' is-active' : ''}`}
+            className={`${styles.vowelBtn}${activePreset === name ? ` ${styles.vowelBtnActive}` : ''}`}
             data-preset={name}
             onClick={() => onPresetSelect(name)}
           >
@@ -80,34 +75,34 @@ export function TargetPresetBar({ activePreset, bands, onPresetSelect, onBandsCh
           </button>
         ))}
       </div>
-      <div className="preset-inputs">
+      <div className={styles.inputs}>
         {(['f0', 'f1', 'f2'] as const).map((key) => (
-          <div key={key} className="band-input" data-band={key}>
-            <span className="band-key">{key.toUpperCase()}</span>
+          <div key={key} className={styles.bandInput} data-band={key}>
+            <span className={styles.bandKey}>{key.toUpperCase()}</span>
             <input
               type="number"
               min={key === 'f0' ? 20 : 100}
               max={key === 'f0' ? 600 : 3500}
               step={key === 'f0' ? 5 : 10}
-              className="band-lo"
+              className={styles.bandLo}
               value={localValues[bandKeyToId(key, 0)]}
               onChange={e => handleInputChange(key, 0, e.target.value)}
               onBlur={() => handleInputBlur(key, 0)}
               aria-label={`${key.toUpperCase()}下限`}
             />
-            <span className="band-dash">—</span>
+            <span className={styles.bandDash}>—</span>
             <input
               type="number"
               min={key === 'f0' ? 20 : 100}
               max={key === 'f0' ? 600 : 3500}
               step={key === 'f0' ? 5 : 10}
-              className="band-hi"
+              className={styles.bandHi}
               value={localValues[bandKeyToId(key, 1)]}
               onChange={e => handleInputChange(key, 1, e.target.value)}
               onBlur={() => handleInputBlur(key, 1)}
               aria-label={`${key.toUpperCase()}上限`}
             />
-            <span className="band-unit">Hz</span>
+            <span className={styles.bandUnit}>Hz</span>
           </div>
         ))}
       </div>

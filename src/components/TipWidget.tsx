@@ -1,4 +1,5 @@
 import { useTipStateMachine } from './useTipStateMachine'
+import styles from './TipWidget.module.css'
 
 const DEFAULT_TIPS = [
   '点击顶部「开始录音」或「导入 WAV」即可开始分析',
@@ -25,19 +26,19 @@ export function TipWidget({ tips = DEFAULT_TIPS, interval = 5000 }: TipWidgetPro
   const isHidden = state.status === 'idle' || state.status === 'stopped' || state.status === 'closing'
 
   return (
-    <div className={`tip-widget ${state.status === 'stopped' ? 'is-closed' : ''}`}>
-      <button className="tip-trigger" onClick={() => dispatch({ type: 'OPEN' })} aria-label="小提示">
+    <div className={`${styles.widget}${state.status === 'stopped' ? ` ${styles.widgetClosed}` : ''}`}>
+      <button className={styles.trigger} onClick={() => dispatch({ type: 'OPEN' })} aria-label="小提示">
         ℹ
       </button>
       <div
         ref={cardRef}
-        className={`tip-card${isHidden ? ' is-hidden' : ''}`}
+        className={`${styles.card}${isHidden ? ` ${styles.cardHidden}` : ''}`}
         onMouseEnter={() => dispatch({ type: 'MOUSE_ENTER' })}
         onMouseLeave={() => dispatch({ type: 'MOUSE_LEAVE' })}
       >
-        <button className="tip-close" onClick={() => dispatch({ type: 'CLOSE' })} aria-label="关闭小提示">×</button>
-        <h4 className="tip-title">💡 小提示</h4>
-        <p className="tip-text">{tips[state.index]}</p>
+        <button className={styles.close} onClick={() => dispatch({ type: 'CLOSE' })} aria-label="关闭小提示">×</button>
+        <h4 className={styles.title}>💡 小提示</h4>
+        <p className={styles.text}>{tips[state.index]}</p>
       </div>
     </div>
   )

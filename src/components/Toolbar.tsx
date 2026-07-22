@@ -1,5 +1,7 @@
 import type { AppPhase } from '../types'
 import logo from '../../assets/logo.png'
+import { Button } from './Button'
+import styles from './Toolbar.module.css'
 
 interface ToolbarProps {
   phase: AppPhase
@@ -27,43 +29,25 @@ export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onCl
   const isPaused = phase === 'paused'
 
   return (
-    <header className="toolbar">
-      <div className="toolbar-brand">
-        <img src={logo} className="logo" alt="" aria-hidden="true" />
-        <span className="title">在线声音训练</span>
-        <span className="subtitle">「看见自己的声音」</span>
+    <header className={styles.toolbar}>
+      <div className={styles.brand}>
+        <img src={logo} className={styles.logo} alt="" aria-hidden="true" />
+        <span className={styles.title}>在线声音训练</span>
+        <span className={styles.subtitle}>「看见自己的声音」</span>
       </div>
 
-      <div className="toolbar-actions">
-        <button id="btnRecord" className={`btn btn-primary${isRecording ? ' is-recording' : ''}`} onClick={onRecord} disabled={isRequesting}>
-          <span className="btn-icon">{isRecording ? '■' : '●'}</span>
-          <span className="btn-label">{label}</span>
-        </button>
+      <div className={styles.actions}>
+        <Button id="btnRecord" variant="primary" icon={isRecording ? '■' : '●'} label={label} recording={isRecording} onClick={onRecord} disabled={isRequesting} />
 
-        <button id="btnImport" className="btn btn-ghost" onClick={onImport}>
-          <span className="btn-icon">📁</span>
-          <span className="btn-label">导入 WAV</span>
-        </button>
+        <Button id="btnImport" variant="ghost" icon="📁" label="导入 WAV" onClick={onImport} />
 
-        <button id="btnPlayback" className="btn btn-ghost" onClick={onPlayback} disabled={!isPaused}>
-          <span className="btn-icon">{isPlaying ? '■' : '♫'}</span>
-          <span className="btn-label">{isPlaying ? '停止' : '回放'}</span>
-        </button>
+        <Button id="btnPlayback" variant="ghost" icon={isPlaying ? '■' : '♫'} label={isPlaying ? '停止' : '回放'} onClick={onPlayback} disabled={!isPaused} />
 
-        <button id="btnClear" className="btn btn-ghost" onClick={onClear}>
-          <span className="btn-icon">↺</span>
-          <span className="btn-label">清空</span>
-        </button>
+        <Button id="btnClear" variant="ghost" icon="↺" label="清空" onClick={onClear} />
 
-        <button id="btnConfig" className="btn btn-ghost" aria-label="配置" onClick={onConfig}>
-          <span className="btn-icon">⚙</span>
-          <span className="btn-label">配置</span>
-        </button>
+        <Button id="btnConfig" variant="ghost" icon="⚙" label="配置" aria-label="配置" onClick={onConfig} />
 
-        <button id="btnHelp" className="btn btn-ghost" onClick={onHelp}>
-          <span className="btn-icon">?</span>
-          <span className="btn-label">帮助</span>
-        </button>
+        <Button id="btnHelp" variant="ghost" icon="?" label="帮助" onClick={onHelp} />
       </div>
     </header>
   )

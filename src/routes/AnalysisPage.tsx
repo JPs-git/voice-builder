@@ -14,6 +14,7 @@ import { AudioEngine } from '../../js/audio-engine.js'
 import { AnalysisPipeline } from '../../js/analysis-pipeline.js'
 import { parseWav } from '../../js/wav-parser.js'
 import { Resampler } from '../../js/resampler.js'
+import styles from './AnalysisPage.module.css'
 
 export function AnalysisPage() {
   const { state, dispatch } = useAnalysis()
@@ -240,7 +241,7 @@ export function AnalysisPage() {
         onHelp={() => dispatch({ type: 'SET_HELP_DRAWER', open: true })}
       />
 
-      <main className="content">
+      <main className={styles.content}>
         <TargetPresetBar
           activePreset={state.activePreset}
           bands={state.bands}
@@ -248,13 +249,13 @@ export function AnalysisPage() {
           onBandsChange={onBandsChange}
         />
 
-        <div className="charts-column">
-          <section className="card">
-            <div className="chart-wrapper">
-              <div className="chart-header">
-                <h2 className="card-title">基频</h2>
+        <div className={styles.chartsColumn}>
+          <section className={`${styles.card} ${styles.chartsColumnCard}`}>
+            <div className={styles.chartWrapper}>
+              <div className={styles.chartHeader}>
+                <h2 className={styles.cardTitle}>基频</h2>
               </div>
-              <div className="chart-area">
+              <div className={styles.chartArea}>
                 <F0Chart ref={f0Ref} batchMode={false} />
                 <EmptyState
                   title="还没有声音数据"
@@ -265,17 +266,17 @@ export function AnalysisPage() {
             </div>
           </section>
 
-          <section className="card">
-            <div className="chart-wrapper">
-              <div className="chart-header has-legend">
-                <h2 className="card-title">共振峰</h2>
-                <div className="card-legend" aria-label="图例">
-                  <button className="legend-item" data-key="f0" data-active="true"><i style={{ background: '#1F2937' }}></i>F0</button>
-                  <button className="legend-item" data-key="f1" data-active="true"><i style={{ background: '#E23E57' }}></i>F1</button>
-                  <button className="legend-item" data-key="f2" data-active="true"><i style={{ background: '#3B82F6' }}></i>F2</button>
+          <section className={`${styles.card} ${styles.chartsColumnCard}`}>
+            <div className={styles.chartWrapper}>
+              <div className={`${styles.chartHeader} ${styles.chartHeaderLegend}`}>
+                <h2 className={styles.cardTitle}>共振峰</h2>
+                <div className={styles.cardLegend} aria-label="图例">
+                  <button className={styles.legendItem} data-key="f0" data-active="true"><i style={{ background: '#1F2937' }}></i>F0</button>
+                  <button className={styles.legendItem} data-key="f1" data-active="true"><i style={{ background: '#E23E57' }}></i>F1</button>
+                  <button className={styles.legendItem} data-key="f2" data-active="true"><i style={{ background: '#3B82F6' }}></i>F2</button>
                 </div>
               </div>
-              <div className="chart-area">
+              <div className={styles.chartArea}>
                 <FormantChart ref={formantRef} batchMode={false} />
                 <EmptyState
                   title="曲线待生成"

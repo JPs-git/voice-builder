@@ -1,0 +1,104 @@
+.content {
+  flex: 1;
+  position: relative;
+  padding: 16px 20px;
+  width: 100%;
+}
+.chartsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+}
+.chartsColumnCard { margin: 0; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  flex: 1;
+}
+.cardTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  white-space: nowrap;
+}
+.chartWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: calc(100% - 20px);
+  height: min(42vh, 420px);
+  min-height: 280px;
+  background: #FAFBFC;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 10px auto;
+  padding: 8px 10px;
+}
+.chartHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.chartHeaderLegend {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+.chartHeader .cardTitle {
+  font-size: 14px;
+  margin: 0;
+}
+.chartArea {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow: hidden;
+}
+.cardLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: #F9FAFB;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s ease, background .15s ease;
+}
+.legendItem:hover { background: #F3F4F6; }
+.legendItem[data-active="false"] { opacity: 0.35; }
+.legendItem i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 14px;
+  }
+  .chartWrapper { height: 280px; }
+}
