@@ -73,4 +73,13 @@ describe('AnalysisContext reducer', () => {
     act(() => result.current.dispatch({ type: 'SET_LATEST_FRAME', frame }))
     expect(result.current.state.latestFrame).toEqual(frame)
   })
+
+  it('SET_ABOUT_MODAL toggles modal state', () => {
+    const { result } = renderHook(() => useAnalysis(), { wrapper })
+    expect(result.current.state.aboutModalOpen).toBe(false)
+    act(() => result.current.dispatch({ type: 'SET_ABOUT_MODAL', open: true }))
+    expect(result.current.state.aboutModalOpen).toBe(true)
+    act(() => result.current.dispatch({ type: 'SET_ABOUT_MODAL', open: false }))
+    expect(result.current.state.aboutModalOpen).toBe(false)
+  })
 })

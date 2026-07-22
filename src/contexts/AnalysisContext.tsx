@@ -12,6 +12,7 @@ interface AnalysisState {
   stats: AnalysisStats
   configDrawerOpen: boolean
   helpDrawerOpen: boolean
+  aboutModalOpen: boolean
 }
 
 type Action =
@@ -24,6 +25,7 @@ type Action =
   | { type: 'SET_STATS'; stats: AnalysisStats }
   | { type: 'SET_CONFIG_DRAWER'; open: boolean }
   | { type: 'SET_HELP_DRAWER'; open: boolean }
+  | { type: 'SET_ABOUT_MODAL'; open: boolean }
   | { type: 'RESET' }
 
 const vowelA = VOWEL_PRESETS['vowel-a']
@@ -61,6 +63,8 @@ function reducer(state: AnalysisState, action: Action): AnalysisState {
       return { ...state, configDrawerOpen: action.open }
     case 'SET_HELP_DRAWER':
       return { ...state, helpDrawerOpen: action.open }
+    case 'SET_ABOUT_MODAL':
+      return { ...state, aboutModalOpen: action.open }
     case 'RESET':
       return { ...initialState }
     default:
@@ -78,6 +82,7 @@ const initialState: AnalysisState = {
   stats: { f0Mean: null, hitRate: null, duration: 0 },
   configDrawerOpen: false,
   helpDrawerOpen: false,
+  aboutModalOpen: false,
 }
 
 const AnalysisContext = createContext<{
