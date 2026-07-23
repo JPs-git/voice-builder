@@ -1,0 +1,23 @@
+.refTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.refTable th, .refTable td {
+  border: 1px solid #E5E7EB;
+  padding: 3px 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.refTable th {
+  background: #F9FAFB;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.refTable td {
+  color: var(--text-soft);
+}

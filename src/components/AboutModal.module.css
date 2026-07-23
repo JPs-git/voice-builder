@@ -1,0 +1,50 @@
+.section + .section {
+  margin-top: 16px;
+}
+
+.section h4 {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.section p {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.link {
+  color: var(--accent, #3B82F6);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.placeholder {
+  color: var(--text-mute);
+  font-style: italic;
+}
+
+.contactIcons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+  vertical-align: middle;
+}
+
+.icon:hover {
+  opacity: 1;
+}
