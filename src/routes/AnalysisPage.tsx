@@ -168,6 +168,7 @@ export function AnalysisPage() {
     const preset = VOWEL_PRESETS[name]
     if (!preset) return
     dispatch({ type: 'SET_ACTIVE_PRESET', name })
+    dispatch({ type: 'SET_BANDS', bands: { f0: preset.f0, f1: preset.f1, f2: preset.f2 } })
     formantRef.current?.setTargetBands({ f0: preset.f0, f1: preset.f1, f2: preset.f2 })
   }, [dispatch])
 
