@@ -94,6 +94,12 @@ export function AnalysisPage() {
     }
 
     if (state.phase === 'paused') {
+      if (audioRef.current.isPlaying) {
+        audioRef.current.stopPlayback()
+        setIsPlaying(false)
+        f0Ref.current?.setCursorTime(-1)
+        formantRef.current?.setCursorTime(-1)
+      }
       pipelineRef.current?.reset()
       pipelineRef.current = null
       await startStream()
