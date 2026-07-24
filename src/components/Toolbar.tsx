@@ -21,13 +21,14 @@ const LABELS: Record<AppPhase, string> = {
   recording: '停止录音',
   paused: '继续录音',
   analyzing: '分析中…',
+  uploaded: '开始录音',
 }
 
 export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onClear, onConfig, onHelp, onAbout }: ToolbarProps) {
   const label = LABELS[phase]
   const isRecording = phase === 'recording'
   const isRequesting = phase === 'requesting'
-  const isPaused = phase === 'paused'
+  const isPaused = phase === 'paused' || phase === 'uploaded'
 
   return (
     <header className={styles.toolbar}>

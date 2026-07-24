@@ -25,7 +25,7 @@ export const FORMANT_METHODS: FormantMethod[] = [
   { value: 'cepstral', label: '纯倒谱法', description: '封闭元音 F2 偏大' },
 ]
 
-export type AppPhase = 'idle' | 'requesting' | 'recording' | 'paused' | 'analyzing'
+export type AppPhase = 'idle' | 'requesting' | 'recording' | 'paused' | 'analyzing' | 'uploaded'
 
 export interface TargetBands {
   f0: TargetBand
