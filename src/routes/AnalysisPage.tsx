@@ -49,15 +49,16 @@ export function AnalysisPage() {
     formantRef.current?.pushFrame(frame)
   }, [dispatch])
 
-  const startStream = useCallback(async () => {
+  const startStream = useCallback(async (frameOffsetOverride?: number) => {
     if (!audioRef.current) return
     f0Ref.current?.setLiveMode()
     formantRef.current?.setLiveMode()
+    const frameOffset = frameOffsetOverride ?? state.frameCount
     pipelineRef.current = new (AnalysisPipeline as any)({
       onFrame,
       formantMethod: state.config.formantMethod,
       formantSmoothing: state.config.formantSmoothing,
-      frameOffset: state.frameCount,
+      frameOffset,
     })
     audioRef.current.startStream(
       (chunk: Float32Array, rate: number) => pipelineRef.current?.pushChunk(chunk, rate),
@@ -90,6 +91,24 @@ export function AnalysisPage() {
         audioRef.current.trimBufferToDuration(10)
       }
       dispatch({ type: 'SET_PHASE', phase: 'paused' })
+      return
+    }
+
+    if (state.phase === 'uploaded') {
+      if (audioRef.current.isPlaying) {
+        audioRef.current.stopPlayback()
+        setIsPlaying(false)
+        f0Ref.current?.setCursorTime(-1)
+        formantRef.current?.setCursorTime(-1)
+      }
+      audioRef.current.clearRecordedBuffer()
+      dispatch({ type: 'SET_FRAME_COUNT', count: 0 })
+      f0Ref.current?.clear()
+      formantRef.current?.clear()
+      sessionFramesRef.current = []
+      pipelineRef.current?.reset()
+      pipelineRef.current = null
+      await startStream(0)
       return
     }
 
@@ -133,16 +152,16 @@ export function AnalysisPage() {
   }, [dispatch])
 
   const onImport = useCallback(() => {
-    if (state.phase === 'recording' || state.phase === 'paused') clearAll()
+    if (state.phase === 'recording') clearAll()
     wavInputRef.current?.click()
   }, [state.phase, clearAll])
 
   const onWavSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
     const ae = audioRef.current
     if (!ae) return
-    clearAll()
     try {
       const buf = await file.arrayBuffer()
       const parsed: any = parseWav(buf)
@@ -153,6 +172,12 @@ export function AnalysisPage() {
         samples = r.process(samples)
         rate = 16000
       }
+      const MAX_SAMPLES = 16000 * 10
+      if (samples.length > MAX_SAMPLES) {
+        alert('导入的音频不能超过 10 秒，请裁剪后重试。')
+        return
+      }
+      clearAll()
       ae.setImportedBuffer(samples)
       ;(ae as any)._recordingSampleRate = rate
       const frames: AnalysisFrame[] = AnalysisPipeline.analyze(
@@ -162,12 +187,13 @@ export function AnalysisPage() {
       dispatch({ type: 'SET_FRAME_COUNT', count: frames.length })
       f0Ref.current?.displayAll(frames)
       formantRef.current?.displayAll(frames)
-      if (frames.length > 0) dispatch({ type: 'SET_PHASE', phase: 'paused' })
+      if (frames.length > 0) {
+        dispatch({ type: 'SET_PHASE', phase: 'uploaded' })
+      }
     } catch (err) {
       console.error('WAV analysis failed:', err)
       dispatch({ type: 'SET_PHASE', phase: 'idle' })
     }
-    e.target.value = ''
   }, [state.config, clearAll, dispatch])
 
   const onPresetSelect = useCallback((name: string) => {
@@ -229,7 +255,7 @@ export function AnalysisPage() {
   const [hasData, setHasData] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   useEffect(() => {
-    if (state.phase === 'recording' || state.phase === 'paused' || state.frameCount > 0) {
+    if (state.phase === 'recording' || state.phase === 'paused' || state.phase === 'uploaded' || state.frameCount > 0) {
       setHasData(true)
     } else {
       setHasData(false)
