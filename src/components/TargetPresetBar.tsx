@@ -39,7 +39,7 @@ export function TargetPresetBar({ activePreset, bands, onPresetSelect, onBandsCh
     setLocalValues(prev => ({ ...prev, [bandKeyToId(key, index)]: value }))
   }, [])
 
-  const handleInputBlur = useCallback((key: 'f0' | 'f1' | 'f2', index: 0 | 1) => {
+  const commitValue = useCallback((key: 'f0' | 'f1' | 'f2', index: 0 | 1) => {
     const id = bandKeyToId(key, index)
     const num = parseFloat(localValues[id])
     if (!Number.isFinite(num)) {
@@ -54,6 +54,19 @@ export function TargetPresetBar({ activePreset, bands, onPresetSelect, onBandsCh
       setLocalValues(prev => ({ ...prev, [id]: String(bands[key].range[index]) }))
     }
   }, [localValues, bands, onBandsChange])
+
+  const handleInputBlur = useCallback((key: 'f0' | 'f1' | 'f2', index: 0 | 1) => {
+    commitValue(key, index)
+  }, [commitValue])
+
+  const handleInputKeyDown = useCallback((key: 'f0' | 'f1' | 'f2', index: 0 | 1) => {
+    return (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        commitValue(key, index)
+        ;(e.target as HTMLInputElement).blur()
+      }
+    }
+  }, [commitValue])
 
   const vowelKeys = Object.keys(VOWEL_PRESETS) as (keyof typeof VOWEL_PRESETS)[]
 
@@ -88,6 +101,7 @@ export function TargetPresetBar({ activePreset, bands, onPresetSelect, onBandsCh
               value={localValues[bandKeyToId(key, 0)]}
               onChange={e => handleInputChange(key, 0, e.target.value)}
               onBlur={() => handleInputBlur(key, 0)}
+              onKeyDown={handleInputKeyDown(key, 0)}
               aria-label={`${key.toUpperCase()}下限`}
             />
             <span className={styles.bandDash}>—</span>
@@ -100,6 +114,7 @@ export function TargetPresetBar({ activePreset, bands, onPresetSelect, onBandsCh
               value={localValues[bandKeyToId(key, 1)]}
               onChange={e => handleInputChange(key, 1, e.target.value)}
               onBlur={() => handleInputBlur(key, 1)}
+              onKeyDown={handleInputKeyDown(key, 1)}
               aria-label={`${key.toUpperCase()}上限`}
             />
             <span className={styles.bandUnit}>Hz</span>
