@@ -2,6 +2,7 @@ import { Modal } from "./Modal";
 import styles from "./AboutModal.module.css";
 import bilibiliIcon from "../../assets/Bilibili.svg";
 import githubIcon from "../../assets/GitHub_Invertocat_Black.svg";
+import pkg from "../../package.json";
 
 interface AboutModalProps {
   open: boolean;
@@ -18,7 +19,7 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
       <section className={styles.section}>
         <h4>项目信息</h4>
         <p>名称：在线声音训练「看见自己的声音」</p>
-        <p>版本：1.1.0</p>
+        <p>版本：{pkg.version}</p>
       </section>
 
       <section className={styles.section}>
