@@ -19,8 +19,6 @@ jobs:
         with:
           node-version: lts/*
 
-      - run: npm install
-
       - name: Determine version bump type
         id: bump
         run: |
@@ -33,6 +31,8 @@ jobs:
           fi
 
       - run: npm version ${{ steps.bump.outputs.type }} -m "v%s"
+
+      - run: npm install
 
       - run: npm run build
 
