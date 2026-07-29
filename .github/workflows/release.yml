@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: lts/*
 
-      - run: npm ci
+      - run: npm install
 
       - name: Determine version bump type
         id: bump
