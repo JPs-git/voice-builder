@@ -101,7 +101,4 @@ jobs:
           echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
           git push --follow-tags
 
-      - uses: softprops/action-gh-release@v2
-        if: steps.bump.outputs.bump != 'none'
-        with:
-          generate_release_notes: true
+
