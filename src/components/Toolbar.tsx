@@ -43,7 +43,7 @@ export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onCl
 
         <Button id="btnImport" variant="ghost" icon="📁" label="导入 WAV" onClick={onImport} />
 
-        <Button id="btnPlayback" variant="ghost" icon={isPlaying ? '■' : '♫'} label={isPlaying ? '停止' : '回放'} onClick={onPlayback} disabled={!isPaused} />
+        <Button id="btnPlayback" variant="ghost" icon={isPlaying ? '■' : '♫'} label={isPlaying ? '停止' : '回放'} onClick={onPlayback} disabled={!isPaused && phase !== 'recording'} />
 
         <Button id="btnClear" variant="ghost" icon="↺" label="清空" onClick={onClear} />
 
