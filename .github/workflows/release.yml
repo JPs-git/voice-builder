@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - run: npm ci
+
+      - name: Determine version bump type
+        id: bump
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LOG=$(git log "$LAST_TAG..HEAD" --oneline)
+          if echo "$LOG" | grep -Eq "feat:|perf:"; then
+            echo "type=minor" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=patch" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: npm version ${{ steps.bump.outputs.type }} -m "v%s"
+
+      - run: npm run build
+
+      - name: Push tags
+        run: git push --follow-tags
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
