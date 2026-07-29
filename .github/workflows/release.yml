@@ -1,4 +1,17 @@
-name: Release
+# Runs on every push to master (i.e. after a PR is merged).
+# Determines the version bump from Conventional Commits since the last tag,
+# then bumps package.json, tags, and pushes.
+#
+# Bump rules:
+#   - `BREAKING CHANGE` in body, or `type!:` in the header -> major
+#   - `feat:`                                              -> minor
+#   - `fix:`                                               -> patch
+#   - anything else (chore/docs/refactor/ci/test/...)      -> no release
+#
+# The version-bump commit/tag is pushed with GITHUB_TOKEN, which does NOT
+# re-trigger workflows, so there is no release loop.
+
+name: Auto Release
 
 on:
   push:
@@ -7,43 +20,80 @@ on:
 permissions:
   contents: write
 
+# Never run two releases at once.
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # full history + tags for commit analysis
 
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: npm
 
-      - run: npm install
+      - run: npm ci
 
-      - run: npm run build
-
-      - name: Determine version bump type
+      - name: Decide version bump from Conventional Commits
         id: bump
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          LOG=$(git log "$LAST_TAG..HEAD" --oneline)
-          if echo "$LOG" | grep -Eq "feat:|perf:"; then
-            echo "type=minor" >> "$GITHUB_OUTPUT"
+          LAST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="${LAST_TAG}..HEAD"
+            echo "Analysing commits in ${RANGE}"
           else
-            echo "type=patch" >> "$GITHUB_OUTPUT"
+            RANGE=""
+            echo "No previous tag — analysing full history"
           fi
 
-      - name: Configure git identity
+          SUBJECTS="$(git log $RANGE --format='%s')"
+          BODIES="$(git log $RANGE --format='%B')"
+
+          BUMP=""
+          # major: "BREAKING CHANGE" in any body, or "type!:" / "type(scope)!:" header
+          if echo "$BODIES" | grep -qE 'BREAKING[ -]CHANGE' \
+            || echo "$SUBJECTS" | grep -qE '^[a-z]+(\([^)]+\))?!:'; then
+            BUMP="major"
+          elif echo "$SUBJECTS" | grep -qE '^feat(\([^)]+\))?:'; then
+            BUMP="minor"
+          elif echo "$SUBJECTS" | grep -qE '^fix(\([^)]+\))?:'; then
+            BUMP="patch"
+          fi
+
+          if [ -z "$BUMP" ]; then
+            echo "No releasable commits (feat/fix/BREAKING) since ${LAST_TAG:-start} — skipping release."
+            echo "bump=none" >> "$GITHUB_OUTPUT"
+          else
+            echo "Selected bump: ${BUMP}"
+            echo "bump=${BUMP}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test + build
+        if: steps.bump.outputs.bump != 'none'
+        run: |
+          npm run test
+          npm run build
+
+      - name: Bump version, commit and tag
+        if: steps.bump.outputs.bump != 'none'
+        id: version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - run: npm version ${{ steps.bump.outputs.type }} -m "v%s"
-
-      - run: git push --follow-tags
+          # `npm version` updates package.json, creates a commit and a v* tag.
+          # [skip ci] is belt-and-suspenders; GITHUB_TOKEN pushes don't trigger
+          # workflows anyway.
+          NEW_VERSION="$(npm version ${{ steps.bump.outputs.bump }} -m 'chore(release): %s [skip ci]')"
+          echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          git push --follow-tags
 
       - uses: softprops/action-gh-release@v2
+        if: steps.bump.outputs.bump != 'none'
         with:
           generate_release_notes: true
