@@ -87,9 +87,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # `npm version` updates package.json, creates a commit and a v* tag.
-          # [skip ci] is belt-and-suspenders; GITHUB_TOKEN pushes don't trigger
-          # workflows anyway.
+
+          # Remove stale tag left from a previous partial run
+          CURRENT="$(node -p "require('./package.json').version")"
+          case "${{ steps.bump.outputs.bump }}" in
+            major) NEW="$(awk -F. '{print $1+1".0.0"}' <<< "$CURRENT")" ;;
+            minor) NEW="$(awk -F. '{print $1"."$2+1".0"}' <<< "$CURRENT")" ;;
+            patch) NEW="$(awk -F. '{print $1"."$2"."$3+1}' <<< "$CURRENT")" ;;
+          esac
+          git tag -d "v$NEW" 2>/dev/null && echo "Removed stale tag v$NEW" || true
+
           NEW_VERSION="$(npm version ${{ steps.bump.outputs.bump }} -m 'chore(release): %s [skip ci]')"
           echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
           git push --follow-tags
