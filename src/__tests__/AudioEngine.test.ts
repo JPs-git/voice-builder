@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { AudioEngine } from '../ts/AudioEngine'
+import { getAudioEngine, resetAudioEngine } from '../ts'
 
 describe('AudioEngine', () => {
   let engine: AudioEngine
@@ -57,5 +58,24 @@ describe('AudioEngine', () => {
 
   it('startStream rejects if no getUserMedia (server-side test)', async () => {
     await expect(engine.startStream(() => {})).rejects.toThrow()
+  })
+})
+
+describe('AudioEngine singleton', () => {
+  afterEach(() => {
+    resetAudioEngine()
+  })
+
+  it('getAudioEngine returns the same instance', () => {
+    const a = getAudioEngine()
+    const b = getAudioEngine()
+    expect(a).toBe(b)
+  })
+
+  it('resetAudioEngine destroys and nullifies instance', () => {
+    const a = getAudioEngine()
+    resetAudioEngine()
+    const b = getAudioEngine()
+    expect(a).not.toBe(b)
   })
 })

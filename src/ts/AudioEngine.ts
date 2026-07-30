@@ -45,7 +45,7 @@ export class AudioEngine {
     this._processor.onaudioprocess = (event) => {
       const chunk = event.inputBuffer.getChannelData(0)
       this._ringBuffer.write(chunk)
-      onChunk(chunk, this._sampleRate)
+      onChunk(chunk, ctx.sampleRate)
     }
     this._source.connect(this._processor)
     this._processor.connect(ctx.destination)
