@@ -11,7 +11,8 @@ import { AboutModal } from '../components/AboutModal'
 import { TipWidget } from '../components/TipWidget'
 import { VOWEL_PRESETS } from '../types'
 import type { AnalysisFrame, ChartHandles } from '../types'
-import { AudioEngine } from '../../js/audio-engine.js'
+import { getAudioEngine } from '../ts'
+import { usePlayback } from '../hooks/usePlayback'
 import { AnalysisPipeline } from '../../js/analysis-pipeline.js'
 import { parseWav } from '../../js/wav-parser.js'
 import { Resampler } from '../../js/resampler.js'
@@ -21,15 +22,10 @@ export function AnalysisPage() {
   const { state, dispatch } = useAnalysis()
   const f0Ref = useRef<ChartHandles>(null)
   const formantRef = useRef<ChartHandles>(null)
-  const audioRef = useRef<InstanceType<typeof AudioEngine> | null>(null)
   const pipelineRef = useRef<InstanceType<typeof AnalysisPipeline> | null>(null)
   const wavInputRef = useRef<HTMLInputElement>(null)
   const sessionFramesRef = useRef<AnalysisFrame[]>([])
   const WINDOW_FRAMES = 1000
-
-  useEffect(() => {
-    audioRef.current = new AudioEngine()
-  }, [])
 
   useEffect(() => {
     formantRef.current?.setTargetBands({
@@ -50,7 +46,6 @@ export function AnalysisPage() {
   }, [dispatch])
 
   const startStream = useCallback(async (frameOffsetOverride?: number) => {
-    if (!audioRef.current) return
     f0Ref.current?.setLiveMode()
     formantRef.current?.setLiveMode()
     const frameOffset = frameOffsetOverride ?? state.frameCount
@@ -60,25 +55,21 @@ export function AnalysisPage() {
       formantSmoothing: state.config.formantSmoothing,
       frameOffset,
     })
-    audioRef.current.startStream(
-      (chunk: Float32Array, rate: number) => pipelineRef.current?.pushChunk(chunk, rate),
-      10
+    getAudioEngine().startStream(
+      (chunk: Float32Array, rate: number) => pipelineRef.current?.pushChunk(chunk, rate)
     )
     dispatch({ type: 'SET_PHASE', phase: 'recording' })
   }, [onFrame, state.config, state.frameCount, dispatch])
 
   const startNewRecording = useCallback(async () => {
-    if (!audioRef.current) return
     pipelineRef.current?.reset()
-    audioRef.current.clearRecordedBuffer()
+    getAudioEngine().clear()
     await startStream()
   }, [startStream])
 
   const onRecord = useCallback(async () => {
-    if (!audioRef.current) return
-
     if (state.phase === 'recording') {
-      audioRef.current.stopStream()
+      getAudioEngine().stopStream()
       if (pipelineRef.current) {
         pipelineRef.current.flush()
         const totalFrames = state.frameCount + pipelineRef.current.frameCount
@@ -88,20 +79,18 @@ export function AnalysisPage() {
       }
       if (sessionFramesRef.current.length > WINDOW_FRAMES) {
         sessionFramesRef.current.splice(0, sessionFramesRef.current.length - WINDOW_FRAMES)
-        audioRef.current.trimBufferToDuration(10)
       }
       dispatch({ type: 'SET_PHASE', phase: 'paused' })
       return
     }
 
     if (state.phase === 'uploaded') {
-      if (audioRef.current.isPlaying) {
-        audioRef.current.stopPlayback()
-        setIsPlaying(false)
+      if (isPlaying) {
+        stopPlayback()
         f0Ref.current?.setCursorTime(-1)
         formantRef.current?.setCursorTime(-1)
       }
-      audioRef.current.clearRecordedBuffer()
+      getAudioEngine().clear()
       dispatch({ type: 'SET_FRAME_COUNT', count: 0 })
       f0Ref.current?.clear()
       formantRef.current?.clear()
@@ -113,9 +102,8 @@ export function AnalysisPage() {
     }
 
     if (state.phase === 'paused') {
-      if (audioRef.current.isPlaying) {
-        audioRef.current.stopPlayback()
-        setIsPlaying(false)
+      if (isPlaying) {
+        stopPlayback()
         f0Ref.current?.setCursorTime(-1)
         formantRef.current?.setCursorTime(-1)
       }
@@ -132,24 +120,21 @@ export function AnalysisPage() {
       console.error('Stream start failed:', err)
       dispatch({ type: 'SET_PHASE', phase: 'idle' })
     }
-  }, [state.phase, state.frameCount, startNewRecording, startStream, dispatch])
+  }, [state.phase, state.frameCount, startNewRecording, startStream, dispatch, isPlaying, stopPlayback])
 
   const clearAll = useCallback(() => {
-    const ae = audioRef.current
-    if (!ae) return
     pipelineRef.current?.reset()
     pipelineRef.current = null
-    ae.stopPlayback()
-    setIsPlaying(false)
-    ae.stopStream()
-    ae.clearRecordedBuffer()
+    stopPlayback()
+    getAudioEngine().stopStream()
+    getAudioEngine().clear()
     f0Ref.current?.clear()
     formantRef.current?.clear()
     f0Ref.current?.setCursorTime(-1)
     formantRef.current?.setCursorTime(-1)
     sessionFramesRef.current = []
     dispatch({ type: 'RESET' })
-  }, [dispatch])
+  }, [dispatch, stopPlayback])
 
   const onImport = useCallback(() => {
     if (state.phase === 'recording') clearAll()
@@ -160,8 +145,6 @@ export function AnalysisPage() {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    const ae = audioRef.current
-    if (!ae) return
     try {
       const buf = await file.arrayBuffer()
       const parsed: any = parseWav(buf)
@@ -178,8 +161,7 @@ export function AnalysisPage() {
         return
       }
       clearAll()
-      ae.setImportedBuffer(samples)
-      ;(ae as any)._recordingSampleRate = rate
+      getAudioEngine().importBuffer(samples)
       const frames: AnalysisFrame[] = AnalysisPipeline.analyze(
         samples as any, rate, state.config.formantMethod, state.config.formantSmoothing
       )
@@ -205,17 +187,14 @@ export function AnalysisPage() {
   }, [dispatch])
 
   const onPlayback = useCallback(() => {
-    const ae = audioRef.current
-    if (!ae) return
-    if (ae.isPlaying) {
-      ae.stopPlayback()
+    if (isPlaying) {
+      stopPlayback()
       f0Ref.current?.setCursorTime(-1)
       formantRef.current?.setCursorTime(-1)
-      setIsPlaying(false)
       return
     }
     if (state.phase === 'recording') {
-      ae.stopStream()
+      getAudioEngine().stopStream()
       if (pipelineRef.current) {
         pipelineRef.current.flush()
         const totalFrames = state.frameCount + pipelineRef.current.frameCount
@@ -225,12 +204,11 @@ export function AnalysisPage() {
       }
       if (sessionFramesRef.current.length > WINDOW_FRAMES) {
         sessionFramesRef.current.splice(0, sessionFramesRef.current.length - WINDOW_FRAMES)
-        ae.trimBufferToDuration(10)
       }
       dispatch({ type: 'SET_PHASE', phase: 'paused' })
     }
     const firstTime = sessionFramesRef.current[0]?.time ?? 0
-    ae.startPlayback(
+    startPlayback(
       (elapsed) => {
         f0Ref.current?.setCursorTime(elapsed + firstTime)
         formantRef.current?.setCursorTime(elapsed + firstTime)
@@ -238,11 +216,9 @@ export function AnalysisPage() {
       () => {
         f0Ref.current?.setCursorTime(-1)
         formantRef.current?.setCursorTime(-1)
-        setIsPlaying(false)
       }
     )
-    setIsPlaying(true)
-  }, [state.phase, state.frameCount, dispatch])
+  }, [isPlaying, state.phase, state.frameCount, dispatch, startPlayback, stopPlayback])
 
   const onBandsChange = useCallback(
     (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => {
@@ -253,7 +229,7 @@ export function AnalysisPage() {
   )
 
   const [hasData, setHasData] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const { play: startPlayback, stop: stopPlayback, isPlaying } = usePlayback()
   useEffect(() => {
     if (state.phase === 'recording' || state.phase === 'paused' || state.phase === 'uploaded' || state.frameCount > 0) {
       setHasData(true)
