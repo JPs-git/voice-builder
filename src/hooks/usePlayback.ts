@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { getAudioEngine } from '../ts'
 
 export function usePlayback() {
@@ -69,6 +69,10 @@ export function usePlayback() {
       }
     }
     rafRef.current = requestAnimationFrame(tick)
+  }, [])
+
+  useEffect(() => {
+    return () => stop()
   }, [stop])
 
   return { play, stop, isPlaying }

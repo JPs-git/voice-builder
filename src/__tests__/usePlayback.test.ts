@@ -67,4 +67,13 @@ describe('usePlayback', () => {
     act(() => { result.current.stop() })
     expect(result.current.isPlaying).toBe(false)
   })
+
+  it('stops playback on unmount', () => {
+    const ae = getAudioEngine()
+    ae.importBuffer(new Float32Array([0.1, 0.2, 0.3]))
+    const { result, unmount } = renderHook(() => usePlayback())
+    act(() => { result.current.play() })
+    expect(result.current.isPlaying).toBe(true)
+    unmount()
+  })
 })
