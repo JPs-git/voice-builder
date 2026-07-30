@@ -26,6 +26,7 @@ export function AnalysisPage() {
   const wavInputRef = useRef<HTMLInputElement>(null)
   const sessionFramesRef = useRef<AnalysisFrame[]>([])
   const WINDOW_FRAMES = 1000
+  const { play: startPlayback, stop: stopPlayback, isPlaying } = usePlayback()
 
   useEffect(() => {
     formantRef.current?.setTargetBands({
@@ -229,7 +230,6 @@ export function AnalysisPage() {
   )
 
   const [hasData, setHasData] = useState(false)
-  const { play: startPlayback, stop: stopPlayback, isPlaying } = usePlayback()
   useEffect(() => {
     if (state.phase === 'recording' || state.phase === 'paused' || state.phase === 'uploaded' || state.frameCount > 0) {
       setHasData(true)
