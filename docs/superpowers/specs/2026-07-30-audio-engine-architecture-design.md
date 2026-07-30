@@ -82,17 +82,17 @@ export function resetAudioEngine(): void {
 
 ```
 function usePlayback(): {
-  play: () => void
+  play: (onProgress?: (elapsed: number) => void, onEnd?: () => void) => void
   stop: () => void
   isPlaying: boolean
-  progress: number
 }
 ```
 
 - 内部使用 Web Audio API (AudioBufferSourceNode)
 - 从 `getAudioEngine().audioContext` 获取 AudioContext
 - 调用 `getAudioEngine().getBuffer()` 获取数据
-- requestAnimationFrame 驱动进度
+- `play()` 接受可选的 `onProgress(elapsed)` 和 `onEnd()` 回调
+- `useEffect` 返回的 cleanup 函数在卸载时自动调用 `stop()`
 
 ## 文件变更
 

@@ -6,7 +6,6 @@ export function usePlayback() {
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   const rafRef = useRef<number | null>(null)
   const startTimeRef = useRef(0)
-  const totalDurationRef = useRef(0)
 
   const stop = useCallback(() => {
     if (sourceRef.current) {
@@ -43,7 +42,6 @@ export function usePlayback() {
     source.connect(audioCtx.destination)
 
     const totalDuration = samples.length / ae.sampleRate
-    totalDurationRef.current = totalDuration
     startTimeRef.current = audioCtx.currentTime
 
     source.onended = () => {
