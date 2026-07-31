@@ -7,6 +7,7 @@ export class AudioEngine {
   private _stream: MediaStream | null = null
   private _source: MediaStreamAudioSourceNode | null = null
   private _processor: ScriptProcessorNode | null = null
+  private _silentGain: GainNode | null = null
   private _sampleRate: number
   private _isCapturing: boolean = false
 
@@ -39,6 +40,15 @@ export class AudioEngine {
       onChunk(chunk, ctx.sampleRate)
     }
     this._source.connect(this._processor)
+    // Connect via silent gain node to keep the audio graph alive
+    // (ScriptProcessorNode only fires onaudioprocess when connected downstream).
+    // Direct connection to destination would create acoustic feedback that
+    // triggers browser AEC to suppress the mic signal.
+    const silentGain = ctx.createGain()
+    silentGain.gain.value = 0
+    this._processor.connect(silentGain)
+    silentGain.connect(ctx.destination)
+    this._silentGain = silentGain
 
     this._isCapturing = true
   }
@@ -48,6 +58,10 @@ export class AudioEngine {
     if (this._processor) {
       this._processor.disconnect()
       this._processor = null
+    }
+    if (this._silentGain) {
+      this._silentGain.disconnect()
+      this._silentGain = null
     }
     if (this._source) {
       this._source.disconnect()
