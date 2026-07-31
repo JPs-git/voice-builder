@@ -13,32 +13,20 @@ import { TipWidget } from '../components/TipWidget'
 import styles from './AnalysisPage.module.css'
 
 export function AnalysisPage() {
-  const {
-    isCapturing, isRequesting, isPlaying, hasData,
-    onRecord, onImport, onPlayback, onClear,
-    fileInputRef, handleFileChange,
-  } = useToolbar()
-  const { cursorTime } = usePlayback()
-
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
 
+  const { toolItems, handleClickTool, hasData, fileInputRef, handleFileChange } = useToolbar(
+    () => setConfigOpen(true),
+    () => setHelpOpen(true),
+    () => setAboutOpen(true),
+  )
+  const { cursorTime } = usePlayback()
+
   return (
     <div>
-      <Toolbar
-        isCapturing={isCapturing}
-        isRequesting={isRequesting}
-        hasData={hasData}
-        isPlaying={isPlaying}
-        onRecord={onRecord}
-        onImport={onImport}
-        onPlayback={onPlayback}
-        onClear={onClear}
-        onConfig={() => setConfigOpen(true)}
-        onHelp={() => setHelpOpen(true)}
-        onAbout={() => setAboutOpen(true)}
-      />
+      <Toolbar toolItems={toolItems} onToolClick={handleClickTool} />
 
       <main className={styles.content}>
         <TargetPresetBar />

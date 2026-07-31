@@ -1,49 +1,14 @@
 import logo from '../../assets/logo.png'
 import { Button } from './Button'
 import styles from './Toolbar.module.css'
+import type { ToolItem } from '../hooks/useToolbar'
 
 interface ToolbarProps {
-  isCapturing: boolean
-  isRequesting: boolean
-  hasData: boolean
-  isPlaying: boolean
-  onRecord: () => void
-  onImport: () => void
-  onPlayback: () => void
-  onClear: () => void
-  onConfig: () => void
-  onHelp: () => void
-  onAbout: () => void
+  toolItems: ToolItem[]
+  onToolClick: (toolId: string) => void
 }
 
-export function Toolbar({
-  isCapturing,
-  isRequesting,
-  hasData,
-  isPlaying,
-  onRecord,
-  onImport,
-  onPlayback,
-  onClear,
-  onConfig,
-  onHelp,
-  onAbout,
-}: ToolbarProps) {
-  const isRecording = isCapturing
-
-  let label: string
-  if (isRequesting) {
-    label = '麦克风授权中…'
-  } else if (isRecording) {
-    label = '停止录音'
-  } else if (hasData) {
-    label = '继续录音'
-  } else {
-    label = '开始录音'
-  }
-
-  const canPlayOrClear = hasData || isRecording
-
+export function Toolbar({ toolItems, onToolClick }: ToolbarProps) {
   return (
     <header className={styles.toolbar}>
       <div className={styles.brand}>
@@ -53,41 +18,18 @@ export function Toolbar({
       </div>
 
       <div className={styles.actions}>
-        <Button
-          id="btnRecord"
-          variant="primary"
-          icon={isRecording ? '■' : '●'}
-          label={label}
-          recording={isRecording}
-          onClick={onRecord}
-          disabled={isRequesting}
-        />
-
-        <Button id="btnImport" variant="ghost" icon="📁" label="导入 WAV" onClick={onImport} />
-
-        <Button
-          id="btnPlayback"
-          variant="ghost"
-          icon={isPlaying ? '■' : '♫'}
-          label={isPlaying ? '停止' : '回放'}
-          onClick={onPlayback}
-          disabled={!canPlayOrClear}
-        />
-
-        <Button
-          id="btnClear"
-          variant="ghost"
-          icon="↺"
-          label="清空"
-          onClick={onClear}
-          disabled={!canPlayOrClear}
-        />
-
-        <Button id="btnConfig" variant="ghost" icon="⚙" label="配置" aria-label="配置" onClick={onConfig} />
-
-        <Button id="btnHelp" variant="ghost" icon="?" label="帮助" onClick={onHelp} />
-
-        <Button id="btnAbout" variant="ghost" icon="ⓘ" label="关于" onClick={onAbout} />
+        {toolItems.map(item => (
+          <Button
+            key={item.id}
+            id={item.id}
+            variant={item.variant}
+            icon={item.icon}
+            label={item.label}
+            recording={item.recording}
+            disabled={item.disabled}
+            onClick={() => onToolClick(item.id)}
+          />
+        ))}
       </div>
     </header>
   )
