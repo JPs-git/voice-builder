@@ -2,9 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAppStore } from '../store/appStore'
 import { getAudioEngine } from '../ts'
 import { recordingBuffer } from '../audio/recordingBuffer'
-import { AnalysisPipeline } from '../../js/analysis-pipeline.js'
-import { parseWav } from '../../js/wav-parser.js'
-import { Resampler } from '../../js/resampler.js'
+import { AnalysisPipeline, parseWav, Resampler } from '../dsp'
 import type { AnalysisFrame } from '../types'
 
 export function useAnalysis() {
@@ -82,7 +80,7 @@ export function useAnalysis() {
         formantMethod: config.formantMethod,
         formantSmoothing: config.formantSmoothing,
         frameOffset: frameOffsetRef.current,
-      } as any)
+      })
 
       dataSourceRef.current = 'mic'
       setDataSource('mic')
@@ -120,9 +118,9 @@ export function useAnalysis() {
 
       stopRecording(false)
 
-      const parsed: any = parseWav(buf)
-      let samples = parsed.samples as Float32Array
-      let rate = parsed.sampleRate as number
+      const parsed = parseWav(buf)
+      let samples = parsed.samples
+      let rate = parsed.sampleRate
 
       if (rate !== 16000) {
         const r = new Resampler(rate, 16000)
@@ -139,8 +137,8 @@ export function useAnalysis() {
       const config = useAppStore.getState().config
 
       // Analyze first, then commit data
-      const frames: AnalysisFrame[] = AnalysisPipeline.analyze(
-        samples as any, 16000, config.formantMethod, config.formantSmoothing,
+      const frames = AnalysisPipeline.analyze(
+        samples, 16000, config.formantMethod, config.formantSmoothing,
       )
 
       // Commit: only after analysis succeeds

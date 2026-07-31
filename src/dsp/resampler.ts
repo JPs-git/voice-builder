@@ -1,14 +1,17 @@
 export class Resampler {
-  constructor(inputRate, outputRate = 16000) {
+  private ratio: number
+  private buffer: Float32Array
+
+  constructor(inputRate: number, outputRate: number = 16000) {
     this.ratio = outputRate / inputRate
     this.buffer = new Float32Array(0)
   }
 
-  reset() {
+  reset(): void {
     this.buffer = new Float32Array(0)
   }
 
-  process(input) {
+  process(input: Float32Array): Float32Array {
     const combined = new Float32Array(this.buffer.length + input.length)
     combined.set(this.buffer, 0)
     combined.set(input, this.buffer.length)

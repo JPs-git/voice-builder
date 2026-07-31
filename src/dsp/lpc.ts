@@ -1,6 +1,6 @@
-import { Complex } from './complex.js'
+import { Complex } from './complex'
 
-export function autocorrelate(signal, order) {
+export function autocorrelate(signal: Float32Array, order: number): number[] {
   const r = new Array(order + 1).fill(0)
   for (let k = 0; k <= order; k++) {
     let sum = 0
@@ -12,7 +12,7 @@ export function autocorrelate(signal, order) {
   return r
 }
 
-export function levinsonDurbin(r, order) {
+export function levinsonDurbin(r: number[], order: number): number[] {
   const a = new Array(order + 1).fill(0)
   a[0] = 1
   if (r[0] === 0) return a
@@ -39,7 +39,7 @@ export function levinsonDurbin(r, order) {
   return a
 }
 
-export function polyval(coeffs, z) {
+export function polyval(coeffs: number[], z: Complex): Complex {
   const n = coeffs.length - 1
   let result = new Complex(coeffs[n], 0)
   for (let i = n - 1; i >= 0; i--) {
@@ -48,7 +48,12 @@ export function polyval(coeffs, z) {
   return result
 }
 
-export function laguerre(coeffs, guess, maxIter = 100, tol = 1e-12) {
+export function laguerre(
+  coeffs: number[],
+  guess: Complex,
+  maxIter: number = 100,
+  tol: number = 1e-12,
+): Complex {
   const n = coeffs.length - 1
   if (n <= 0) return guess
   let x = guess
@@ -70,11 +75,11 @@ export function laguerre(coeffs, guess, maxIter = 100, tol = 1e-12) {
     const twoPpp = new Complex(2, 0).mul(ppp)
     const H = G.mul(G).sub(twoPpp.div(p))
     const radicand = new Complex(n - 1, 0).mul(
-      new Complex(n, 0).mul(H).sub(G.mul(G))
+      new Complex(n, 0).mul(H).sub(G.mul(G)),
     )
     const sqrtTerm = radicand.sqrt()
 
-    let denom
+    let denom: Complex
     if (G.add(sqrtTerm).abs() > G.sub(sqrtTerm).abs()) {
       denom = G.add(sqrtTerm)
     } else {
@@ -95,7 +100,7 @@ export function laguerre(coeffs, guess, maxIter = 100, tol = 1e-12) {
   return x
 }
 
-function deflateReal(a, r) {
+function deflateReal(a: number[], r: number): number[] {
   const n = a.length - 1
   const q = new Array(n)
   q[n - 1] = a[n]
@@ -105,7 +110,7 @@ function deflateReal(a, r) {
   return q
 }
 
-function deflateQuadratic(a, root) {
+function deflateQuadratic(a: number[], root: Complex): number[] {
   const n = a.length - 1
   const b = -2 * root.re
   const c = root.re * root.re + root.im * root.im
@@ -118,9 +123,8 @@ function deflateQuadratic(a, root) {
   return q
 }
 
-export function findRoots(coeffs) {
+export function findRoots(coeffs: number[]): Complex[] {
   let a = [...coeffs]
-  // Strip leading zeros (highest-degree coefficients that are zero)
   while (a.length > 1 && Math.abs(a[a.length - 1]) < 1e-15) {
     a.pop()
   }
@@ -129,7 +133,7 @@ export function findRoots(coeffs) {
   if (n <= 0) return []
   if (n === 1) return [new Complex(-a[0] / a[1], 0)]
 
-  const roots = []
+  const roots: Complex[] = []
   let rootIdx = 0
 
   while (a.length > 3) {
@@ -167,8 +171,13 @@ export function findRoots(coeffs) {
   return roots
 }
 
-export function rootsToFormants(roots, sampleRate) {
-  const formants = []
+export interface FormantPeak {
+  freq: number
+  bw: number
+}
+
+export function rootsToFormants(roots: Complex[], sampleRate: number): FormantPeak[] {
+  const formants: FormantPeak[] = []
   for (const root of roots) {
     if (root.im <= 0) continue
     const mag = root.abs()
@@ -187,7 +196,7 @@ export function rootsToFormants(roots, sampleRate) {
   return formants
 }
 
-export function detectPitch(signal, sampleRate) {
+export function detectPitch(signal: Float32Array, sampleRate: number): number | null {
   const minFreq = 60
   const maxFreq = 500
   const minPeriod = Math.max(Math.ceil(sampleRate / maxFreq), 1)
@@ -220,24 +229,16 @@ export function detectPitch(signal, sampleRate) {
   return sampleRate / maxIdx
 }
 
-export function isHarmonicLocked(f0, freq, bw) {
+export function isHarmonicLocked(f0: number | null, freq: number | null, bw: number | null): boolean {
   if (f0 == null || f0 <= 0 || freq == null || freq <= 0) return false
 
   const ratio = freq / f0
 
-  // If freq is too close to F0 (< 1.5x), it's F1 itself not a harmonic.
-  // F1 can have very narrow bandwidth when it almost coincides with F0.
   if (ratio < 1.5) return false
 
-  // Bandwidth anomaly: formant bandwidth < 30Hz is unphysiologically narrow,
-  // almost certainly a harmonic peak rather than a true formant.
   if (bw != null && bw < 30) return true
-
-  // If bandwidth is available and normal (>30Hz), it's a real formant regardless of ratio.
   if (bw != null && bw >= 30) return false
 
-  // Fallback when bandwidth is unavailable: check if freq is within 10% of an
-  // integer multiple of F0 (2x-4x) — likely a harmonic.
   const nearestInt = Math.round(ratio)
   if (nearestInt >= 2 && nearestInt <= 4) {
     if (Math.abs(ratio - nearestInt) / nearestInt < 0.10) return true
@@ -246,11 +247,13 @@ export function isHarmonicLocked(f0, freq, bw) {
   return false
 }
 
-export function extractFormants(signal, sampleRate, maxFormants = 5) {
+export function extractFormants(
+  signal: Float32Array,
+  sampleRate: number,
+  maxFormants: number = 5,
+): { f0: number | null; formants: FormantPeak[] } {
   const order = Math.min(16, Math.floor(signal.length / 3), Math.floor(sampleRate / 1000 + 4))
 
-  // Pre-emphasis: y[n] = x[n] - 0.99 * x[n-1] to reduce spectral tilt,
-  // helping LPC focus on formant peaks rather than the overall slope.
   const n = signal.length
   const emphasized = new Float32Array(n)
   emphasized[0] = signal[0]
@@ -258,7 +261,6 @@ export function extractFormants(signal, sampleRate, maxFormants = 5) {
     emphasized[i] = signal[i] - 0.99 * signal[i - 1]
   }
 
-  // Apply Hamming window to improve numerical conditioning
   const windowed = new Float32Array(n)
   for (let i = 0; i < n; i++) {
     windowed[i] = emphasized[i] * (0.54 - 0.46 * Math.cos(2 * Math.PI * i / (n - 1)))

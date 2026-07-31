@@ -1,4 +1,12 @@
-function readSample(view, offset, bitsPerSample) {
+export interface WavResult {
+  samples: Float32Array
+  sampleRate: number
+  numChannels: number
+  bitsPerSample: number
+  audioFormat: number
+}
+
+function readSample(view: DataView, offset: number, bitsPerSample: number): number {
   switch (bitsPerSample) {
     case 8:
       return (view.getUint8(offset) - 128) / 128
@@ -18,10 +26,11 @@ function readSample(view, offset, bitsPerSample) {
   }
 }
 
-export function parseWav(arrayBuffer) {
+export function parseWav(arrayBuffer: ArrayBuffer): WavResult {
   const view = new DataView(arrayBuffer)
+  const uint8 = new Uint8Array(arrayBuffer, 0, 4)
 
-  const riff = String.fromCharCode(...new Uint8Array(arrayBuffer, 0, 4))
+  const riff = String.fromCharCode(...uint8)
   if (riff !== 'RIFF') throw new Error('Not a RIFF file')
 
   const wave = String.fromCharCode(...new Uint8Array(arrayBuffer, 8, 4))

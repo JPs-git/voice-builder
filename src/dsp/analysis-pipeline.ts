@@ -1,37 +1,68 @@
-import { Resampler } from './resampler.js'
-import { FrameProcessor } from './frame-processor.js'
-import { fftMagnitudes } from './fft.js'
-import { detectPitch, extractFormants, isHarmonicLocked } from './lpc.js'
-import { extractFormantsCepstral } from './cepstral.js'
-import { VoiceActivityDetector } from './vad.js'
-import { FormantSmoother } from './formant-smoother.js'
+import { Resampler } from './resampler'
+import { FrameProcessor } from './frame-processor'
+import type { FrameData } from './frame-processor'
+import { fftMagnitudes } from './fft'
+import { detectPitch, extractFormants, isHarmonicLocked } from './lpc'
+import { extractFormantsCepstral } from './cepstral'
+import { VoiceActivityDetector } from './vad'
+import { FormantSmoother } from './formant-smoother'
+import type { SmootherFrame } from './formant-smoother'
 
 const TARGET_RATE = 16000
 const FRAME_SIZE = 800
 const HOP_SIZE = 160
 
+export interface PipelineOptions {
+  onFrame?: (frame: SmootherFrame) => void
+  vadThreshold?: number
+  formantMethod?: 'hybrid' | 'lpc' | 'cepstral'
+  frameOffset?: number
+  formantSmoothing?: boolean
+}
+
+export interface FormantResult {
+  freq: number
+  bw: number
+}
+
 export class AnalysisPipeline {
-  constructor({ onFrame, vadThreshold, formantMethod = 'hybrid', frameOffset = 0, formantSmoothing = true } = {}) {
-    this._resampler = null
-    this._frameProcessor = null
-    this.onFrame = onFrame
-    this._frameCount = 0
+  private _resampler: Resampler | null = null
+  private _frameProcessor: FrameProcessor | null = null
+  onFrame: ((frame: SmootherFrame) => void) | null
+  private _frameCount = 0
+  private _frameOffset: number
+  private _vad: VoiceActivityDetector
+  private _formantMethod: string
+  private _prevGoodF1: number | null = null
+  private _smoother: FormantSmoother | null
+
+  constructor({
+    onFrame,
+    vadThreshold,
+    formantMethod = 'hybrid',
+    frameOffset = 0,
+    formantSmoothing = true,
+  }: PipelineOptions = {}) {
     this._frameOffset = frameOffset
     this._vad = new VoiceActivityDetector({ threshold: vadThreshold })
     this._formantMethod = formantMethod
-    this._prevGoodF1 = null
     this._smoother = formantSmoothing ? new FormantSmoother() : null
+    this.onFrame = onFrame ?? null
   }
 
-  get frameCount() { return this._frameCount }
+  get frameCount(): number { return this._frameCount }
 
-  pushChunk(samples, inputSampleRate) {
+  pushChunk(samples: Float32Array, inputSampleRate: number): void {
     if (!this._frameProcessor) {
-      this._frameProcessor = new FrameProcessor({ sampleRate: TARGET_RATE, frameSize: FRAME_SIZE, hopSize: HOP_SIZE })
-      this._frameProcessor.onFrame = (frame) => {
+      this._frameProcessor = new FrameProcessor({
+        sampleRate: TARGET_RATE,
+        frameSize: FRAME_SIZE,
+        hopSize: HOP_SIZE,
+      })
+      this._frameProcessor.onFrame = (frame: FrameData) => {
         const { voiced } = this._vad.compute(frame.samples)
-        let f0 = null
-        let formants = []
+        let f0: number | null = null
+        let formants: FormantResult[] = []
         if (voiced) {
           f0 = detectPitch(frame.samples, frame.sampleRate)
           if (this._formantMethod === 'cepstral') {
@@ -39,51 +70,50 @@ export class AnalysisPipeline {
             formants = result.formants
           } else if (this._formantMethod === 'lpc') {
             const result = extractFormants(frame.samples, frame.sampleRate, 2)
-            let fmts = result.formants
+            const fmts = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
-                fmts[0] = null
+                fmts[0] = null as unknown as FormantResult
               }
             }
             formants = fmts
           } else {
-            let result = extractFormants(frame.samples, frame.sampleRate, 2)
-            let fmts = result.formants
+            const result = extractFormants(frame.samples, frame.sampleRate, 2)
+            const fmts = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               const f1Jump = this._prevGoodF1 != null ? Math.abs(fmts[0].freq - this._prevGoodF1) : 0
               if (f1Jump > 300 && fmts[0].freq > 600) {
                 const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2)
                 if (cepResult.formants[1] && cepResult.formants[1].freq > 0) {
                   if (cepResult.formants[0] && isHarmonicLocked(cepResult.f0, cepResult.formants[0].freq, cepResult.formants[0].bw)) {
-                    cepResult.formants[0] = null
+                    cepResult.formants[0] = null as unknown as FormantResult
                   }
-                  fmts = cepResult.formants
+                  formants = cepResult.formants
                 } else {
                   if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
-                    fmts[0] = null
+                    fmts[0] = null as unknown as FormantResult
                   }
                 }
               } else {
                 if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
-                  fmts[0] = null
+                  fmts[0] = null as unknown as FormantResult
                 }
               }
             } else {
               const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2)
               if (cepResult.formants[1] && cepResult.formants[1].freq > 0) {
                 if (cepResult.formants[0] && isHarmonicLocked(cepResult.f0, cepResult.formants[0].freq, cepResult.formants[0].bw)) {
-                  cepResult.formants[0] = null
+                  cepResult.formants[0] = null as unknown as FormantResult
                 }
-                fmts = cepResult.formants
+                formants = cepResult.formants
               }
             }
-            this._prevGoodF1 = fmts[0]?.freq ?? null
-            formants = fmts
+            this._prevGoodF1 = formants[0]?.freq ?? null
           }
         }
         const magnitudes = fftMagnitudes(frame.samples, 2048)
         this._frameCount++
-        let output = {
+        let output: SmootherFrame = {
           f0,
           f1: formants[0]?.freq ?? null,
           f2: formants[1]?.freq ?? null,
@@ -108,13 +138,13 @@ export class AnalysisPipeline {
     }
   }
 
-  flush() {
+  flush(): void {
     if (this._frameProcessor) {
       this._frameProcessor.push(new Float32Array(FRAME_SIZE))
     }
   }
 
-  reset() {
+  reset(): void {
     if (this._resampler) this._resampler.reset()
     if (this._frameProcessor) this._frameProcessor.reset()
     if (this._smoother) this._smoother.reset()
@@ -122,12 +152,17 @@ export class AnalysisPipeline {
     this._frameCount = 0
   }
 
-  static analyze(samples, sampleRate, formantMethod, formantSmoothing = true) {
+  static analyze(
+    samples: Float32Array,
+    sampleRate: number,
+    formantMethod: string,
+    formantSmoothing: boolean = true,
+  ): SmootherFrame[] {
     if (samples.length === 0) return []
-    const frames = []
+    const frames: SmootherFrame[] = []
     const pipeline = new AnalysisPipeline({
       onFrame: (frame) => frames.push(frame),
-      formantMethod,
+      formantMethod: formantMethod as 'hybrid' | 'lpc' | 'cepstral',
       formantSmoothing,
     })
     pipeline.pushChunk(samples, sampleRate)
