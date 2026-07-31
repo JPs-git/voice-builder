@@ -62,7 +62,7 @@ export class AnalysisPipeline {
       this._frameProcessor.onFrame = (frame: FrameData) => {
         const { voiced } = this._vad.compute(frame.samples)
         let f0: number | null = null
-        let formants: FormantResult[] = []
+        let formants: (FormantResult | null)[] = []
         if (voiced) {
           f0 = detectPitch(frame.samples, frame.sampleRate)
           if (this._formantMethod === 'cepstral') {
@@ -73,7 +73,7 @@ export class AnalysisPipeline {
             const fmts = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
-                fmts[0] = null as unknown as FormantResult
+                fmts[0] = null
               }
             }
             formants = fmts
@@ -86,24 +86,24 @@ export class AnalysisPipeline {
                 const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2)
                 if (cepResult.formants[1] && cepResult.formants[1].freq > 0) {
                   if (cepResult.formants[0] && isHarmonicLocked(cepResult.f0, cepResult.formants[0].freq, cepResult.formants[0].bw)) {
-                    cepResult.formants[0] = null as unknown as FormantResult
+                    cepResult.formants[0] = null
                   }
                   formants = cepResult.formants
                 } else {
                   if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
-                    fmts[0] = null as unknown as FormantResult
+                    fmts[0] = null
                   }
                 }
               } else {
                 if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
-                  fmts[0] = null as unknown as FormantResult
+                  fmts[0] = null
                 }
               }
             } else {
               const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2)
               if (cepResult.formants[1] && cepResult.formants[1].freq > 0) {
                 if (cepResult.formants[0] && isHarmonicLocked(cepResult.f0, cepResult.formants[0].freq, cepResult.formants[0].bw)) {
-                  cepResult.formants[0] = null as unknown as FormantResult
+                  cepResult.formants[0] = null
                 }
                 formants = cepResult.formants
               }
