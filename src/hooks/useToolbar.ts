@@ -24,6 +24,7 @@ export function useToolbar(
     onClear: analysisClear,
     isCapturing,
     isRequesting,
+    dataSource,
     fileInputRef,
     handleFileChange,
   } = useAnalysis()
@@ -79,7 +80,7 @@ export function useToolbar(
     ? '麦克风授权中…'
     : isCapturing
       ? '停止录音'
-      : hasData
+      : hasData && dataSource === 'mic'
         ? '继续录音'
         : '开始录音'
 
@@ -130,7 +131,7 @@ export function useToolbar(
       icon: 'ⓘ',
       label: '关于',
     },
-  ], [isCapturing, isRequesting, isPlaying, hasData, recorderLabel])
+  ], [isCapturing, isRequesting, isPlaying, hasData, dataSource, recorderLabel])
 
   return { toolItems, handleClickTool, isCapturing, hasData, cursorTime, fileInputRef, handleFileChange }
 }

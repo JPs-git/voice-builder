@@ -11,6 +11,7 @@ export function useAnalysis() {
   const pipelineRef = useRef<InstanceType<typeof AnalysisPipeline> | null>(null)
   const frameOffsetRef = useRef(0)
   const dataSourceRef = useRef<'mic' | 'file'>('mic')
+  const [dataSource, setDataSource] = useState<'mic' | 'file'>('mic')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isCapturing, setIsCapturing] = useState(false)
   const [isRequesting, setIsRequesting] = useState(false)
@@ -72,6 +73,7 @@ export function useAnalysis() {
     try {
       await getAudioEngine().startCapture(onAudioChunk)
       dataSourceRef.current = 'mic'
+      setDataSource('mic')
       setIsCapturing(true)
     } catch (err) {
       console.error('Failed to start recording:', err)
@@ -92,6 +94,8 @@ export function useAnalysis() {
     recordingBuffer.clear()
     useAppStore.getState().reset()
     frameOffsetRef.current = 0
+    dataSourceRef.current = 'mic'
+    setDataSource('mic')
   }, [isCapturing])
 
   // ── WAV import ──
@@ -132,6 +136,7 @@ export function useAnalysis() {
       recordingBuffer.clear()
       recordingBuffer.write(samples)
       dataSourceRef.current = 'file'
+      setDataSource('file')
       frameOffsetRef.current = 0
 
       useAppStore.getState().reset()
@@ -159,6 +164,7 @@ export function useAnalysis() {
     onClear,
     isCapturing,
     isRequesting,
+    dataSource,
     fileInputRef,
     handleFileChange,
   }
