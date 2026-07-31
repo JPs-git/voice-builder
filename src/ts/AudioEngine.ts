@@ -39,7 +39,6 @@ export class AudioEngine {
       onChunk(chunk, ctx.sampleRate)
     }
     this._source.connect(this._processor)
-    this._processor.connect(ctx.destination)
 
     this._isCapturing = true
   }
