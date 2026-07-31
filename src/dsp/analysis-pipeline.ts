@@ -78,8 +78,8 @@ export class AnalysisPipeline {
             }
             formants = fmts
           } else {
-            const result = extractFormants(frame.samples, frame.sampleRate, 2)
-            const fmts = result.formants
+            let result = extractFormants(frame.samples, frame.sampleRate, 2)
+            let fmts = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               const f1Jump = this._prevGoodF1 != null ? Math.abs(fmts[0].freq - this._prevGoodF1) : 0
               if (f1Jump > 300 && fmts[0].freq > 600) {
@@ -88,7 +88,7 @@ export class AnalysisPipeline {
                   if (cepResult.formants[0] && isHarmonicLocked(cepResult.f0, cepResult.formants[0].freq, cepResult.formants[0].bw)) {
                     cepResult.formants[0] = null
                   }
-                  formants = cepResult.formants
+                  fmts = cepResult.formants
                 } else {
                   if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
                     fmts[0] = null
@@ -105,10 +105,11 @@ export class AnalysisPipeline {
                 if (cepResult.formants[0] && isHarmonicLocked(cepResult.f0, cepResult.formants[0].freq, cepResult.formants[0].bw)) {
                   cepResult.formants[0] = null
                 }
-                formants = cepResult.formants
+                fmts = cepResult.formants
               }
             }
-            this._prevGoodF1 = formants[0]?.freq ?? null
+            this._prevGoodF1 = fmts[0]?.freq ?? null
+            formants = fmts
           }
         }
         const magnitudes = fftMagnitudes(frame.samples, 2048)

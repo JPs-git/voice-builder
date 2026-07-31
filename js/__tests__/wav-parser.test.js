@@ -1,17 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { parseWav } from '../../dsp/wav-parser'
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import { parseWav } from '../../src/dsp/wav-parser.ts'
 
-function makeWav({
-  sampleRate = 44100,
-  numChannels = 1,
-  bitsPerSample = 16,
-  samples,
-}: {
-  sampleRate?: number
-  numChannels?: number
-  bitsPerSample?: number
-  samples?: Float32Array
-} = {}): ArrayBuffer {
+function makeWav({ sampleRate = 44100, numChannels = 1, bitsPerSample = 16, samples = null }) {
   const bytesPerSample = bitsPerSample / 8
   const numSamples = samples ? samples.length : 10
   const dataSize = numSamples * numChannels * bytesPerSample
@@ -20,7 +11,7 @@ function makeWav({
   const view = new DataView(buf)
   let off = 0
 
-  const writeStr = (s: string) => {
+  const writeStr = (s) => {
     for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i))
     off += s.length
   }
@@ -30,7 +21,7 @@ function makeWav({
   writeStr('WAVE')
   writeStr('fmt ')
   view.setUint32(off, 16, true); off += 4
-  view.setUint16(off, 1, true); off += 2
+  view.setUint16(off, 1, true); off += 2 // PCM
   view.setUint16(off, numChannels, true); off += 2
   view.setUint32(off, sampleRate, true); off += 4
   view.setUint32(off, sampleRate * numChannels * bytesPerSample, true); off += 4
@@ -82,78 +73,106 @@ describe('parseWav', () => {
     const buf = makeWav({ sampleRate: 44100, numChannels: 1, bitsPerSample: 16, samples })
     const result = parseWav(buf)
 
-    expect(result.sampleRate).toBe(44100)
-    expect(result.numChannels).toBe(1)
-    expect(result.bitsPerSample).toBe(16)
-    expect(result.audioFormat).toBe(1)
-    expect(result.samples.length).toBe(100)
+    assert.equal(result.sampleRate, 44100)
+    assert.equal(result.numChannels, 1)
+    assert.equal(result.bitsPerSample, 16)
+    assert.equal(result.audioFormat, 1)
+    assert.equal(result.samples.length, 100)
+    for (let i = 0; i < 100; i++) {
+      assert.ok(Math.abs(result.samples[i] - samples[i]) < 0.01, `sample ${i} mismatch`)
+    }
   })
 
   it('parses 8-bit mono WAV', () => {
     const samples = new Float32Array(50)
     for (let i = 0; i < 50; i++) samples[i] = Math.sin(2 * Math.PI * 200 * i / 8000)
 
-    const result = parseWav(makeWav({ sampleRate: 8000, bitsPerSample: 8, samples }))
-    expect(result.sampleRate).toBe(8000)
-    expect(result.bitsPerSample).toBe(8)
+    const result = parseWav(makeWav({ sampleRate: 8000, numChannels: 1, bitsPerSample: 8, samples }))
+    assert.equal(result.sampleRate, 8000)
+    assert.equal(result.bitsPerSample, 8)
+    assert.equal(result.samples.length, 50)
   })
 
   it('parses 24-bit mono WAV', () => {
     const samples = new Float32Array(50)
     for (let i = 0; i < 50; i++) samples[i] = Math.sin(2 * Math.PI * 300 * i / 48000)
 
-    const result = parseWav(makeWav({ sampleRate: 48000, bitsPerSample: 24, samples }))
-    expect(result.bitsPerSample).toBe(24)
+    const result = parseWav(makeWav({ sampleRate: 48000, numChannels: 1, bitsPerSample: 24, samples }))
+    assert.equal(result.sampleRate, 48000)
+    assert.equal(result.bitsPerSample, 24)
+    assert.equal(result.samples.length, 50)
   })
 
   it('parses 32-bit float mono WAV', () => {
     const samples = new Float32Array(50)
     for (let i = 0; i < 50; i++) samples[i] = Math.sin(2 * Math.PI * 440 * i / 44100)
 
-    const result = parseWav(makeWav({ bitsPerSample: 32, samples }))
-    expect(result.bitsPerSample).toBe(32)
+    const result = parseWav(makeWav({ sampleRate: 44100, numChannels: 1, bitsPerSample: 32, samples }))
+    assert.equal(result.sampleRate, 44100)
+    assert.equal(result.bitsPerSample, 32)
+    assert.equal(result.samples.length, 50)
   })
 
-  it('reads first channel from stereo', () => {
+  it('reads first channel from stereo WAV', () => {
     const mono = new Float32Array(10)
     for (let i = 0; i < 10; i++) mono[i] = Math.sin(2 * Math.PI * 440 * i / 44100)
 
-    const result = parseWav(makeWav({ numChannels: 2, bitsPerSample: 16, samples: mono }))
-    expect(result.samples.length).toBe(10)
-    expect(result.numChannels).toBe(2)
+    const buf = makeWav({ sampleRate: 44100, numChannels: 2, bitsPerSample: 16, samples: mono })
+    const result = parseWav(buf)
+    assert.equal(result.samples.length, 10)
+    assert.equal(result.numChannels, 2)
   })
 
   it('throws for non-RIFF', () => {
     const buf = new ArrayBuffer(44)
-    expect(() => parseWav(buf)).toThrow('Not a RIFF file')
+    assert.throws(() => parseWav(buf), /Not a RIFF file/)
   })
 
   it('throws for non-WAVE', () => {
     const buf = new ArrayBuffer(44)
     const view = new DataView(buf)
     let off = 0
-    const w = (s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); off += s.length }
+    const w = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); off += s.length }
     w('RIFF')
     view.setUint32(off, 36, true); off += 4
     w('NotWAVE')
-    expect(() => parseWav(buf)).toThrow('Not a WAV file')
+    assert.throws(() => parseWav(buf), /Not a WAV file/)
   })
 
   it('throws for missing fmt chunk', () => {
     const buf = new ArrayBuffer(12 + 8 + 8)
     const view = new DataView(buf)
     let off = 0
-    const w = (s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); off += s.length }
+    const w = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); off += s.length }
     w('RIFF')
     view.setUint32(off, buf.byteLength - 8, true); off += 4
     w('WAVE')
     w('data')
-    view.setUint32(off, 0, true)
-    expect(() => parseWav(buf)).toThrow('fmt chunk not found')
+    view.setUint32(off, 0, true); off += 4
+    assert.throws(() => parseWav(buf), /fmt chunk not found/)
+  })
+
+  it('throws for missing data chunk', () => {
+    const buf = new ArrayBuffer(12 + 8 + 24)
+    const view = new DataView(buf)
+    let off = 0
+    const w = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); off += s.length }
+    w('RIFF')
+    view.setUint32(off, buf.byteLength - 8, true); off += 4
+    w('WAVE')
+    w('fmt ')
+    view.setUint32(off, 16, true); off += 4
+    view.setUint16(off, 1, true); off += 2
+    view.setUint16(off, 1, true); off += 2
+    view.setUint32(off, 44100, true); off += 4
+    view.setUint32(off, 88200, true); off += 4
+    view.setUint16(off, 2, true); off += 2
+    view.setUint16(off, 16, true); off += 2
+    assert.throws(() => parseWav(buf), /data chunk not found/)
   })
 
   it('throws for unsupported bitsPerSample', () => {
     const samples = new Float32Array(10)
-    expect(() => parseWav(makeWav({ bitsPerSample: 64, samples }))).toThrow('Unsupported')
+    assert.throws(() => parseWav(makeWav({ sampleRate: 44100, bitsPerSample: 64, samples })), /Unsupported/)
   })
 })
