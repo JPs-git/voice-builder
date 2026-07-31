@@ -4,10 +4,14 @@ const DEAD_ZONE = 50
 type FormantKey = 'f0' | 'f1' | 'f2'
 
 export interface SmootherFrame {
+  time: number
   f0: number | null
   f1: number | null
   f2: number | null
-  [key: string]: unknown
+  f3?: number | null
+  f4?: number | null
+  voiced?: boolean
+  magnitudes?: Float32Array
 }
 
 export class FormantSmoother {

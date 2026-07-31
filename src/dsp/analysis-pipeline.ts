@@ -70,7 +70,7 @@ export class AnalysisPipeline {
             formants = result.formants
           } else if (this._formantMethod === 'lpc') {
             const result = extractFormants(frame.samples, frame.sampleRate, 2)
-            const fmts = result.formants
+            const fmts: (FormantResult | null)[] = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
                 fmts[0] = null
@@ -79,16 +79,17 @@ export class AnalysisPipeline {
             formants = fmts
           } else {
             let result = extractFormants(frame.samples, frame.sampleRate, 2)
-            let fmts = result.formants
+            let fmts: (FormantResult | null)[] = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
-              const f1Jump = this._prevGoodF1 != null ? Math.abs(fmts[0].freq - this._prevGoodF1) : 0
-              if (f1Jump > 300 && fmts[0].freq > 600) {
+              const f1Jump = this._prevGoodF1 != null ? Math.abs(fmts[0]!.freq - this._prevGoodF1) : 0
+              if (f1Jump > 300 && fmts[0]!.freq > 600) {
                 const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2)
-                if (cepResult.formants[1] && cepResult.formants[1].freq > 0) {
-                  if (cepResult.formants[0] && isHarmonicLocked(cepResult.f0, cepResult.formants[0].freq, cepResult.formants[0].bw)) {
-                    cepResult.formants[0] = null
+                const cepFormants: (FormantResult | null)[] = cepResult.formants
+                if (cepFormants[1] && cepFormants[1].freq > 0) {
+                  if (cepFormants[0] && isHarmonicLocked(cepResult.f0, cepFormants[0].freq, cepFormants[0].bw)) {
+                    cepFormants[0] = null
                   }
-                  fmts = cepResult.formants
+                  fmts = cepFormants
                 } else {
                   if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
                     fmts[0] = null
@@ -101,11 +102,12 @@ export class AnalysisPipeline {
               }
             } else {
               const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2)
-              if (cepResult.formants[1] && cepResult.formants[1].freq > 0) {
-                if (cepResult.formants[0] && isHarmonicLocked(cepResult.f0, cepResult.formants[0].freq, cepResult.formants[0].bw)) {
-                  cepResult.formants[0] = null
+              const cepFormants: (FormantResult | null)[] = cepResult.formants
+              if (cepFormants[1] && cepFormants[1].freq > 0) {
+                if (cepFormants[0] && isHarmonicLocked(cepResult.f0, cepFormants[0].freq, cepFormants[0].bw)) {
+                  cepFormants[0] = null
                 }
-                fmts = cepResult.formants
+                fmts = cepFormants
               }
             }
             this._prevGoodF1 = fmts[0]?.freq ?? null

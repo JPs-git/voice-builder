@@ -3,6 +3,9 @@ export class Resampler {
   private buffer: Float32Array
 
   constructor(inputRate: number, outputRate: number = 16000) {
+    if (!Number.isFinite(inputRate) || inputRate <= 0) {
+      throw new Error(`Invalid inputRate: ${inputRate}`)
+    }
     this.ratio = outputRate / inputRate
     this.buffer = new Float32Array(0)
   }

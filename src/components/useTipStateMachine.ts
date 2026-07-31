@@ -81,7 +81,7 @@ export function useTipStateMachine(
   }, [tips.length])
 
   const wrappedDispatch = useCallback(
-    (action: TipAction) => {
+    (action: TipAction | { type: 'OPEN' }) => {
       if (action.type === 'OPEN') {
         dispatch({ type: 'OPEN', index: pickNextIndex() })
         return

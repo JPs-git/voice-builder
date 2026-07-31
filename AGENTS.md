@@ -7,13 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Vite dev server |
-| `npm test` | All tests (DSP + Vitest) |
-| `npm run test:dsp` | DSP tests only (`node --test js/__tests__/`) |
-| `npm run test:unit` | React tests only (`npx vitest run`) |
+| `npm test` | All tests (`npx vitest run`) |
+| `npm run test:dsp` | DSP tests only (`npx vitest run js/__tests__/`) |
+| `npm run test:unit` | React tests only (`npx vitest run src/__tests__/`) |
 | `npx vitest run src/__tests__/Foo.test.ts` | Run single test file |
 | `npm run build` | Production build to `dist/` |
+| `npx tsc --noEmit` | Typecheck |
 
-No linter, formatter, or typecheck configured.
+No linter or formatter configured.
 
 ## Architecture
 
@@ -52,13 +53,14 @@ playback:
 | `src/components/ConfigDrawer.tsx` | Reads/writes appStore.config |
 | `src/types/index.ts` | Shared types: AnalysisFrame, TargetBands, AppConfig, VowelPresets. No AppPhase or ChartHandles |
 
-### DSP layer (vanilla JS, in `js/`)
+### DSP layer (TypeScript, in `src/dsp/`)
 
-- `analysis-pipeline.js` -- orchestrator: FRAME_SIZE=800 (50ms), HOP_SIZE=160. Three methods: `hybrid` (default, LPC + cepstral fallback), `lpc`, `cepstral`
-- `lpc.js` -- autocorrelation + Levinson-Durbin + Laguerre root-finding
-- `cepstral.js` -- 2048-FFT cepstral envelope + peak-picking
-- `formant-smoother.js` -- 5-frame median, 300Hz jump clamp, F0<F1<F2 ordering
-- `wav-parser.js`, `resampler.js`, `vad.js`, `fft.js`, `frame-processor.js`
+- `analysis-pipeline.ts` -- orchestrator: FRAME_SIZE=800 (50ms), HOP_SIZE=160. Three methods: `hybrid` (default, LPC + cepstral fallback), `lpc`, `cepstral`
+- `lpc.ts` -- autocorrelation + Levinson-Durbin + Laguerre root-finding
+- `cepstral.ts` -- 2048-FFT cepstral envelope + peak-picking
+- `formant-smoother.ts` -- 5-frame median, 300Hz jump clamp, F0<F1<F2 ordering
+- `wav-parser.ts`, `resampler.ts`, `vad.ts`, `fft.ts`, `frame-processor.ts`, `complex.ts`, `RingBuffer.ts`
+- All modules exported via `src/dsp/index.ts` barrel
 - DSP is synchronous, runs in `onaudioprocess` callback (main thread, ~100fps)
 - Pipeline used standalone for WAV import: `AnalysisPipeline.analyze(samples, rate, method, smoothing)` (static)
 
@@ -82,8 +84,9 @@ Data-clearing uses `clearFrames()` (clears frames only, preserves config/bands).
 
 ### Testing
 
-- DSP tests: `node --test` in `js/__tests__/` (Praat regression, FFT, LPC, cepstral, VAD, etc.)
-- React tests: Vitest + @testing-library/react in `src/__tests__/`
+- All tests run under Vitest 3 (two projects: `dsp` in node env, `unit` in jsdom)
+- DSP tests: `js/__tests__/*.test.js` (Praat regression, FFT, LPC, cepstral, VAD, etc.), import from `src/dsp/*.ts`
+- React tests: `src/__tests__/` with @testing-library/react
 - Zustand stores tested directly via `getState().action()` -- no React wrapper needed
 
 ## Docs

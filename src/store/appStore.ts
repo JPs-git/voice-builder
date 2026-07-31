@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AppConfig, TargetBands, AnalysisFrame } from '../types'
+import type { AppConfig, TargetBands, AnalysisFrame, AnalysisStats } from '../types'
 import { DEFAULT_CONFIG, VOWEL_PRESETS } from '../types'
 
 const WINDOW_FRAMES = 1000
