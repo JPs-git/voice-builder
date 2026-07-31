@@ -25,7 +25,7 @@ const VOWELS = [
   { id: 'yu', f1Ref: 330, f2Ref: 2050 },
 ]
 
-describe.skip('Praat regression', () => {
+describe('Praat regression', () => {
   for (const { id } of VOWELS) {
     it(`${id}: F1/F2 error < 10% on stable region (hybrid + smoother)`, () => {
       const fileBuf = readFileSync(path.join(ASSETS, `${id}.wav`))
