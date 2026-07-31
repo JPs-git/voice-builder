@@ -1,6 +1,6 @@
 {
   "name": "voice-builder",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Web-based voice training tool with real-time spectrogram and formant analysis",
   "type": "module",
   "scripts": {
