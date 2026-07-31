@@ -27,7 +27,7 @@ export function useToolbar(
     fileInputRef,
     handleFileChange,
   } = useAnalysis()
-  const { play, stop, isPlaying } = usePlayback()
+  const { play, stop, isPlaying, cursorTime } = usePlayback()
 
   const hasData = isCapturing || frames.length > 0
 
@@ -127,5 +127,5 @@ export function useToolbar(
     },
   ], [isCapturing, isRequesting, isPlaying, hasData, recorderLabel])
 
-  return { toolItems, handleClickTool, isCapturing, hasData, fileInputRef, handleFileChange }
+  return { toolItems, handleClickTool, isCapturing, hasData, cursorTime, fileInputRef, handleFileChange }
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useToolbar } from '../hooks/useToolbar'
-import { usePlayback } from '../hooks/usePlayback'
 import { Toolbar } from '../components/Toolbar'
 import { TargetPresetBar } from '../components/TargetPresetBar'
 import { F0Chart } from '../components/F0Chart'
@@ -17,12 +16,12 @@ export function AnalysisPage() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
 
-  const { toolItems, handleClickTool, hasData, fileInputRef, handleFileChange } = useToolbar(
-    () => setConfigOpen(true),
-    () => setHelpOpen(true),
-    () => setAboutOpen(true),
-  )
-  const { cursorTime } = usePlayback()
+  const { toolItems, handleClickTool, hasData, cursorTime, fileInputRef, handleFileChange }
+    = useToolbar(
+      () => setConfigOpen(true),
+      () => setHelpOpen(true),
+      () => setAboutOpen(true),
+    )
 
   return (
     <div>
