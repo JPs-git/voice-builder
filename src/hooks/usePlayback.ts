@@ -1,10 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { getAudioEngine } from '../ts'
-import { getAnalysisService } from '../services/AnalysisService'
 import { useAnalysisStore } from '../store/analysisStore'
 import { useFrameStore } from '../store/frameStore'
 
-export function usePlayback() {
+export function usePlayback(getSamples?: () => Float32Array) {
   const [isPlaying, setIsPlaying] = useState(false)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   const rafRef = useRef<number | null>(null)
@@ -31,10 +30,9 @@ export function usePlayback() {
       useAnalysisStore.getState().setPhase('ready')
     }
 
-    // Get samples from Service
-    const service = getAnalysisService()
-    const samples = service.getPlaybackSamples()
-    if (samples.length === 0) return
+    // Get samples from provider
+    const samples = getSamples?.()
+    if (!samples || samples.length === 0) return
 
     if (sourceRef.current) {
       try { sourceRef.current.stop() } catch {}
@@ -76,7 +74,7 @@ export function usePlayback() {
       }
     }
     rafRef.current = requestAnimationFrame(tick)
-  }, [])
+  }, [getSamples])
 
   useEffect(() => {
     return () => stop()

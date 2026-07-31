@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAnalysisStore } from '../store/analysisStore'
 import { useFrameStore } from '../store/frameStore'
-import { useAnalysisService } from '../hooks/useAnalysisService'
+import { useAnalysis } from '../hooks/useAnalysis'
 import { usePlayback } from '../hooks/usePlayback'
 import { Toolbar } from '../components/Toolbar'
 import { TargetPresetBar } from '../components/TargetPresetBar'
@@ -16,11 +16,9 @@ import styles from './AnalysisPage.module.css'
 
 export function AnalysisPage() {
   const phase = useAnalysisStore(s => s.phase)
-  const config = useAnalysisStore(s => s.config)
-  const setConfig = useAnalysisStore(s => s.setConfig)
   const hasFrames = useFrameStore(s => s.frames.length > 0)
-  const { importWav, fileInputRef, handleFileChange } = useAnalysisService()
-  const { play: startPlayback, stop: stopPlayback, isPlaying } = usePlayback()
+  const { importWav, getPlaybackSamples, fileInputRef, handleFileChange } = useAnalysis()
+  const { play: startPlayback, stop: stopPlayback, isPlaying } = usePlayback(getPlaybackSamples)
 
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -88,8 +86,6 @@ export function AnalysisPage() {
 
       <ConfigDrawer
         open={configOpen}
-        config={config}
-        onChange={cfg => setConfig(cfg)}
         onClose={() => setConfigOpen(false)}
       />
 
