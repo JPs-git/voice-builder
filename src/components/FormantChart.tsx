@@ -1,8 +1,7 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect } from 'react'
 import { useECharts } from '../hooks/useECharts'
 import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame, TargetBands } from '../types'
-import { VOWEL_PRESETS } from '../types'
 
 const WINDOW = 10
 const FREQ_MAX = 3500
@@ -11,13 +10,6 @@ const COLORS = {
   f0: '#1F2937',
   f1: '#E23E57',
   f2: '#3B82F6',
-}
-
-const vowelA = VOWEL_PRESETS['vowel-a']
-const DEFAULT_BANDS: TargetBands = {
-  f0: { range: vowelA.f0, color: '#10B981' },
-  f1: { range: vowelA.f1, color: '#3B82F6' },
-  f2: { range: vowelA.f2, color: '#F59E0B' },
 }
 
 function hexToRgba(hex: string, alpha: number): string {

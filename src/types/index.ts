@@ -59,16 +59,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   formantSmoothing: true,
 }
 
-/** @deprecated 将在 Phase 3 被 frameStore 响应式订阅替代 */
-export interface ChartHandles {
-  pushFrame: (frame: AnalysisFrame) => void
-  displayAll: (frames: AnalysisFrame[]) => void
-  setLiveMode: () => void
-  setTargetBands: (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => void
-  setCursorTime: (time: number) => void
-  setSeriesVisible?: (key: string, visible: boolean) => void
-  clear: () => void
-}
 
 export interface AnalysisStats {
   f0Mean: number | null
