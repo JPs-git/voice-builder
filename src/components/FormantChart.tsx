@@ -1,7 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 import { useECharts } from '../hooks/useECharts'
-import { useFrameStore } from '../store/frameStore'
-import { useAnalysisStore } from '../store/analysisStore'
+import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame, TargetBands } from '../types'
 import { VOWEL_PRESETS } from '../types'
 
@@ -48,13 +47,13 @@ function buildMarkLine(band: { range: [number, number]; color: string }, name: s
 }
 
 interface FormantChartProps {
+  cursorTime?: number
   onFrameClick?: (frame: AnalysisFrame) => void
 }
 
-export function FormantChart({ onFrameClick }: FormantChartProps) {
-  const frames = useFrameStore(s => s.frames)
-  const cursorTime = useFrameStore(s => s.cursorTime)
-  const bands = useAnalysisStore(s => s.bands)
+export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProps) {
+  const frames = useAppStore(s => s.frames)
+  const bands = useAppStore(s => s.bands)
   const { chartRef, setOption, getInstance } = useECharts()
   const rafRef = useRef<number | null>(null)
   const isLiveRef = useRef(false)
@@ -86,7 +85,7 @@ export function FormantChart({ onFrameClick }: FormantChartProps) {
     const handler = (params: any) => {
       const t = params.value?.[0]
       if (t == null) return
-      const data = useFrameStore.getState().frames
+      const data = useAppStore.getState().frames
       let best: AnalysisFrame | null = null
       let bestDist = Infinity
       for (const f of data) {

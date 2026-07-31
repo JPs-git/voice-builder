@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { useAnalysisStore } from '../store/analysisStore'
-import { useFrameStore } from '../store/frameStore'
+import { useAppStore } from '../store/appStore'
 import { useAnalysis } from '../hooks/useAnalysis'
 import { usePlayback } from '../hooks/usePlayback'
 import { Toolbar } from '../components/Toolbar'
@@ -15,25 +14,32 @@ import { TipWidget } from '../components/TipWidget'
 import styles from './AnalysisPage.module.css'
 
 export function AnalysisPage() {
-  const phase = useAnalysisStore(s => s.phase)
-  const hasFrames = useFrameStore(s => s.frames.length > 0)
-  const { importWav, getPlaybackSamples, fileInputRef, handleFileChange } = useAnalysis()
-  const { play: startPlayback, stop: stopPlayback, isPlaying } = usePlayback(getPlaybackSamples)
+  const frames = useAppStore(s => s.frames)
+  const {
+    onRecord, onImport, onClear,
+    isCapturing, isRequesting,
+    fileInputRef, handleFileChange,
+  } = useAnalysis()
+  const { play, stop, isPlaying, cursorTime } = usePlayback()
 
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
 
-  const hasData = phase === 'recording' || phase === 'ready' || hasFrames
+  const hasData = isCapturing || frames.length > 0
 
   return (
     <div>
       <Toolbar
-        phase={phase}
+        isCapturing={isCapturing}
+        isRequesting={isRequesting}
+        hasData={hasData}
         isPlaying={isPlaying}
-        onImport={importWav}
-        onPlayback={startPlayback}
-        onStopPlayback={stopPlayback}
+        onRecord={onRecord}
+        onImport={onImport}
+        onPlayback={play}
+        onStopPlayback={stop}
+        onClear={onClear}
         onConfig={() => setConfigOpen(true)}
         onHelp={() => setHelpOpen(true)}
         onAbout={() => setAboutOpen(true)}
@@ -49,7 +55,7 @@ export function AnalysisPage() {
                 <h2 className={styles.cardTitle}>基频</h2>
               </div>
               <div className={styles.chartArea}>
-                <F0Chart />
+                <F0Chart cursorTime={cursorTime} />
                 <EmptyState
                   title="还没有声音数据"
                   description="🎤 点击顶栏'开始录音'试试"
@@ -70,7 +76,7 @@ export function AnalysisPage() {
                 </div>
               </div>
               <div className={styles.chartArea}>
-                <FormantChart />
+                <FormantChart cursorTime={cursorTime} />
                 <EmptyState
                   title="曲线待生成"
                   description="录音或导入音频后显示共振峰曲线"

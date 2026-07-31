@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { getAudioEngine } from '../ts'
-import { useAnalysisStore } from '../store/analysisStore'
-import { useFrameStore } from '../store/frameStore'
+import { recordingBuffer } from '../audio/recordingBuffer'
+import { useAppStore } from '../store/appStore'
 
-export function usePlayback(getSamples?: () => Float32Array) {
+export function usePlayback() {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [cursorTime, setCursorTime] = useState(-1)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   const rafRef = useRef<number | null>(null)
   const startTimeRef = useRef(0)
@@ -19,20 +20,16 @@ export function usePlayback(getSamples?: () => Float32Array) {
       rafRef.current = null
     }
     setIsPlaying(false)
-    useFrameStore.getState().setCursorTime(-1)
+    setCursorTime(-1)
   }, [])
 
   const play = useCallback(() => {
-    const phase = useAnalysisStore.getState().phase
+    // Stop recording if active — read isCapturing via a different mechanism
+    // Actually, usePlayback doesn't need to know about recording state.
+    // The caller (onPlayback in Toolbar) should handle that if needed.
 
-    // Stop recording if active
-    if (phase === 'recording') {
-      useAnalysisStore.getState().setPhase('ready')
-    }
-
-    // Get samples from provider
-    const samples = getSamples?.()
-    if (!samples || samples.length === 0) return
+    const samples = recordingBuffer.read()
+    if (samples.length === 0) return
 
     if (sourceRef.current) {
       try { sourceRef.current.stop() } catch {}
@@ -45,7 +42,7 @@ export function usePlayback(getSamples?: () => Float32Array) {
     const ae = getAudioEngine()
     const { source, totalDuration } = ae.createPlaybackSource(samples)
 
-    const firstTime = useFrameStore.getState().frames[0]?.time ?? 0
+    const firstTime = useAppStore.getState().frames[0]?.time ?? 0
     startTimeRef.current = ae.audioContext.currentTime
 
     source.onended = () => {
@@ -55,7 +52,7 @@ export function usePlayback(getSamples?: () => Float32Array) {
       }
       sourceRef.current = null
       setIsPlaying(false)
-      useFrameStore.getState().setCursorTime(-1)
+      setCursorTime(-1)
     }
 
     source.start()
@@ -68,17 +65,17 @@ export function usePlayback(getSamples?: () => Float32Array) {
         ae.audioContext.currentTime - startTimeRef.current,
         totalDuration,
       )
-      useFrameStore.getState().setCursorTime(elapsed + firstTime)
+      setCursorTime(elapsed + firstTime)
       if (elapsed < totalDuration) {
         rafRef.current = requestAnimationFrame(tick)
       }
     }
     rafRef.current = requestAnimationFrame(tick)
-  }, [getSamples])
+  }, [])
 
   useEffect(() => {
     return () => stop()
   }, [stop])
 
-  return { play, stop, isPlaying }
+  return { play, stop, isPlaying, cursorTime }
 }

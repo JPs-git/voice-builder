@@ -1,59 +1,48 @@
-import type { AppPhase } from '../types'
-import { useAnalysisStore } from '../store/analysisStore'
-import { useFrameStore } from '../store/frameStore'
 import logo from '../../assets/logo.png'
 import { Button } from './Button'
 import styles from './Toolbar.module.css'
 
 interface ToolbarProps {
-  phase: AppPhase
+  isCapturing: boolean
+  isRequesting: boolean
+  hasData: boolean
   isPlaying: boolean
+  onRecord: () => void
   onImport: () => void
   onPlayback: () => void
   onStopPlayback: () => void
+  onClear: () => void
   onConfig: () => void
   onHelp: () => void
   onAbout: () => void
 }
 
-const LABELS: Record<AppPhase, string> = {
-  idle: '开始录音',
-  requesting: '麦克风授权中…',
-  recording: '停止录音',
-  ready: '继续录音',
-}
-
 export function Toolbar({
-  phase,
+  isCapturing,
+  isRequesting,
+  hasData,
   isPlaying,
+  onRecord,
   onImport,
   onPlayback,
   onStopPlayback,
+  onClear,
   onConfig,
   onHelp,
   onAbout,
 }: ToolbarProps) {
-  const setPhase = useAnalysisStore(s => s.setPhase)
-  const hasFrames = useFrameStore(s => s.frames.length > 0)
-
-  const label = LABELS[phase]
-  const isRecording = phase === 'recording'
-  const isRequesting = phase === 'requesting'
-  const isReady = phase === 'ready'
-
-  const onRecord = () => {
-    if (isRecording) {
-      setPhase('ready')
-    } else {
-      setPhase('requesting')
-    }
+  let label: string
+  if (isRequesting) {
+    label = '麦克风授权中…'
+  } else if (isCapturing) {
+    label = '停止录音'
+  } else if (hasData) {
+    label = '继续录音'
+  } else {
+    label = '开始录音'
   }
 
-  const onClear = () => {
-    setPhase('idle')
-  }
-
-  const canPlayOrClear = isReady || isRecording
+  const canPlayOrClear = hasData || isCapturing
 
   return (
     <header className={styles.toolbar}>
@@ -64,13 +53,35 @@ export function Toolbar({
       </div>
 
       <div className={styles.actions}>
-        <Button id="btnRecord" variant="primary" icon={isRecording ? '■' : '●'} label={label} recording={isRecording} onClick={onRecord} disabled={isRequesting} />
+        <Button
+          id="btnRecord"
+          variant="primary"
+          icon={isCapturing ? '■' : '●'}
+          label={label}
+          recording={isCapturing}
+          onClick={onRecord}
+          disabled={isRequesting}
+        />
 
         <Button id="btnImport" variant="ghost" icon="📁" label="导入 WAV" onClick={onImport} />
 
-        <Button id="btnPlayback" variant="ghost" icon={isPlaying ? '■' : '♫'} label={isPlaying ? '停止' : '回放'} onClick={isPlaying ? onStopPlayback : onPlayback} disabled={!canPlayOrClear} />
+        <Button
+          id="btnPlayback"
+          variant="ghost"
+          icon={isPlaying ? '■' : '♫'}
+          label={isPlaying ? '停止' : '回放'}
+          onClick={isPlaying ? onStopPlayback : onPlayback}
+          disabled={!canPlayOrClear}
+        />
 
-        <Button id="btnClear" variant="ghost" icon="↺" label="清空" onClick={onClear} disabled={!canPlayOrClear && !hasFrames} />
+        <Button
+          id="btnClear"
+          variant="ghost"
+          icon="↺"
+          label="清空"
+          onClick={onClear}
+          disabled={!canPlayOrClear}
+        />
 
         <Button id="btnConfig" variant="ghost" icon="⚙" label="配置" aria-label="配置" onClick={onConfig} />
 

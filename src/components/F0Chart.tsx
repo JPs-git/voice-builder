@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useECharts } from '../hooks/useECharts'
-import { useFrameStore } from '../store/frameStore'
+import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame } from '../types'
 
 const WINDOW = 10
@@ -43,9 +43,12 @@ function buildMarkLineData(zones: typeof TARGET_ZONES) {
   })
 }
 
-export function F0Chart() {
-  const frames = useFrameStore(s => s.frames)
-  const cursorTime = useFrameStore(s => s.cursorTime)
+interface F0ChartProps {
+  cursorTime?: number
+}
+
+export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
+  const frames = useAppStore(s => s.frames)
   const { chartRef, setOption } = useECharts()
   const rafRef = useRef<number | null>(null)
   const isLiveRef = useRef(false)

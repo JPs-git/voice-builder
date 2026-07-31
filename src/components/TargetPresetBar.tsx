@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from 'react'
 import { VOWEL_PRESETS } from '../types'
-import { useAnalysisStore } from '../store/analysisStore'
+import { useAppStore } from '../store/appStore'
 import type { TargetBands } from '../types'
 import styles from './TargetPresetBar.module.css'
 
@@ -20,10 +20,9 @@ function makeLocalValues(bands: TargetBands) {
 }
 
 export function TargetPresetBar() {
-  const activePreset = useAnalysisStore(s => s.activePreset)
-  const bands = useAnalysisStore(s => s.bands)
-  const setActivePreset = useAnalysisStore(s => s.setActivePreset)
-  const setBands = useAnalysisStore(s => s.setBands)
+  const bands = useAppStore(s => s.bands)
+  const setBands = useAppStore(s => s.setBands)
+  const [activePreset, setActivePreset] = useState<string | null>('vowel-a')
 
   const [localValues, setLocalValues] = useState<Record<string, string>>(() =>
     makeLocalValues(bands),
@@ -61,9 +60,7 @@ export function TargetPresetBar() {
   )
 
   const handleInputBlur = useCallback(
-    (key: 'f0' | 'f1' | 'f2', index: 0 | 1) => {
-      commitValue(key, index)
-    },
+    (key: 'f0' | 'f1' | 'f2', index: 0 | 1) => { commitValue(key, index) },
     [commitValue],
   )
 
@@ -79,6 +76,13 @@ export function TargetPresetBar() {
     [commitValue],
   )
 
+  const handlePresetClick = useCallback((name: string) => {
+    const preset = VOWEL_PRESETS[name]
+    if (!preset) return
+    setActivePreset(name)
+    setBands({ f0: preset.f0, f1: preset.f1, f2: preset.f2 })
+  }, [setBands])
+
   const vowelKeys = Object.keys(VOWEL_PRESETS) as (keyof typeof VOWEL_PRESETS)[]
 
   return (
@@ -93,7 +97,7 @@ export function TargetPresetBar() {
             type="button"
             className={`${styles.vowelBtn}${activePreset === name ? ` ${styles.vowelBtnActive}` : ''}`}
             data-preset={name}
-            onClick={() => setActivePreset(name)}
+            onClick={() => handlePresetClick(name)}
           >
             {VOWEL_PRESETS[name].label.replace('元音 ', '')}
           </button>

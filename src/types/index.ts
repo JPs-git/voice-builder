@@ -25,9 +25,7 @@ export const FORMANT_METHODS: FormantMethod[] = [
   { value: 'cepstral', label: '纯倒谱法', description: '封闭元音 F2 偏大' },
 ]
 
-export type AppPhase = 'idle' | 'requesting' | 'recording' | 'ready'
-
-export type DataSource = 'mic' | 'file' | null
+// AppPhase removed — engine control is callback-driven, UI state is local (isCapturing, isRequesting)
 
 export interface TargetBands {
   f0: TargetBand

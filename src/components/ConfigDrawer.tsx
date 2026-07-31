@@ -1,6 +1,6 @@
 import { FORMANT_METHODS } from '../types'
 import type { FormantMethod as FM } from '../types'
-import { useAnalysisStore } from '../store/analysisStore'
+import { useAppStore } from '../store/appStore'
 import { Drawer } from './Drawer'
 import styles from './ConfigDrawer.module.css'
 
@@ -10,8 +10,8 @@ interface ConfigDrawerProps {
 }
 
 export function ConfigDrawer({ open, onClose }: ConfigDrawerProps) {
-  const config = useAnalysisStore(s => s.config)
-  const setConfig = useAnalysisStore(s => s.setConfig)
+  const config = useAppStore(s => s.config)
+  const setConfig = useAppStore(s => s.setConfig)
   return (
     <Drawer open={open} title="配置" onClose={onClose}>
       <section>

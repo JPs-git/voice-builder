@@ -1,117 +1,19 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { useAnalysisStore } from '../store/analysisStore'
-import { useFrameStore } from '../store/frameStore'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { useAppStore } from '../store/appStore'
 import { getAudioEngine } from '../ts'
-import { RingBuffer } from '../dsp/RingBuffer'
+import { recordingBuffer } from '../audio/recordingBuffer'
 import { AnalysisPipeline } from '../../js/analysis-pipeline.js'
 import { parseWav } from '../../js/wav-parser.js'
 import { Resampler } from '../../js/resampler.js'
-import type { AnalysisFrame, AppPhase } from '../types'
-
-type Phase = AppPhase
+import type { AnalysisFrame } from '../types'
 
 export function useAnalysis() {
-  const phase = useAnalysisStore(s => s.phase)
-  const rawBufferRef = useRef(new RingBuffer(16000 * 10))
   const pipelineRef = useRef<InstanceType<typeof AnalysisPipeline> | null>(null)
   const frameOffsetRef = useRef(0)
+  const dataSourceRef = useRef<'mic' | 'file'>('mic')
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const prevPhaseRef = useRef<Phase>(phase)
-
-  // ── Audio chunk handler ──
-
-  const onAudioChunk = useCallback((chunk: Float32Array, rate: number) => {
-    rawBufferRef.current.write(chunk)
-    pipelineRef.current?.pushChunk(chunk, rate)
-  }, [])
-
-  // ── Capture control ──
-
-  const startCapture = useCallback(async () => {
-    const state = useAnalysisStore.getState()
-
-    // Keep frameOffset for appending; reset for fresh or file-based
-    if (state.dataSource === 'mic' && state.phase === 'requesting') {
-      // Appending — frameOffset preserved from previous stopCapture
-    } else {
-      frameOffsetRef.current = 0
-      rawBufferRef.current.clear()
-      useFrameStore.getState().clear()
-    }
-
-    const config = state.config
-
-    pipelineRef.current = new AnalysisPipeline({
-      onFrame: (frame: AnalysisFrame) => {
-        useFrameStore.getState().appendFrame(frame)
-      },
-      formantMethod: config.formantMethod,
-      formantSmoothing: config.formantSmoothing,
-      frameOffset: frameOffsetRef.current,
-    } as any)
-
-    try {
-      await getAudioEngine().startCapture(onAudioChunk)
-      useAnalysisStore.setState({
-        phase: 'recording',
-        dataSource: 'mic',
-      })
-    } catch (err) {
-      console.error('Failed to start recording:', err)
-      useAnalysisStore.setState({ phase: 'idle', dataSource: null })
-    }
-  }, [onAudioChunk])
-
-  const stopCapture = useCallback(() => {
-    const pipeline = pipelineRef.current
-    if (pipeline) {
-      pipeline.flush()
-      frameOffsetRef.current += pipeline.frameCount
-      pipeline.reset()
-      pipelineRef.current = null
-    }
-    getAudioEngine().stopCapture()
-
-    if (useFrameStore.getState().frames.length > 0) {
-      useAnalysisStore.setState({
-        phase: 'ready',
-        dataSource: 'mic',
-      })
-    }
-  }, [])
-
-  const clearAll = useCallback(() => {
-    rawBufferRef.current.clear()
-    useFrameStore.getState().clear()
-    useAnalysisStore.getState().reset()
-  }, [])
-
-  // ── Phase change watcher ──
-
-  useEffect(() => {
-    const prev = prevPhaseRef.current
-    const next = phase
-    prevPhaseRef.current = next
-    if (prev === next) return
-
-    const handle = async () => {
-      // Stop capture when leaving recording
-      if (prev === 'recording' && next !== 'recording') {
-        stopCapture()
-      }
-
-      // Start capture when entering requesting
-      if (next === 'requesting') {
-        await startCapture()
-      }
-
-      // Clear all when entering idle
-      if (next === 'idle') {
-        clearAll()
-      }
-    }
-    handle()
-  }, [phase, startCapture, stopCapture, clearAll])
+  const [isCapturing, setIsCapturing] = useState(false)
+  const [isRequesting, setIsRequesting] = useState(false)
 
   // Cleanup on unmount
   useEffect(() => {
@@ -122,64 +24,126 @@ export function useAnalysis() {
     }
   }, [])
 
-  // ── Playback ──
+  // ── Audio chunk handler ──
 
-  const getPlaybackSamples = useCallback((): Float32Array => {
-    return rawBufferRef.current.read()
+  const onAudioChunk = useCallback((chunk: Float32Array, rate: number) => {
+    recordingBuffer.write(chunk)
+    pipelineRef.current?.pushChunk(chunk, rate)
   }, [])
+
+  // ── Record ──
+
+  const onRecord = useCallback(async () => {
+    if (isCapturing) {
+      // Stop
+      const pipeline = pipelineRef.current
+      if (pipeline) {
+        pipeline.flush()
+        frameOffsetRef.current += pipeline.frameCount
+        pipeline.reset()
+        pipelineRef.current = null
+      }
+      getAudioEngine().stopCapture()
+      setIsCapturing(false)
+      return
+    }
+
+    // Start / Append
+    setIsRequesting(true)
+
+    const config = useAppStore.getState().config
+
+    // dataSource='file' → clear and start fresh; 'mic' with data → append
+    if (dataSourceRef.current === 'file') {
+      frameOffsetRef.current = 0
+      recordingBuffer.clear()
+      useAppStore.getState().reset()
+    }
+
+    pipelineRef.current = new AnalysisPipeline({
+      onFrame: (frame: AnalysisFrame) => {
+        useAppStore.getState().appendFrame(frame)
+      },
+      formantMethod: config.formantMethod,
+      formantSmoothing: config.formantSmoothing,
+      frameOffset: frameOffsetRef.current,
+    } as any)
+
+    try {
+      await getAudioEngine().startCapture(onAudioChunk)
+      dataSourceRef.current = 'mic'
+      setIsCapturing(true)
+    } catch (err) {
+      console.error('Failed to start recording:', err)
+    } finally {
+      setIsRequesting(false)
+    }
+  }, [isCapturing, onAudioChunk])
+
+  // ── Clear ──
+
+  const onClear = useCallback(() => {
+    if (isCapturing) {
+      pipelineRef.current?.reset()
+      pipelineRef.current = null
+      getAudioEngine().stopCapture()
+      setIsCapturing(false)
+    }
+    recordingBuffer.clear()
+    useAppStore.getState().reset()
+    frameOffsetRef.current = 0
+  }, [isCapturing])
 
   // ── WAV import ──
 
-  const importWav = useCallback(() => {
+  const onImport = useCallback(() => {
     fileInputRef.current?.click()
   }, [])
-
-  const importWavFromBuffer = useCallback(async (arrayBuffer: ArrayBuffer) => {
-    const state = useAnalysisStore.getState()
-
-    if (state.phase === 'recording') {
-      stopCapture()
-    }
-
-    const parsed: any = parseWav(arrayBuffer)
-    let samples = parsed.samples as Float32Array
-    let rate = parsed.sampleRate as number
-
-    if (rate !== 16000) {
-      const r = new Resampler(rate, 16000)
-      samples = r.process(samples)
-    }
-
-    const maxSamples = 16000 * 10
-    if (samples.length > maxSamples) {
-      throw new Error('音频不能超过 10 秒')
-    }
-
-    rawBufferRef.current.clear()
-    rawBufferRef.current.write(samples)
-
-    useFrameStore.getState().clear()
-    const config = state.config
-    const frames: AnalysisFrame[] = AnalysisPipeline.analyze(
-      samples as any,
-      16000,
-      config.formantMethod,
-      config.formantSmoothing,
-    )
-
-    useFrameStore.getState().setFrames(frames)
-    useAnalysisStore.setState({
-      phase: 'ready',
-      dataSource: 'file',
-    })
-  }, [stopCapture])
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
     try {
       const buf = await file.arrayBuffer()
-      await importWavFromBuffer(buf)
+
+      // Stop recording if active
+      if (isCapturing) {
+        pipelineRef.current?.reset()
+        pipelineRef.current = null
+        getAudioEngine().stopCapture()
+        setIsCapturing(false)
+      }
+
+      const parsed: any = parseWav(buf)
+      let samples = parsed.samples as Float32Array
+      let rate = parsed.sampleRate as number
+
+      if (rate !== 16000) {
+        const r = new Resampler(rate, 16000)
+        samples = r.process(samples)
+      }
+
+      const maxSamples = 16000 * 10
+      if (samples.length > maxSamples) {
+        throw new Error('音频不能超过 10 秒')
+      }
+
+      recordingBuffer.clear()
+      recordingBuffer.write(samples)
+      dataSourceRef.current = 'file'
+      frameOffsetRef.current = 0
+
+      useAppStore.getState().reset()
+      const config = useAppStore.getState().config
+      const frames: AnalysisFrame[] = AnalysisPipeline.analyze(
+        samples as any,
+        16000,
+        config.formantMethod,
+        config.formantSmoothing,
+      )
+
+      useAppStore.getState().setFrames(frames)
     } catch (err) {
       console.error('WAV import failed:', err)
     } finally {
@@ -187,11 +151,14 @@ export function useAnalysis() {
         fileInputRef.current.value = ''
       }
     }
-  }, [importWavFromBuffer])
+  }, [isCapturing])
 
   return {
-    importWav,
-    getPlaybackSamples,
+    onRecord,
+    onImport,
+    onClear,
+    isCapturing,
+    isRequesting,
     fileInputRef,
     handleFileChange,
   }
