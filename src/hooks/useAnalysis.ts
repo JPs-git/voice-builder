@@ -130,7 +130,8 @@ export function useAnalysis() {
 
       const maxSamples = 16000 * 10
       if (samples.length > maxSamples) {
-        throw new Error('音频不能超过 10 秒')
+        alert('导入的音频不能超过 10 秒，请裁剪后重试。')
+        return
       }
 
       recordingBuffer.clear()
