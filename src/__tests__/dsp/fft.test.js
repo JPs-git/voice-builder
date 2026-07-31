@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { fftMagnitudes } from '../../src/dsp/fft.ts'
+import { fftMagnitudes } from '../../dsp/fft'
 
 function generateSine(freqHz, sampleRate, numSamples) {
   const signal = new Float32Array(numSamples)

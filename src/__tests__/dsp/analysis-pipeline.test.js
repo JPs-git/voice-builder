@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { AnalysisPipeline } from '../../src/dsp/analysis-pipeline.ts'
+import { AnalysisPipeline } from '../../dsp/analysis-pipeline'
 
 describe('AnalysisPipeline', () => {
   it('static analyze() produces frames with correct structure', () => {

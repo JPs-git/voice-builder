@@ -3,11 +3,11 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import path from 'path'
-import { parseWav } from '../../src/dsp/wav-parser.ts'
-import { AnalysisPipeline } from '../../src/dsp/analysis-pipeline.ts'
+import { parseWav } from '../../dsp/wav-parser'
+import { AnalysisPipeline } from '../../dsp/analysis-pipeline'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const ASSETS = path.resolve(__dirname, '../../assets')
+const ASSETS = path.resolve(__dirname, '../../../assets')
 
 function loadPraat(vowel) {
   const raw = readFileSync(path.join(ASSETS, `info_${vowel}.txt`), 'utf-8')

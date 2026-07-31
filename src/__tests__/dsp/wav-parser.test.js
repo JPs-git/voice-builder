@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { parseWav } from '../../src/dsp/wav-parser.ts'
+import { parseWav } from '../../dsp/wav-parser'
 
 function makeWav({ sampleRate = 44100, numChannels = 1, bitsPerSample = 16, samples = null }) {
   const bytesPerSample = bitsPerSample / 8

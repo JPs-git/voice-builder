@@ -11,8 +11,8 @@
     "start:serve": "serve .",
     "start:py": "python3 -m http.server 3000",
     "test": "npx vitest run",
-    "test:unit": "npx vitest run src/__tests__/",
-    "test:dsp": "npx vitest run js/__tests__/"
+    "test:unit": "npx vitest run --project unit",
+    "test:dsp": "npx vitest run --project dsp"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

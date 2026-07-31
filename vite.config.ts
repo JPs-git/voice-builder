@@ -12,7 +12,7 @@ export default defineConfig({
           name: 'dsp',
           environment: 'node',
           globals: true,
-          include: ['js/__tests__/*.test.js'],
+          include: ['src/__tests__/dsp/**/*.test.{js,ts}'],
         },
       },
       {
@@ -21,6 +21,7 @@ export default defineConfig({
           environment: 'jsdom',
           globals: true,
           include: ['src/__tests__/**/*.test.{ts,tsx}'],
+          exclude: ['src/__tests__/dsp/**'],
         },
       },
     ],

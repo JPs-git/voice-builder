@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { Resampler } from '../../src/dsp/resampler.ts'
+import { Resampler } from '../../dsp/resampler'
 
 describe('Resampler', () => {
   it('resamples 44100 to 16000 and preserves frequency', () => {
