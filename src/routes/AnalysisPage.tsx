@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { useAppStore } from '../store/appStore'
-import { useAnalysis } from '../hooks/useAnalysis'
+import { useToolbar } from '../hooks/useToolbar'
 import { usePlayback } from '../hooks/usePlayback'
 import { Toolbar } from '../components/Toolbar'
 import { TargetPresetBar } from '../components/TargetPresetBar'
@@ -14,19 +13,16 @@ import { TipWidget } from '../components/TipWidget'
 import styles from './AnalysisPage.module.css'
 
 export function AnalysisPage() {
-  const frames = useAppStore(s => s.frames)
   const {
-    onRecord, onImport, onClear,
-    isCapturing, isRequesting,
+    isCapturing, isRequesting, isPlaying, hasData,
+    onRecord, onImport, onPlayback, onClear,
     fileInputRef, handleFileChange,
-  } = useAnalysis()
-  const { play, stop, isPlaying, cursorTime } = usePlayback()
+  } = useToolbar()
+  const { cursorTime } = usePlayback()
 
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-
-  const hasData = isCapturing || frames.length > 0
 
   return (
     <div>
@@ -37,8 +33,7 @@ export function AnalysisPage() {
         isPlaying={isPlaying}
         onRecord={onRecord}
         onImport={onImport}
-        onPlayback={play}
-        onStopPlayback={stop}
+        onPlayback={onPlayback}
         onClear={onClear}
         onConfig={() => setConfigOpen(true)}
         onHelp={() => setHelpOpen(true)}
@@ -90,20 +85,9 @@ export function AnalysisPage() {
 
       <TipWidget />
 
-      <ConfigDrawer
-        open={configOpen}
-        onClose={() => setConfigOpen(false)}
-      />
-
-      <HelpDrawer
-        open={helpOpen}
-        onClose={() => setHelpOpen(false)}
-      />
-
-      <AboutModal
-        open={aboutOpen}
-        onClose={() => setAboutOpen(false)}
-      />
+      <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
+      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
 
       <input ref={fileInputRef} type="file" accept=".wav" hidden onChange={handleFileChange} />
     </div>

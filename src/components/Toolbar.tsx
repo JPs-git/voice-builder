@@ -10,7 +10,6 @@ interface ToolbarProps {
   onRecord: () => void
   onImport: () => void
   onPlayback: () => void
-  onStopPlayback: () => void
   onClear: () => void
   onConfig: () => void
   onHelp: () => void
@@ -25,16 +24,17 @@ export function Toolbar({
   onRecord,
   onImport,
   onPlayback,
-  onStopPlayback,
   onClear,
   onConfig,
   onHelp,
   onAbout,
 }: ToolbarProps) {
+  const isRecording = isCapturing
+
   let label: string
   if (isRequesting) {
     label = '麦克风授权中…'
-  } else if (isCapturing) {
+  } else if (isRecording) {
     label = '停止录音'
   } else if (hasData) {
     label = '继续录音'
@@ -42,7 +42,7 @@ export function Toolbar({
     label = '开始录音'
   }
 
-  const canPlayOrClear = hasData || isCapturing
+  const canPlayOrClear = hasData || isRecording
 
   return (
     <header className={styles.toolbar}>
@@ -56,9 +56,9 @@ export function Toolbar({
         <Button
           id="btnRecord"
           variant="primary"
-          icon={isCapturing ? '■' : '●'}
+          icon={isRecording ? '■' : '●'}
           label={label}
-          recording={isCapturing}
+          recording={isRecording}
           onClick={onRecord}
           disabled={isRequesting}
         />
@@ -70,7 +70,7 @@ export function Toolbar({
           variant="ghost"
           icon={isPlaying ? '■' : '♫'}
           label={isPlaying ? '停止' : '回放'}
-          onClick={isPlaying ? onStopPlayback : onPlayback}
+          onClick={onPlayback}
           disabled={!canPlayOrClear}
         />
 
