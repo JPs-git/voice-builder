@@ -59,16 +59,13 @@ src/
 │   └── index.ts                # getAudioEngine, resetAudioEngine
 │
 ├── services/                  # Service Layer: 业务编排
-│   └── AnalysisService.ts      # 录音/导入生命周期
-│
 ├── store/                     # State Layer: Zustand
-│   ├── analysisStore.ts        # config, preset, bands, sampleCount
-│   └── frameStore.ts           # frames[], latestFrame, stats
+│   └── appStore.ts             # config, bands, frames[], latestFrame, stats
 │
 ├── components/                # UI Layer
 │   ├── AnalysisPage.tsx        # ~60 行, 仅组件组装
-│   ├── F0Chart.tsx            # 响应式订阅 frameStore
-│   ├── FormantChart.tsx       # 响应式订阅 frameStore
+│   ├── F0Chart.tsx            # 响应式订阅 appStore, cursorTime prop
+│   ├── FormantChart.tsx       # 响应式订阅 appStore, cursorTime prop
 │   ├── Toolbar.tsx            # 使用 analysisStore
 │   ├── TargetPresetBar.tsx    # 使用 analysisStore
 │   ├── Drawer.tsx
@@ -200,69 +197,54 @@ src/
 
 ### 设计原则
 
-- 两个独立的 Zustand store，互不依赖
-- Service 层可以直接 `store.getState()` 读写，无需 React 桥接
+- **一个 Store** — 只有跨组件共享的数据才入 Store
 - 组件通过 selector 精准订阅，只重渲染变动的部分
+- 不在此 Store 的数据：`activePreset`（TargetPresetBar 局部）、`cursorTime`（usePlayback 返回，AnalysisPage 传 props）
 
-### analysisStore
+### appStore
 
 ```typescript
+// src/store/appStore.ts
 import { create } from 'zustand'
-import type { AppConfig, TargetBands } from '../types'
+import type { AppConfig, TargetBands, AnalysisFrame, AnalysisStats } from '../types'
 import { DEFAULT_CONFIG, VOWEL_PRESETS } from '../types'
 
-interface AnalysisState {
+interface AppState {
   config: AppConfig
-  activePreset: string | null
   bands: TargetBands
-  sampleCount: number                         // 原始采样数（用于判断是否有数据）
-}
-
-interface AnalysisActions {
-  setConfig: (config: Partial<AppConfig>) => void
-  setActivePreset: (name: string | null) => void
-  setBands: (bands: Partial<Record<'f0'|'f1'|'f2', [number, number]>>) => void
-  setSampleCount: (count: number) => void
-  reset: () => void
-}
-
-type AnalysisStore = AnalysisState & AnalysisActions
-```
-
-- `setBands`: 合并更新，只修改提供的 key
-- `reset`: 恢复全部默认值
-- `setSampleCount`: 由 useAnalysis 在录音导入时更新
-- 默认 bands 从 VOWEL_PRESETS['vowel-a'] 初始化
-
-**不再包含 `phase` 和 `dataSource`** — 引擎控制走直接回调，不需要状态驱动。
-
-### frameStore
-
-```typescript
-import { create } from 'zustand'
-import type { AnalysisFrame, AnalysisStats } from '../types'
-
-interface FrameState {
   frames: AnalysisFrame[]
   latestFrame: AnalysisFrame | null
   stats: AnalysisStats
-  cursorTime: number
 }
 
-interface FrameActions {
+interface AppActions {
+  setConfig: (config: Partial<AppConfig>) => void
+  setBands: (bands: Partial<Record<'f0'|'f1'|'f2', [number, number]>>) => void
   appendFrame: (frame: AnalysisFrame) => void
   setFrames: (frames: AnalysisFrame[]) => void
-  setCursorTime: (time: number) => void
-  clear: () => void
+  reset: () => void
 }
 
-type FrameStore = FrameState & FrameActions
+type AppStore = AppState & AppActions
 ```
 
-- `appendFrame`: 追加一帧，超过 `WINDOW_FRAMES (1000)` 自动 shift 最早帧；增量更新 `latestFrame` 和 `stats`
-- `setFrames`: 批量设置（WAV 导入），重置整个数组并重算 stats
-- `stats`: 增量计算 `f0Mean`（累计和/帧数），`hitRate`（命中目标区帧数/总帧数），`duration`（最后一帧 time）
-- `cursorTime`: 回放进度游标，-1 表示隐藏
+- `setConfig`: 合并更新
+- `setBands`: 合并更新，校验 `low < high`
+- `appendFrame`: 追加一帧，超过 1000 帧自动 shift；增量更新 latestFrame 和 stats
+- `setFrames`: 批量设置（WAV 导入），重建 stats
+- `reset`: 恢复全部默认值
+- 默认 bands 从 VOWEL_PRESETS['vowel-a'] 初始化
+- stats 增量计算：f0Mean、hitRate、duration
+
+### 不再入 Store 的字段
+
+| 字段 | 改为 | 原因 |
+|------|------|------|
+| `activePreset` | TargetPresetBar 局部 `useState` | 只有它用，bands 已在 Store 中 |
+| `cursorTime` | usePlayback 内部 state，返回后通过 props 传给 Charts | 游标是播放行为的一部分 |
+| `phase` | 删除 | 回调直接控引擎 |
+| `dataSource` | 删除 | 无需区分 mic/file |
+| `sampleCount` | 删除 | `frames.length > 0` 等价 |
 
 ---
 
@@ -399,7 +381,7 @@ const onClear = useCallback(() => {
 
 ### usePlayback：回放
 
-直接从 `recordingBuffer` 读取原始采样，不依赖 `useAnalysis`。
+直接从 `recordingBuffer` 读取原始采样。**cursorTime 作为内部 state 返回**，不在 Store 中。
 
 ```typescript
 // src/hooks/usePlayback.ts
@@ -407,22 +389,28 @@ function usePlayback(): {
   play: () => void
   stop: () => void
   isPlaying: boolean
+  cursorTime: number           // ← 回放游标，返回给 AnalysisPage 传 props
 }
 ```
 
 **实现要点：**
 
 ```typescript
-const play = useCallback(() => {
-  // 如果正在录制，先停止
-  // ... (通过 shared isCapturing 状态或直接调 stopCapture)
+const [cursorTime, setCursorTime] = useState(-1)
 
-  const samples = recordingBuffer.read()    // 直接从共享模块读取
+const play = useCallback(() => {
+  const samples = recordingBuffer.read()
   if (samples.length === 0) return
 
   const { source, totalDuration } = getAudioEngine().createPlaybackSource(samples)
-  // ... rAF tick + cursorTime
-})
+  // rAF tick:
+  //   setCursorTime(elapsed + firstTime)
+}, [])
+
+const stop = useCallback(() => {
+  // ... stop source
+  setCursorTime(-1)
+}, [])
 ```
 
 **useAnalysis 和 usePlayback 是平级关系，都 import `recordingBuffer`，互不依赖。**
@@ -444,104 +432,72 @@ const play = useCallback(() => {
 
 ```tsx
 export function AnalysisPage() {
+  const frames = useAppStore(s => s.frames)
   const { onRecord, onImport, onClear, isCapturing, fileInputRef, handleFileChange }
     = useAnalysis()
-  const { play, stop, isPlaying } = usePlayback()
-  const sampleCount = useAnalysisStore(s => s.sampleCount)
+  const { play, stop, isPlaying, cursorTime } = usePlayback()
 
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
 
-  const hasData = isCapturing || sampleCount > 0
+  const hasData = isCapturing || frames.length > 0
 
   return (
     <div>
       <Toolbar
-        isCapturing={isCapturing}
-        hasData={hasData}
-        isPlaying={isPlaying}
-        onRecord={onRecord}
-        onImport={onImport}
-        onPlayback={play}
-        onStopPlayback={stop}
-        onClear={onClear}
-        onConfig={() => setConfigOpen(true)}
-        onHelp={() => setHelpOpen(true)}
-        onAbout={() => setAboutOpen(true)}
-      />
+        isCapturing={isCapturing} hasData={hasData} isPlaying={isPlaying}
+        onRecord={onRecord} onImport={onImport}
+        onPlayback={play} onStopPlayback={stop} onClear={onClear}
+        onConfig={...} onHelp={...} onAbout={...} />
       <TargetPresetBar />
-      <main className={styles.content}>
-        <F0Chart />
-        <FormantChart />
-      </main>
-      <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
-      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
-      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
-      <input ref={fileInputRef} type="file" accept=".wav" hidden onChange={handleFileChange} />
+      <F0Chart cursorTime={cursorTime} />
+      <FormantChart cursorTime={cursorTime} />
+      <ConfigDrawer ... />
+      ...
     </div>
   )
 }
 ```
 
-- ~60 行
-- 组件只做接线：从 hooks 拿回调和状态，传给子组件
-- 不引用 AudioEngine、AnalysisPipeline、ECharts
-- **不再有 phase 概念** — Toolbar 从 `isCapturing` + `hasData` 推导按钮状态
-
 ### Toolbar
 
-```tsx
-function Toolbar({ isCapturing, hasData, isPlaying, onRecord, onImport,
-                   onPlayback, onStopPlayback, onClear, onConfig, onHelp, onAbout }) {
-  const label = isCapturing ? '停止录音' : hasData ? '继续录音' : '开始录音'
-
-  return (
-    <header>
-      <Button label={label} icon={isCapturing ? '■' : '●'}
-              recording={isCapturing} onClick={onRecord} />
-      <Button label="导入 WAV" icon="📁" onClick={onImport} />
-      <Button label={isPlaying ? '停止' : '回放'} icon={isPlaying ? '■' : '♫'}
-              onClick={isPlaying ? onStopPlayback : onPlayback}
-              disabled={!hasData && !isCapturing} />
-      <Button label="清空" icon="↺" onClick={onClear}
-              disabled={!hasData && !isCapturing} />
-      <Button label="配置" icon="⚙" onClick={onConfig} />
-      <Button label="帮助" icon="?" onClick={onHelp} />
-      <Button label="关于" icon="ⓘ" onClick={onAbout} />
-    </header>
-  )
-}
-```
-
-**按钮状态推导——不需要 phase：**
-
-| 条件 | 录音按钮 |
-|------|---------|
-| `!isCapturing && !hasData` | "开始录音" |
-| `!isCapturing && hasData` | "继续录音" |
-| `isCapturing` | "停止录音" ⏹ |
+- 接收 `isCapturing` + `hasData` + 回调 props
+- 按钮文字：`isCapturing ? '停止录音' : hasData ? '继续录音' : '开始录音'`
 
 ### F0Chart / FormantChart
 
-不变 — 同样通过 Zustand selector 订阅 frameStore 和 analysisStore。
+- 从 `appStore` 订阅 `frames`、`bands`
+- `cursorTime` 从 props 接收（由 usePlayback 返回 → AnalysisPage 传入）
+
+```typescript
+function F0Chart({ cursorTime }: { cursorTime: number }) {
+  const frames = useAppStore(s => s.frames)
+  const bands = useAppStore(s => s.bands)
+  // ... cursorTime 直接使用 props，不再订阅 Store
+}
+```
+
+### TargetPresetBar
+
+- `activePreset` 改为局部 `useState('vowel-a')`
+- 点击预设时：`setActivePreset(name)` + `appStore.setBands(presetBands)`
+- 从 `appStore` 订阅 `bands` 用于显示当前区间值
 
 ### 组件变更汇总
 
 | 组件 | 变更 |
 |---|---|
-| AnalysisPage | ~110→~60 行，从 hooks 获取回调 + 状态，传给子组件 |
-| Toolbar | 接收 `isCapturing` + `hasData` + 回调 props，不再推导 phase |
-| F0Chart / FormantChart | 不变（已响应式订阅） |
-| TargetPresetBar | 不变（已读写 analysisStore） |
-| ConfigDrawer | 不变（已读写 analysisStore） |
-| Drawer/Button/Modal/EmptyState/TipWidget | 不变 |
+| AnalysisPage | cursorTime 从 usePlayback 获取后传 props 给 Charts |
+| Toolbar | hasData = `isCapturing \|\| frames.length > 0` |
+| F0Chart / FormantChart | cursorTime 改为 prop |
+| TargetPresetBar | activePreset 局部 useState |
+| ConfigDrawer | 不变（读写 appStore） |
 
 ### 未变更的部分
 
 - `src/hooks/useECharts.ts` — 不变
-- `src/hooks/usePlayback.ts` — 核心逻辑不变，去掉 phase 引用
-- 所有 CSS module — 不变
+- CSS modules — 不变
 - `vite.config.ts` — 不变
 
 ---
@@ -660,7 +616,8 @@ export { AnalysisPipeline } from './analysis-pipeline'
 
 | 文件 | 替代 |
 |---|---|
-| `src/contexts/AnalysisContext.tsx` | `src/store/analysisStore.ts` + `frameStore.ts` |
+| `src/contexts/AnalysisContext.tsx` | `src/store/appStore.ts` |
+| `src/store/analysisStore.ts` + `frameStore.ts` | 合并为 `src/store/appStore.ts` |
 | `src/ts/AudioEngine.ts` | → `src/audio/AudioEngine.ts`（精简为纯硬件接口） |
 | `src/ts/RingBuffer.ts` | → `src/dsp/RingBuffer.ts`（数据归属 Service） |
 | `src/ts/index.ts` | → `src/audio/index.ts` |
@@ -679,8 +636,12 @@ export { AnalysisPipeline } from './analysis-pipeline'
 | `js/__tests__/*.test.js` | 迁移到 `src/__tests__/` (Vitest) |
 | `src/types/index.ts` 中的 ChartHandles | 完全移除（所有方法被 store 或 useECharts 替代） |
 | `src/types/index.ts` 中的 AppPhase | 完全移除（引擎控制走直接回调，不需要 phase 状态） |
-| `src/types/index.ts` 中的 `dataSource` | 移除（不需要区分 mic/file，数据都在 recordingBuffer 里） |
-| `src/services/` | 删除整个目录（AnalysisService 被 useAnalysis hook 替代） |
+| `src/types/index.ts` 中的 `dataSource` | 移除 |
+| `src/services/` | 删除整个目录 |
+| `activePreset` (原在 analysisStore) | → TargetPresetBar 局部 useState |
+| `cursorTime` (原在 frameStore) | → usePlayback 内部 state，通过 props 传给 Charts |
+| `AppPhase` 类型 | 完全移除 |
+| `ChartHandles` 接口 | 完全移除 |
 
 ---
 
