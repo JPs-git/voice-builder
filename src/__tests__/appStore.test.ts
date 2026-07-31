@@ -86,17 +86,18 @@ describe('appStore', () => {
     })
   })
 
-  describe('stats', () => {
-    it('computes f0Mean', () => {
-      useAppStore.getState().appendFrame(makeFrame({ time: 0.01, f0: 200 }))
-      useAppStore.getState().appendFrame(makeFrame({ time: 0.02, f0: 400 }))
-      expect(useAppStore.getState().stats.f0Mean).toBeCloseTo(300)
-    })
-
-    it('tracks duration', () => {
+  describe('clearFrames', () => {
+    it('clears only frames, preserves config and bands', () => {
+      useAppStore.getState().setConfig({ formantMethod: 'cepstral' })
+      useAppStore.getState().setBands({ f0: [100, 200] })
       useAppStore.getState().appendFrame(makeFrame({ time: 0.01, f0: 220 }))
-      useAppStore.getState().appendFrame(makeFrame({ time: 0.10, f0: 230 }))
-      expect(useAppStore.getState().stats.duration).toBe(0.10)
+      useAppStore.getState().clearFrames()
+
+      expect(useAppStore.getState().frames).toEqual([])
+      expect(useAppStore.getState().latestFrame).toBeNull()
+      // Config and bands preserved
+      expect(useAppStore.getState().config.formantMethod).toBe('cepstral')
+      expect(useAppStore.getState().bands.f0.range).toEqual([100, 200])
     })
   })
 

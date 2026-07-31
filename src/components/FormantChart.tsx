@@ -118,9 +118,12 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
       const currentTime = data[data.length - 1].time
       minTime = currentTime - WINDOW
       maxTime = currentTime
+    } else if (hasData) {
+      minTime = data[0].time
+      maxTime = Math.max(data[data.length - 1].time, minTime + WINDOW)
     } else {
-      minTime = hasData ? data[0].time : 0
-      maxTime = hasData ? data[data.length - 1].time : WINDOW
+      minTime = 0
+      maxTime = WINDOW
     }
 
     const tooltipKeys = ['f2', 'f1', 'f0']

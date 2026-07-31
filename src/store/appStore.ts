@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AppConfig, TargetBands, AnalysisFrame, AnalysisStats } from '../types'
+import type { AppConfig, TargetBands, AnalysisFrame } from '../types'
 import { DEFAULT_CONFIG, VOWEL_PRESETS } from '../types'
 
 const WINDOW_FRAMES = 1000
@@ -17,6 +17,7 @@ interface AppActions {
   setBands: (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => void
   appendFrame: (frame: AnalysisFrame) => void
   setFrames: (frames: AnalysisFrame[]) => void
+  clearFrames: () => void
   reset: () => void
 }
 
@@ -35,38 +36,6 @@ const initialState: AppState = {
   frames: [],
   latestFrame: null,
   stats: { f0Mean: null, hitRate: null, duration: 0 },
-}
-
-function computeStats(frames: AnalysisFrame[], bands: TargetBands): AnalysisStats {
-  if (frames.length === 0) {
-    return { f0Mean: null, hitRate: null, duration: 0 }
-  }
-
-  let f0Sum = 0
-  let f0Count = 0
-  let hitCount = 0
-  let voicedCount = 0
-
-  const f0Range = bands.f0.range
-
-  for (const frame of frames) {
-    if (frame.f0 != null) {
-      f0Sum += frame.f0
-      f0Count++
-      voicedCount++
-      if (frame.f0 >= f0Range[0] && frame.f0 <= f0Range[1]) {
-        hitCount++
-      }
-    } else if (frame.voiced) {
-      voicedCount++
-    }
-  }
-
-  return {
-    f0Mean: f0Count > 0 ? f0Sum / f0Count : null,
-    hitRate: voicedCount > 0 ? hitCount / voicedCount : null,
-    duration: frames[frames.length - 1].time,
-  }
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -91,18 +60,19 @@ export const useAppStore = create<AppStore>((set) => ({
     const frames = state.frames.length >= WINDOW_FRAMES
       ? [...state.frames.slice(1), frame]
       : [...state.frames, frame]
-    return {
-      frames,
-      latestFrame: frame,
-      stats: computeStats(frames, state.bands),
-    }
+    return { frames, latestFrame: frame }
   }),
 
-  setFrames: (frames) => set((state) => ({
+  setFrames: (frames) => set({
     frames,
     latestFrame: frames.length > 0 ? frames[frames.length - 1] : null,
-    stats: computeStats(frames, state.bands),
-  })),
+  }),
+
+  clearFrames: () => set({
+    frames: [],
+    latestFrame: null,
+    stats: { f0Mean: null, hitRate: null, duration: 0 },
+  }),
 
   reset: () => set(initialState),
 }))

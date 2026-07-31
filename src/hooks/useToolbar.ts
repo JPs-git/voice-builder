@@ -12,12 +12,15 @@ export interface ToolItem {
   disabled?: boolean
 }
 
+// Actions that need pre-stop; config/help/about don't
+const AUDIO_ACTIONS = new Set(['record', 'import', 'playback', 'clear'])
+
 export function useToolbar(
   onConfig: () => void,
   onHelp: () => void,
   onAbout: () => void,
 ) {
-  const frames = useAppStore(s => s.frames)
+  const frameCount = useAppStore(s => s.frames.length)
   const {
     onRecord: analysisRecord,
     onImport: analysisImport,
@@ -30,9 +33,9 @@ export function useToolbar(
   } = useAnalysis()
   const { play, stop, isPlaying, cursorTime } = usePlayback()
 
-  const hasData = isCapturing || frames.length > 0
+  const hasData = isCapturing || frameCount > 0
 
-  // ── Constrained callbacks (纯操作，不含前置检查) ──
+  // ── Constrained callbacks (纯操作) ──
 
   const handleRecord = useCallback(() => {
     analysisRecord()
@@ -50,31 +53,32 @@ export function useToolbar(
     analysisClear()
   }, [analysisClear])
 
-  // ── 统一约束入口 ──
+  // ── 统一约束入口（仅对音频操作生效） ──
 
   const handleClickTool = useCallback((toolId: string) => {
-    // 1. 回放中 → 任何操作前先停回放
-    if (isPlaying) stop()
-
-    // 2. 录音中 → 非录音操作前先停录音
-    if (toolId !== 'record' && isCapturing) {
-      analysisRecord()
+    if (!AUDIO_ACTIONS.has(toolId)) {
+      // config / help / about — no pre-checks
+      if (toolId === 'config') onConfig()
+      else if (toolId === 'help') onHelp()
+      else if (toolId === 'about') onAbout()
+      return
     }
+
+    // 音频操作：统一前置检查
+    if (isPlaying) stop()
+    if (toolId !== 'record' && isCapturing) analysisRecord()
 
     switch (toolId) {
       case 'record':   handleRecord(); break
       case 'import':   handleImport(); break
       case 'playback': handlePlayback(); break
       case 'clear':    handleClear(); break
-      case 'config':   onConfig(); break
-      case 'help':     onHelp(); break
-      case 'about':    onAbout(); break
     }
   }, [isPlaying, isCapturing, stop, analysisRecord,
       handleRecord, handleImport, handlePlayback, handleClear,
       onConfig, onHelp, onAbout])
 
-  // ── Resolved tool items with dynamic props ──
+  // ── Resolved tool items ──
 
   const recorderLabel = isRequesting
     ? '麦克风授权中…'
@@ -104,7 +108,7 @@ export function useToolbar(
       variant: 'ghost',
       icon: isPlaying ? '■' : '♫',
       label: isPlaying ? '停止' : '回放',
-      disabled: !(hasData || isCapturing),
+      disabled: isRequesting || !(hasData || isCapturing),
     },
     {
       id: 'clear',
@@ -133,5 +137,5 @@ export function useToolbar(
     },
   ], [isCapturing, isRequesting, isPlaying, hasData, dataSource, recorderLabel])
 
-  return { toolItems, handleClickTool, isCapturing, hasData, cursorTime, fileInputRef, handleFileChange }
+  return { toolItems, handleClickTool, hasData, cursorTime, fileInputRef, handleFileChange }
 }

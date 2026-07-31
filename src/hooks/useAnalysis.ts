@@ -16,6 +16,23 @@ export function useAnalysis() {
   const [isCapturing, setIsCapturing] = useState(false)
   const [isRequesting, setIsRequesting] = useState(false)
 
+  // ── Shared stop-recording helper ──
+
+  const stopRecording = useCallback((flush: boolean) => {
+    const pipeline = pipelineRef.current
+    if (pipeline) {
+      if (flush) {
+        pipeline.flush()
+        frameOffsetRef.current += pipeline.frameCount
+      }
+      pipeline.reset()
+      pipelineRef.current = null
+    }
+    getAudioEngine().stopCapture()
+    setIsCapturing(false)
+    setIsRequesting(false)
+  }, [])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -36,67 +53,57 @@ export function useAnalysis() {
 
   const onRecord = useCallback(async () => {
     if (isCapturing) {
-      // Stop
-      const pipeline = pipelineRef.current
-      if (pipeline) {
-        pipeline.flush()
-        frameOffsetRef.current += pipeline.frameCount
-        pipeline.reset()
-        pipelineRef.current = null
-      }
-      getAudioEngine().stopCapture()
-      setIsCapturing(false)
+      stopRecording(true)
       return
     }
 
-    // Start / Append
+    // Guard: already requesting permission
+    if (isRequesting) return
+
     setIsRequesting(true)
 
-    const config = useAppStore.getState().config
+    const config = useAppStore.getState().config  // 快照
 
-    // dataSource='file' → clear and start fresh; 'mic' with data → append
+    // dataSource='file' → clear frames and start fresh
     if (dataSourceRef.current === 'file') {
       frameOffsetRef.current = 0
       recordingBuffer.clear()
-      useAppStore.getState().reset()
+      useAppStore.getState().clearFrames()
     }
-
-    pipelineRef.current = new AnalysisPipeline({
-      onFrame: (frame: AnalysisFrame) => {
-        useAppStore.getState().appendFrame(frame)
-      },
-      formantMethod: config.formantMethod,
-      formantSmoothing: config.formantSmoothing,
-      frameOffset: frameOffsetRef.current,
-    } as any)
 
     try {
       await getAudioEngine().startCapture(onAudioChunk)
+
+      // Only create pipeline AFTER capture succeeds
+      pipelineRef.current = new AnalysisPipeline({
+        onFrame: (frame: AnalysisFrame) => {
+          useAppStore.getState().appendFrame(frame)
+        },
+        formantMethod: config.formantMethod,
+        formantSmoothing: config.formantSmoothing,
+        frameOffset: frameOffsetRef.current,
+      } as any)
+
       dataSourceRef.current = 'mic'
       setDataSource('mic')
       setIsCapturing(true)
+      setIsRequesting(false)
     } catch (err) {
       console.error('Failed to start recording:', err)
-    } finally {
       setIsRequesting(false)
     }
-  }, [isCapturing, onAudioChunk])
+  }, [isCapturing, isRequesting, stopRecording, onAudioChunk])
 
   // ── Clear ──
 
   const onClear = useCallback(() => {
-    if (isCapturing) {
-      pipelineRef.current?.reset()
-      pipelineRef.current = null
-      getAudioEngine().stopCapture()
-      setIsCapturing(false)
-    }
+    stopRecording(false)
     recordingBuffer.clear()
-    useAppStore.getState().reset()
+    useAppStore.getState().clearFrames()
     frameOffsetRef.current = 0
     dataSourceRef.current = 'mic'
     setDataSource('mic')
-  }, [isCapturing])
+  }, [stopRecording])
 
   // ── WAV import ──
 
@@ -111,13 +118,7 @@ export function useAnalysis() {
     try {
       const buf = await file.arrayBuffer()
 
-      // Stop recording if active
-      if (isCapturing) {
-        pipelineRef.current?.reset()
-        pipelineRef.current = null
-        getAudioEngine().stopCapture()
-        setIsCapturing(false)
-      }
+      stopRecording(false)
 
       const parsed: any = parseWav(buf)
       let samples = parsed.samples as Float32Array
@@ -134,22 +135,22 @@ export function useAnalysis() {
         return
       }
 
+      // Snapshot config BEFORE touching state
+      const config = useAppStore.getState().config
+
+      // Analyze first, then commit data
+      const frames: AnalysisFrame[] = AnalysisPipeline.analyze(
+        samples as any, 16000, config.formantMethod, config.formantSmoothing,
+      )
+
+      // Commit: only after analysis succeeds
       recordingBuffer.clear()
       recordingBuffer.write(samples)
+      useAppStore.getState().clearFrames()
+      useAppStore.getState().setFrames(frames)
       dataSourceRef.current = 'file'
       setDataSource('file')
       frameOffsetRef.current = 0
-
-      useAppStore.getState().reset()
-      const config = useAppStore.getState().config
-      const frames: AnalysisFrame[] = AnalysisPipeline.analyze(
-        samples as any,
-        16000,
-        config.formantMethod,
-        config.formantSmoothing,
-      )
-
-      useAppStore.getState().setFrames(frames)
     } catch (err) {
       console.error('WAV import failed:', err)
     } finally {
@@ -157,7 +158,7 @@ export function useAnalysis() {
         fileInputRef.current.value = ''
       }
     }
-  }, [isCapturing])
+  }, [stopRecording])
 
   return {
     onRecord,
