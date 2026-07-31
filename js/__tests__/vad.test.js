@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test'
+import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
 import { VoiceActivityDetector, DEFAULT_VAD_THRESHOLD } from '../../src/dsp/vad.ts'
 

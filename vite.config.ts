@@ -6,8 +6,23 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   test: {
-    environment: 'jsdom',
-    globals: true,
-    include: ['src/__tests__/**/*.test.{ts,tsx}'],
+    projects: [
+      {
+        test: {
+          name: 'dsp',
+          environment: 'node',
+          globals: true,
+          include: ['js/__tests__/*.test.js'],
+        },
+      },
+      {
+        test: {
+          name: 'unit',
+          environment: 'jsdom',
+          globals: true,
+          include: ['src/__tests__/**/*.test.{ts,tsx}'],
+        },
+      },
+    ],
   },
 })
