@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { RingBuffer } from '../ts/RingBuffer'
+import { RingBuffer } from '../dsp/RingBuffer'
 
 describe('RingBuffer', () => {
   it('writes and reads less than capacity', () => {
