@@ -57,6 +57,11 @@ export function useToolbar(
   }, [isPlaying, isCapturing, analysisRecord, analysisClear, stop])
 
   const handleClickTool = useCallback((toolId: string) => {
+    // 统一前置：record/import 前停止回放
+    if (toolId === 'record' || toolId === 'import') {
+      if (isPlaying) stop()
+    }
+
     switch (toolId) {
       case 'record':   handleRecord(); break
       case 'import':   handleImport(); break
@@ -66,7 +71,7 @@ export function useToolbar(
       case 'help':     onHelp(); break
       case 'about':    onAbout(); break
     }
-  }, [handleRecord, handleImport, handlePlayback, handleClear, onConfig, onHelp, onAbout])
+  }, [isPlaying, stop, handleRecord, handleImport, handlePlayback, handleClear, onConfig, onHelp, onAbout])
 
   // ── Resolved tool items with dynamic props ──
 
