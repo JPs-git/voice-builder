@@ -11,7 +11,7 @@ UI 组件通过回调直接操作引擎，分析结果通过 Zustand Store 响�
 
 **控制流（命令式）**：用户点击按钮 → 回调直接调用 AudioEngine/Pipeline 方法。不做 phase → useEffect 的间接中转。
 
-**数据流（响应式）**：原始采样存入模块级共享 `recordingBuffer`，分析帧写入 frameStore，Charts 通过 Zustand selector 订阅。
+**数据流（响应式）**：原始采样存入模块级共享 `recordingBuffer`，分析帧写入 appStore，Charts 通过 Zustand selector 订阅。
 
 ```
 用户点击录音
@@ -21,7 +21,7 @@ UI 组件通过回调直接操作引擎，分析结果通过 Zustand Store 响�
         recordingBuffer.write(chunk)          // 共享原始数据
         pipeline.pushChunk(chunk, rate)       // DSP 分析
       })
-      → onFrame → frameStore.appendFrame(frame)
+      → onFrame → appStore.appendFrame(frame)
                   → Charts 订阅 frames → 渲染
 
 用户点击播放
@@ -66,8 +66,8 @@ src/
 │   ├── AnalysisPage.tsx        # ~60 行, 仅组件组装
 │   ├── F0Chart.tsx            # 响应式订阅 appStore, cursorTime prop
 │   ├── FormantChart.tsx       # 响应式订阅 appStore, cursorTime prop
-│   ├── Toolbar.tsx            # 使用 analysisStore
-│   ├── TargetPresetBar.tsx    # 使用 analysisStore
+│   ├── Toolbar.tsx            # 接收回调 props + isCapturing/isRequesting
+│   ├── TargetPresetBar.tsx    # 读写 appStore (bands), 局部 activePreset
 │   ├── Drawer.tsx
 │   ├── ConfigDrawer.tsx       # UI 状态局部 useState
 │   ├── HelpDrawer.tsx         # UI 状态局部 useState
@@ -164,7 +164,7 @@ mic → AudioEngine.startCapture(onChunk)
         │
         └── pipeline.pushChunk(chunk)      ← DSP 分析
               ↓
-            onFrame → frameStore.appendFrame(frame)
+            onFrame → appStore.appendFrame(frame)
                         ↓
                       Charts 订阅 → 渲染
 ```
@@ -241,9 +241,9 @@ type AppStore = AppState & AppActions
 | 字段 | 改为 | 原因 |
 |------|------|------|
 | `activePreset` | TargetPresetBar 局部 `useState` | 只有它用，bands 已在 Store 中 |
-| `cursorTime` | usePlayback 内部 state，返回后通过 props 传给 Charts | 游标是播放行为的一部分 |
-| `phase` | 删除 | 回调直接控引擎 |
-| `dataSource` | 删除 | 无需区分 mic/file |
+| `cursorTime` | usePlayback 内部 state，通过 props 传给 Charts | 游标是播放行为的一部分 |
+| `phase` | 删除，UI 状态改为局部 `isCapturing` + `isRequesting` | 回调直接控引擎 |
+| `dataSource` | useAnalysis 内部 `useRef<'mic'\|'file'>` | 只 useAnalysis 自己用：决定 onRecord 是清空还是追加 |
 | `sampleCount` | 删除 | `frames.length > 0` 等价 |
 
 ---
@@ -253,7 +253,7 @@ type AppStore = AppState & AppActions
 ### 设计原则：回调驱动 + 共享数据
 
 - **控制走回调**：用户操作直接调用 `useAnalysis` 返回的回调函数，回调内直接操作 AudioEngine 和 Pipeline
-- **数据走 Store**：分析结果存 frameStore，配置存 analysisStore
+- **数据走 Store**：分析结果和配置都存在 `appStore`
 - **原始采样走共享模块**：`recordingBuffer` 是模块级 `RingBuffer`，useAnalysis 写入，usePlayback 读取，两者平级无依赖
 
 ### recordingBuffer：共享原始数据
@@ -277,20 +277,23 @@ function useAnalysis(): {
   onImport: () => void
   onClear: () => void
   isCapturing: boolean
+  isRequesting: boolean                // ← mic 权限请求中
   fileInputRef: React.RefObject<HTMLInputElement>
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
 }
 ```
 
-**内部状态（useRef/useState，不暴露）：**
+**内部状态：**
 
 ```typescript
 const pipelineRef = useRef<AnalysisPipeline | null>(null)
 const frameOffsetRef = useRef(0)
+const dataSourceRef = useRef<'mic' | 'file'>('mic')  // 决定 onRecord 行为
 const [isCapturing, setIsCapturing] = useState(false)
+const [isRequesting, setIsRequesting] = useState(false)
 ```
 
-**录音回调：**
+**录音回调（dataSource 决定清空 vs 追加）：**
 
 ```typescript
 const onRecord = useCallback(async () => {
@@ -305,15 +308,19 @@ const onRecord = useCallback(async () => {
     return
   }
 
-  // 开始 / 追加
-  const config = useAnalysisStore.getState().config     // 快照
-  if (frameOffsetRef.current === 0) {
+  setIsRequesting(true)
+
+  const config = useAppStore.getState().config           // 快照
+
+  // file → 清空重新开始; mic + 有数据 → 追加
+  if (dataSourceRef.current === 'file') {
+    frameOffsetRef.current = 0
     recordingBuffer.clear()
-    useFrameStore.getState().clear()
+    useAppStore.getState().clear()   // 清空 frames
   }
 
   pipelineRef.current = new AnalysisPipeline({
-    onFrame: (f) => useFrameStore.getState().appendFrame(f),
+    onFrame: (f) => useAppStore.getState().appendFrame(f),
     formantMethod: config.formantMethod,
     formantSmoothing: config.formantSmoothing,
     frameOffset: frameOffsetRef.current,
@@ -321,12 +328,15 @@ const onRecord = useCallback(async () => {
 
   try {
     await getAudioEngine().startCapture((chunk, rate) => {
-      recordingBuffer.write(chunk)                // 共享 buffer
-      pipelineRef.current?.pushChunk(chunk, rate) // DSP 分析
+      recordingBuffer.write(chunk)
+      pipelineRef.current?.pushChunk(chunk, rate)
     })
+    dataSourceRef.current = 'mic'
     setIsCapturing(true)
   } catch (err) {
-    setIsCapturing(false)
+    // getUserMedia 失败
+  } finally {
+    setIsRequesting(false)
   }
 }, [isCapturing])
 ```
@@ -353,13 +363,13 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
   recordingBuffer.clear()
   recordingBuffer.write(samples)
-  useFrameStore.getState().clear()
+  useAppStore.getState().clear()
 
-  const config = useAnalysisStore.getState().config
+  const config = useAppStore.getState().config
   const frames = AnalysisPipeline.analyze(samples, 16000,
     config.formantMethod, config.formantSmoothing)
-  useFrameStore.getState().setFrames(frames)
-  useAnalysisStore.getState().setSampleCount(samples.length)
+  useAppStore.getState().setFrames(frames)
+  dataSourceRef.current = 'file'
 }
 ```
 
@@ -374,8 +384,8 @@ const onClear = useCallback(() => {
     setIsCapturing(false)
   }
   recordingBuffer.clear()
-  useFrameStore.getState().clear()
-  useAnalysisStore.getState().reset()
+  useAppStore.getState().clear()
+  useAppStore.getState().reset()
 }, [isCapturing])
 ```
 
@@ -433,23 +443,20 @@ const stop = useCallback(() => {
 ```tsx
 export function AnalysisPage() {
   const frames = useAppStore(s => s.frames)
-  const { onRecord, onImport, onClear, isCapturing, fileInputRef, handleFileChange }
-    = useAnalysis()
+  const { onRecord, onImport, onClear, isCapturing, isRequesting,
+          fileInputRef, handleFileChange } = useAnalysis()
   const { play, stop, isPlaying, cursorTime } = usePlayback()
-
-  const [configOpen, setConfigOpen] = useState(false)
-  const [helpOpen, setHelpOpen] = useState(false)
-  const [aboutOpen, setAboutOpen] = useState(false)
 
   const hasData = isCapturing || frames.length > 0
 
   return (
     <div>
       <Toolbar
-        isCapturing={isCapturing} hasData={hasData} isPlaying={isPlaying}
+        isCapturing={isCapturing} isRequesting={isRequesting}
+        hasData={hasData} isPlaying={isPlaying}
         onRecord={onRecord} onImport={onImport}
         onPlayback={play} onStopPlayback={stop} onClear={onClear}
-        onConfig={...} onHelp={...} onAbout={...} />
+        ...
       <TargetPresetBar />
       <F0Chart cursorTime={cursorTime} />
       <FormantChart cursorTime={cursorTime} />
@@ -462,8 +469,12 @@ export function AnalysisPage() {
 
 ### Toolbar
 
-- 接收 `isCapturing` + `hasData` + 回调 props
-- 按钮文字：`isCapturing ? '停止录音' : hasData ? '继续录音' : '开始录音'`
+- 接收 `isCapturing` + `isRequesting` + `hasData` + `isPlaying` + 回调 props
+- 录音按钮：
+  - `isRequesting` → "麦克风授权中…"（disabled）
+  - `isCapturing` → "停止录音"
+  - `!isCapturing && hasData` → "继续录音"
+  - `!isCapturing && !hasData` → "开始录音"
 
 ### F0Chart / FormantChart
 
@@ -512,16 +523,16 @@ function F0Chart({ cursorTime }: { cursorTime: number }) {
 用户点击"开始录音"
 → Toolbar.onRecord → useAnalysis.onRecord()
   → 如果 isCapturing: stopCapture() + setIsCapturing(false) + return
-  → 快照 config = analysisStore.getState().config
-  → 首次录制: recordingBuffer.clear() + frameStore.clear()
-  → pipeline = new AnalysisPipeline({config, onFrame: frameStore.appendFrame})
+  → 快照 config = appStore.getState().config
+  → dataSource='file'? 清空 rawBuffer + frames : 追加录音
+  → pipeline = new AnalysisPipeline({config, onFrame: appStore.appendFrame})
   → audioEngine.startCapture(chunk => {
       recordingBuffer.write(chunk)              // 写入共享模块
       pipeline.pushChunk(chunk, rate)           // DSP 分析
     })
     → getUserMedia → ScriptProcessorNode (~15.6次/秒)
       → onFrame (100帧/秒): VAD → formants → FormantSmoother
-        → frameStore.appendFrame(frame)
+        → appStore.appendFrame(frame)
   → setIsCapturing(true)
 
 用户点击"停止录音"
@@ -543,10 +554,10 @@ function F0Chart({ cursorTime }: { cursorTime: number }) {
   → 如果 isCapturing: stopCapture()
   → parseWav → Resampler → 10s 检查
   → recordingBuffer.clear() + recordingBuffer.write(samples)
-  → frameStore.clear()
+  → appStore.clear()
   → AnalysisPipeline.analyze(samples) → frames[]
-  → frameStore.setFrames(frames)
-  → analysisStore.setSampleCount(samples.length)
+  → appStore.setFrames(frames)
+  → dataSourceRef.current = 'file'
 ```
 
 ### 回放
@@ -556,7 +567,7 @@ function F0Chart({ cursorTime }: { cursorTime: number }) {
 → Toolbar.onPlayback → usePlayback.play()
   → samples = recordingBuffer.read()           ← 直接读共享模块
   → audioEngine.createPlaybackSource(samples)
-  → rAF tick → frameStore.setCursorTime(elapsed)
+  → rAF tick → setCursorTime (local state)(elapsed)
   → Charts 订阅 cursorTime → useECharts 更新 markLine
 ```
 
@@ -567,8 +578,8 @@ function F0Chart({ cursorTime }: { cursorTime: number }) {
 → Toolbar.onClear → useAnalysis.onClear()
   → 如果 isCapturing: stopCapture()
   → recordingBuffer.clear()
-  → frameStore.clear()
-  → analysisStore.reset()
+  → appStore.clear()
+  → appStore.reset()
   → setIsCapturing(false)
 ```
 
