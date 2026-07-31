@@ -1,63 +1,71 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { AudioEngine } from '../ts/AudioEngine'
 import { getAudioEngine, resetAudioEngine } from '../ts'
+
+// Mock AudioContext for createPlaybackSource tests
+const MockAudioContext = vi.fn(() => ({
+  sampleRate: 16000,
+  resume: vi.fn(),
+  close: vi.fn(),
+  createBuffer: vi.fn((_channels: number, length: number, _rate: number) => ({
+    getChannelData: vi.fn(() => new Float32Array(length)),
+    length,
+  })),
+  createBufferSource: vi.fn(() => ({
+    buffer: null as AudioBuffer | null,
+    connect: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
+  })),
+  createMediaStreamSource: vi.fn(() => ({
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  })),
+  createScriptProcessor: vi.fn(() => ({
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    onaudioprocess: null,
+  })),
+  destination: {},
+}))
 
 describe('AudioEngine', () => {
   let engine: AudioEngine
 
   beforeEach(() => {
-    engine = new AudioEngine({ sampleRate: 16000, maxDurationSec: 10 })
+    vi.stubGlobal('AudioContext', MockAudioContext)
+    engine = new AudioEngine({ sampleRate: 16000 })
   })
 
   afterEach(() => {
     engine.destroy()
+    vi.unstubAllGlobals()
   })
 
   it('initializes with default sample rate', () => {
     expect(engine.sampleRate).toBe(16000)
   })
 
-  it('importBuffer stores samples truncated to maxDuration', () => {
-    const samples = new Float32Array(160000)
+  it('isCapturing is false initially', () => {
+    expect(engine.isCapturing).toBe(false)
+  })
+
+  it('startCapture rejects if no getUserMedia (server-side test)', async () => {
+    await expect(engine.startCapture(() => {})).rejects.toThrow()
+  })
+
+  it('createPlaybackSource returns source and totalDuration', () => {
+    const samples = new Float32Array(16000)  // 1 second at 16kHz
     samples.fill(0.5)
-    engine.importBuffer(samples)
-    expect(engine.getBuffer().length).toBe(160000)
+    const { source, totalDuration } = engine.createPlaybackSource(samples)
+    expect(source).toBeDefined()
+    expect(totalDuration).toBe(1)
   })
 
-  it('importBuffer truncates samples longer than maxDuration', () => {
-    const samples = new Float32Array(200000)
-    samples.fill(0.5)
-    engine.importBuffer(samples)
-    expect(engine.getBuffer().length).toBe(160000)
-  })
-
-  it('importBuffer replaces previous buffer content', () => {
-    engine.importBuffer(new Float32Array(100).fill(0.1))
-    expect(engine.getBuffer().length).toBe(100)
-    engine.importBuffer(new Float32Array(200).fill(0.2))
-    expect(engine.getBuffer().length).toBe(200)
-  })
-
-  it('clear empties the buffer', () => {
-    engine.importBuffer(new Float32Array(100).fill(0.5))
-    engine.clear()
-    expect(engine.getBuffer().length).toBe(0)
-  })
-
-  it('isStreaming is false initially', () => {
-    expect(engine.isStreaming).toBe(false)
-  })
-
-  it('getBuffer returns a copy', () => {
-    engine.importBuffer(new Float32Array([1, 2, 3]))
-    const a = engine.getBuffer()
-    const b = engine.getBuffer()
-    a[0] = 99
-    expect(b[0]).toBe(1)
-  })
-
-  it('startStream rejects if no getUserMedia (server-side test)', async () => {
-    await expect(engine.startStream(() => {})).rejects.toThrow()
+  it('createPlaybackSource duration scales with sample count', () => {
+    const samples = new Float32Array(8000)  // 0.5 seconds
+    const { totalDuration } = engine.createPlaybackSource(samples)
+    expect(totalDuration).toBe(0.5)
   })
 })
 

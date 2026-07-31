@@ -1,15 +1,21 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { getAudioEngine } from '../ts'
+import { recordingBuffer } from '../audio/recordingBuffer'
+import { useAppStore } from '../store/appStore'
 
 export function usePlayback() {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [cursorTime, setCursorTime] = useState(-1)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
   const rafRef = useRef<number | null>(null)
   const startTimeRef = useRef(0)
+  const tickIdRef = useRef(0)
 
   const stop = useCallback(() => {
-    if (sourceRef.current) {
-      try { sourceRef.current.stop() } catch {}
+    const source = sourceRef.current
+    if (source) {
+      source.onended = null  // 防止旧 onended 覆盖新播放
+      try { source.stop() } catch {}
       sourceRef.current = null
     }
     if (rafRef.current !== null) {
@@ -17,41 +23,34 @@ export function usePlayback() {
       rafRef.current = null
     }
     setIsPlaying(false)
+    setCursorTime(-1)
   }, [])
 
-  const play = useCallback((onProgress?: (elapsed: number) => void, onEnd?: () => void) => {
-    const ae = getAudioEngine()
-    const audioCtx = ae.audioContext
-    const samples = ae.getBuffer()
+  const play = useCallback(() => {
+    const samples = recordingBuffer.read()
     if (samples.length === 0) return
 
-    if (sourceRef.current) {
-      try { sourceRef.current.stop() } catch {}
-      sourceRef.current = null
-    }
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current)
-    }
+    // 先停旧的
+    stop()
 
-    audioCtx.resume()
-    const buffer = audioCtx.createBuffer(1, samples.length, ae.sampleRate)
-    buffer.getChannelData(0).set(samples)
+    const ae = getAudioEngine()
+    const { source, totalDuration } = ae.createPlaybackSource(samples)
 
-    const source = audioCtx.createBufferSource()
-    source.buffer = buffer
-    source.connect(audioCtx.destination)
-
-    const totalDuration = samples.length / ae.sampleRate
-    startTimeRef.current = audioCtx.currentTime
+    const firstTime = useAppStore.getState().frames[0]?.time ?? 0
+    startTimeRef.current = ae.audioContext.currentTime
+    tickIdRef.current += 1
+    const activeTickId = tickIdRef.current
 
     source.onended = () => {
+      // 只有当前 source 的 ended 才生效
+      if (sourceRef.current !== source) return
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current)
         rafRef.current = null
       }
       sourceRef.current = null
       setIsPlaying(false)
-      if (onEnd) onEnd()
+      setCursorTime(-1)
     }
 
     source.start()
@@ -59,19 +58,29 @@ export function usePlayback() {
     setIsPlaying(true)
 
     const tick = () => {
-      if (!sourceRef.current) return
-      const elapsed = Math.min(audioCtx.currentTime - startTimeRef.current, totalDuration)
-      if (onProgress) onProgress(elapsed)
+      // 检查是否仍然是当前播放
+      if (sourceRef.current !== source) return
+      const elapsed = Math.min(
+        ae.audioContext.currentTime - startTimeRef.current,
+        totalDuration,
+      )
+      setCursorTime(elapsed + firstTime)
       if (elapsed < totalDuration) {
         rafRef.current = requestAnimationFrame(tick)
+      } else {
+        // 自然结束时主动停止
+        rafRef.current = null
+        sourceRef.current = null
+        setIsPlaying(false)
+        setCursorTime(-1)
       }
     }
     rafRef.current = requestAnimationFrame(tick)
-  }, [])
+  }, [stop])
 
   useEffect(() => {
     return () => stop()
   }, [stop])
 
-  return { play, stop, isPlaying }
+  return { play, stop, isPlaying, cursorTime }
 }

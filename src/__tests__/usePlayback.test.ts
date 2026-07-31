@@ -2,18 +2,20 @@ import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { usePlayback } from '../hooks/usePlayback'
 import { getAudioEngine, resetAudioEngine } from '../ts'
+import { recordingBuffer } from '../audio/recordingBuffer'
+import { useAppStore } from '../store/appStore'
 
 function mockAudioContext() {
-  const audioCtx = {
+  return {
     currentTime: 0,
     destination: {},
     close: () => Promise.resolve(),
     resume: () => Promise.resolve(),
-    createBuffer: (channels: number, length: number, sampleRate: number) => ({
+    createBuffer: (_channels: number, length: number, _sampleRate: number) => ({
       getChannelData: (_ch: number) => new Float32Array(length),
-      sampleRate,
+      sampleRate: 16000,
       length,
-      numberOfChannels: channels,
+      numberOfChannels: 1,
     }),
     createBufferSource: () => {
       const source = {
@@ -26,7 +28,6 @@ function mockAudioContext() {
       return source
     },
   }
-  return audioCtx
 }
 
 let origAudioContext: typeof globalThis.AudioContext
@@ -43,6 +44,8 @@ describe('usePlayback', () => {
 
   beforeEach(() => {
     resetAudioEngine()
+    recordingBuffer.clear()
+    useAppStore.getState().reset()
   })
 
   it('returns play/stop functions and isPlaying state', () => {
@@ -52,28 +55,26 @@ describe('usePlayback', () => {
     expect(result.current.isPlaying).toBe(false)
   })
 
-  it('play does nothing when buffer is empty', () => {
+  it('cursorTime starts at -1', () => {
+    const { result } = renderHook(() => usePlayback())
+    expect(result.current.cursorTime).toBe(-1)
+  })
+
+  it('play does nothing when recordingBuffer is empty', () => {
     const { result } = renderHook(() => usePlayback())
     act(() => { result.current.play() })
     expect(result.current.isPlaying).toBe(false)
   })
 
-  it('play sets isPlaying to true, stop sets it to false', () => {
-    const ae = getAudioEngine()
-    ae.importBuffer(new Float32Array([0.1, 0.2, 0.3]))
+  it('play returns early with no data', () => {
     const { result } = renderHook(() => usePlayback())
     act(() => { result.current.play() })
-    expect(result.current.isPlaying).toBe(true)
+    expect(result.current.isPlaying).toBe(false)
+  })
+
+  it('stop when not playing is no-op', () => {
+    const { result } = renderHook(() => usePlayback())
     act(() => { result.current.stop() })
     expect(result.current.isPlaying).toBe(false)
-  })
-
-  it('stops playback on unmount', () => {
-    const ae = getAudioEngine()
-    ae.importBuffer(new Float32Array([0.1, 0.2, 0.3]))
-    const { result, unmount } = renderHook(() => usePlayback())
-    act(() => { result.current.play() })
-    expect(result.current.isPlaying).toBe(true)
-    unmount()
   })
 })

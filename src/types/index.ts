@@ -25,7 +25,7 @@ export const FORMANT_METHODS: FormantMethod[] = [
   { value: 'cepstral', label: '纯倒谱法', description: '封闭元音 F2 偏大' },
 ]
 
-export type AppPhase = 'idle' | 'requesting' | 'recording' | 'paused' | 'analyzing' | 'uploaded'
+// AppPhase removed — engine control is callback-driven, UI state is local (isCapturing, isRequesting)
 
 export interface TargetBands {
   f0: TargetBand
@@ -59,15 +59,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   formantSmoothing: true,
 }
 
-export interface ChartHandles {
-  pushFrame: (frame: AnalysisFrame) => void
-  displayAll: (frames: AnalysisFrame[]) => void
-  setLiveMode: () => void
-  setTargetBands: (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => void
-  setCursorTime: (time: number) => void
-  setSeriesVisible?: (key: string, visible: boolean) => void
-  clear: () => void
-}
 
 export interface AnalysisStats {
   f0Mean: number | null

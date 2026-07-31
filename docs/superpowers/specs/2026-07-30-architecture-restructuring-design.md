@@ -1,0 +1,658 @@
+# 架构重构设计 — 全量分层
+
+日期: 2026-07-30
+
+## 目标
+
+将 VoiceBuilder 从"单页面编排 + Context + imperative refs"架构重构为命令式控制 + 响应式数据的架构。
+UI 组件通过回调直接操作引擎，分析结果通过 Zustand Store 响应式流向 Charts。
+
+### 核心设计原则：命令式控制 + 响应式数据
+
+**控制流（命令式）**：用户点击按钮 → 回调直接调用 AudioEngine/Pipeline 方法。不做 phase → useEffect 的间接中转。
+
+**数据流（响应式）**：原始采样存入模块级共享 `recordingBuffer`，分析帧写入 appStore，Charts 通过 Zustand selector 订阅。
+
+```
+用户点击录音
+  → useAnalysis.onRecord()
+    → pipeline = new AnalysisPipeline(config快照)
+    → audioEngine.startCapture(chunk => {
+        recordingBuffer.write(chunk)          // 共享原始数据
+        pipeline.pushChunk(chunk, rate)       // DSP 分析
+      })
+      → onFrame → appStore.appendFrame(frame)
+                  → Charts 订阅 frames → 渲染
+
+用户点击播放
+  → usePlayback.play()
+    → samples = recordingBuffer.read()       // 直接从共享模块拿
+    → audioEngine.createPlaybackSource(samples)
+```
+
+- **控制走回调**：AudioEngine 和 Pipeline 的启停直接在事件处理函数中完成，不经过状态
+- **数据走 Store**：分析结果（frames, stats）和配置（config, bands）存 Zustand，Charts 通过 selector 订阅
+- **原始采样走共享模块**：`recordingBuffer` 是模块级变量，useAnalysis 写入，usePlayback 读取，两者平级无依赖
+- **Config 在录音开始时快照**：录音中修改配置不传播到运行中的 pipeline
+
+---
+
+## 目录结构
+
+```
+src/
+├── dsp/                       # Engine Layer: DSP (TS 迁移)
+│   ├── RingBuffer.ts           # 通用循环缓冲（从 src/ts/ 迁入）
+│   ├── analysis-pipeline.ts
+│   ├── cepstral.ts
+│   ├── lpc.ts
+│   ├── fft.ts
+│   ├── formant-smoother.ts
+│   ├── frame-processor.ts
+│   ├── resampler.ts
+│   ├── vad.ts
+│   ├── wav-parser.ts
+│   └── index.ts
+
+├── audio/                     # Engine Layer: 音频硬件
+│   ├── AudioEngine.ts          # 纯硬件接口（无数据存储）
+│   └── index.ts                # getAudioEngine, resetAudioEngine
+│
+├── services/                  # Service Layer: 业务编排
+├── store/                     # State Layer: Zustand
+│   └── appStore.ts             # config, bands, frames[], latestFrame, stats
+│
+├── components/                # UI Layer
+│   ├── AnalysisPage.tsx        # ~60 行, 仅组件组装
+│   ├── F0Chart.tsx            # 响应式订阅 appStore, cursorTime prop
+│   ├── FormantChart.tsx       # 响应式订阅 appStore, cursorTime prop
+│   ├── Toolbar.tsx            # 接收回调 props + isCapturing/isRequesting
+│   ├── TargetPresetBar.tsx    # 读写 appStore (bands), 局部 activePreset
+│   ├── Drawer.tsx
+│   ├── ConfigDrawer.tsx       # UI 状态局部 useState
+│   ├── HelpDrawer.tsx         # UI 状态局部 useState
+│   ├── AboutModal.tsx         # UI 状态局部 useState
+│   └── ... (Button, Modal, TipWidget, EmptyState 不变)
+│
+├── hooks/
+│   ├── useECharts.ts          # ECharts 实例生命周期 + cursor 管理
+│   ├── usePlayback.ts         # 回放控制 (已有, 不变)
+│   └── useAnalysisService.ts  # 桥接 AnalysisService + React 生命周期
+│
+├── types/
+│   └── index.ts               # 共享类型定义
+│
+├── App.tsx                    # 移除 AnalysisProvider, 直接渲染 AnalysisPage
+└── main.tsx
+```
+
+**移除：**
+- `src/contexts/AnalysisContext.tsx` — 被 Zustand store 替代
+- `src/ts/` → 改为 `src/audio/`
+- `js/*.js` — DSP 文件迁移后删除
+
+---
+
+## Engine Layer 设计
+
+### AudioEngine：纯硬件接口
+
+AudioEngine 回归本质——**只负责与浏览器音频硬件交互**，不持有任何数据。
+
+**职责：** AudioContext 管理、getUserMedia、音频采集、音频播放
+
+**不负责：** 数据存储、DSP 处理
+
+```typescript
+// src/audio/AudioEngine.ts — 纯硬件，无状态存储
+class AudioEngine {
+  private audioContext: AudioContext | null = null
+  private stream: MediaStream | null = null
+  private sourceNode: MediaStreamAudioSourceNode | null = null
+  private processor: ScriptProcessorNode | null = null
+  private isCapturing: boolean = false
+
+  get sampleRate(): number
+
+  // ── 采集 ──
+  async startCapture(
+    onChunk: (samples: Float32Array, rate: number) => void
+  ): Promise<void>
+
+  stopCapture(): void
+
+  // ── 播放 ──
+  createPlaybackSource(samples: Float32Array): {
+    source: AudioBufferSourceNode
+    totalDuration: number
+  }
+}
+```
+
+**关键变化：**
+- 删除 `RingBuffer` — 数据存储移到 AnalysisService
+- 删除 `getBuffer()` — 原始采样由 Service 提供
+- 删除 `importBuffer()` — 导入时由 Service 直接写 RingBuffer
+- 删除 `clear()` — Service 掌管数据生命周期
+- `startStream` → `startCapture` — 命名更准确，只表达"开始采集"
+- `stopStream` → `stopCapture`
+- 新增 `createPlaybackSource()` — 提供播放能力，但不持有数据
+
+### AnalysisPipeline：独立 DSP 处理器
+
+Pipeline 与 AudioEngine 完全解耦，保持独立。**唯一耦合是一个 callback：**
+
+```typescript
+// AudioEngine 不知道 Pipeline 的存在
+audioEngine.startCapture((chunk, rate) => pipeline.pushChunk(chunk, rate))
+```
+
+**保持独立的原因：**
+1. 生命周期不同 — AudioEngine 单例，Pipeline 每次录音新建/销毁
+2. WAV 导入只用 Pipeline（`static analyze()`），不涉及 AudioEngine
+3. 测试时各自独立 mock
+4. 未来换 DSP 后端（Rust/WASM）不需要动 AudioEngine
+
+### 数据归属：原始采样 vs 分析结果
+
+两个消费者是平级关系，都在 `useAnalysis.onAudioChunk` 回调中：
+
+```
+mic → AudioEngine.startCapture(onChunk)
+        │
+        ├── recordingBuffer.write(chunk)   ← 模块级共享，回放用
+        │
+        └── pipeline.pushChunk(chunk)      ← DSP 分析
+              ↓
+            onFrame → appStore.appendFrame(frame)
+                        ↓
+                      Charts 订阅 → 渲染
+```
+
+- **原始采样**：`recordingBuffer`（模块级 RingBuffer），谁需要谁直接 import
+- **分析结果**：`frameStore`（Zustand），Charts 通过 selector 订阅
+
+### RingBuffer 的位置
+
+RingBuffer 是通用数据结构。录音缓冲实例是模块级共享变量，不归任何对象所有：
+
+```
+src/
+├── audio/
+│   ├── AudioEngine.ts       # 纯硬件接口
+│   └── recordingBuffer.ts   # 模块级共享 RingBuffer 实例
+├── dsp/
+│   ├── RingBuffer.ts        # 通用循环缓冲 class
+│   └── ...
+├── hooks/
+│   ├── useAnalysis.ts       # 写入 recordingBuffer
+│   └── usePlayback.ts       # 读取 recordingBuffer
+```
+
+两个 hook 平级导入 `recordingBuffer`，无依赖关系。
+
+---
+
+## State Layer (Zustand)
+
+### 设计原则
+
+- **一个 Store** — 只有跨组件共享的数据才入 Store
+- 组件通过 selector 精准订阅，只重渲染变动的部分
+- 不在此 Store 的数据：`activePreset`（TargetPresetBar 局部）、`cursorTime`（usePlayback 返回，AnalysisPage 传 props）
+
+### appStore
+
+```typescript
+// src/store/appStore.ts
+import { create } from 'zustand'
+import type { AppConfig, TargetBands, AnalysisFrame, AnalysisStats } from '../types'
+import { DEFAULT_CONFIG, VOWEL_PRESETS } from '../types'
+
+interface AppState {
+  config: AppConfig
+  bands: TargetBands
+  frames: AnalysisFrame[]
+  latestFrame: AnalysisFrame | null
+  stats: AnalysisStats
+}
+
+interface AppActions {
+  setConfig: (config: Partial<AppConfig>) => void
+  setBands: (bands: Partial<Record<'f0'|'f1'|'f2', [number, number]>>) => void
+  appendFrame: (frame: AnalysisFrame) => void
+  setFrames: (frames: AnalysisFrame[]) => void
+  reset: () => void
+}
+
+type AppStore = AppState & AppActions
+```
+
+- `setConfig`: 合并更新
+- `setBands`: 合并更新，校验 `low < high`
+- `appendFrame`: 追加一帧，超过 1000 帧自动 shift；增量更新 latestFrame 和 stats
+- `setFrames`: 批量设置（WAV 导入），重建 stats
+- `reset`: 恢复全部默认值
+- 默认 bands 从 VOWEL_PRESETS['vowel-a'] 初始化
+- stats 增量计算：f0Mean、hitRate、duration
+
+### 不再入 Store 的字段
+
+| 字段 | 改为 | 原因 |
+|------|------|------|
+| `activePreset` | TargetPresetBar 局部 `useState` | 只有它用，bands 已在 Store 中 |
+| `cursorTime` | usePlayback 内部 state，通过 props 传给 Charts | 游标是播放行为的一部分 |
+| `phase` | 删除，UI 状态改为局部 `isCapturing` + `isRequesting` | 回调直接控引擎 |
+| `dataSource` | useAnalysis 内部 `useRef<'mic'\|'file'>` | 只 useAnalysis 自己用：决定 onRecord 是清空还是追加 |
+| `sampleCount` | 删除 | `frames.length > 0` 等价 |
+
+---
+
+## Hooks Layer
+
+### 设计原则：回调驱动 + 共享数据
+
+- **控制走回调**：用户操作直接调用 `useAnalysis` 返回的回调函数，回调内直接操作 AudioEngine 和 Pipeline
+- **数据走 Store**：分析结果和配置都存在 `appStore`
+- **原始采样走共享模块**：`recordingBuffer` 是模块级 `RingBuffer`，useAnalysis 写入，usePlayback 读取，两者平级无依赖
+
+### recordingBuffer：共享原始数据
+
+```typescript
+// src/audio/recordingBuffer.ts
+import { RingBuffer } from '../dsp/RingBuffer'
+
+// 模块级变量 — 不归任何 hook 或组件所有
+export const recordingBuffer = new RingBuffer(16000 * 10)
+```
+
+### useAnalysis：控制中心
+
+React hook，管理录制/Pipeline 生命周期。返回回调函数，不返回任何状态。
+
+```typescript
+// src/hooks/useAnalysis.ts
+function useAnalysis(): {
+  onRecord: () => Promise<void>
+  onImport: () => void
+  onClear: () => void
+  isCapturing: boolean
+  isRequesting: boolean                // ← mic 权限请求中
+  fileInputRef: React.RefObject<HTMLInputElement>
+  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
+```
+
+**内部状态：**
+
+```typescript
+const pipelineRef = useRef<AnalysisPipeline | null>(null)
+const frameOffsetRef = useRef(0)
+const dataSourceRef = useRef<'mic' | 'file'>('mic')  // 决定 onRecord 行为
+const [isCapturing, setIsCapturing] = useState(false)
+const [isRequesting, setIsRequesting] = useState(false)
+```
+
+**录音回调（dataSource 决定清空 vs 追加）：**
+
+```typescript
+const onRecord = useCallback(async () => {
+  if (isCapturing) {
+    // 停止
+    pipelineRef.current?.flush()
+    frameOffsetRef.current += pipelineRef.current?.frameCount ?? 0
+    pipelineRef.current?.reset()
+    pipelineRef.current = null
+    getAudioEngine().stopCapture()
+    setIsCapturing(false)
+    return
+  }
+
+  setIsRequesting(true)
+
+  const config = useAppStore.getState().config           // 快照
+
+  // file → 清空重新开始; mic + 有数据 → 追加
+  if (dataSourceRef.current === 'file') {
+    frameOffsetRef.current = 0
+    recordingBuffer.clear()
+    useAppStore.getState().clear()   // 清空 frames
+  }
+
+  pipelineRef.current = new AnalysisPipeline({
+    onFrame: (f) => useAppStore.getState().appendFrame(f),
+    formantMethod: config.formantMethod,
+    formantSmoothing: config.formantSmoothing,
+    frameOffset: frameOffsetRef.current,
+  })
+
+  try {
+    await getAudioEngine().startCapture((chunk, rate) => {
+      recordingBuffer.write(chunk)
+      pipelineRef.current?.pushChunk(chunk, rate)
+    })
+    dataSourceRef.current = 'mic'
+    setIsCapturing(true)
+  } catch (err) {
+    // getUserMedia 失败
+  } finally {
+    setIsRequesting(false)
+  }
+}, [isCapturing])
+```
+
+**导入回调：**
+
+```typescript
+const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  const buf = await file.arrayBuffer()
+
+  // 停止录制
+  if (isCapturing) {
+    pipelineRef.current?.reset()
+    pipelineRef.current = null
+    getAudioEngine().stopCapture()
+    setIsCapturing(false)
+  }
+
+  const parsed = parseWav(buf)
+  let samples = resampleIfNeeded(parsed.samples, parsed.sampleRate)
+  // 10s 检查...
+
+  recordingBuffer.clear()
+  recordingBuffer.write(samples)
+  useAppStore.getState().clear()
+
+  const config = useAppStore.getState().config
+  const frames = AnalysisPipeline.analyze(samples, 16000,
+    config.formantMethod, config.formantSmoothing)
+  useAppStore.getState().setFrames(frames)
+  dataSourceRef.current = 'file'
+}
+```
+
+**清空回调：**
+
+```typescript
+const onClear = useCallback(() => {
+  if (isCapturing) {
+    pipelineRef.current?.reset()
+    pipelineRef.current = null
+    getAudioEngine().stopCapture()
+    setIsCapturing(false)
+  }
+  recordingBuffer.clear()
+  useAppStore.getState().clear()
+  useAppStore.getState().reset()
+}, [isCapturing])
+```
+
+### usePlayback：回放
+
+直接从 `recordingBuffer` 读取原始采样。**cursorTime 作为内部 state 返回**，不在 Store 中。
+
+```typescript
+// src/hooks/usePlayback.ts
+function usePlayback(): {
+  play: () => void
+  stop: () => void
+  isPlaying: boolean
+  cursorTime: number           // ← 回放游标，返回给 AnalysisPage 传 props
+}
+```
+
+**实现要点：**
+
+```typescript
+const [cursorTime, setCursorTime] = useState(-1)
+
+const play = useCallback(() => {
+  const samples = recordingBuffer.read()
+  if (samples.length === 0) return
+
+  const { source, totalDuration } = getAudioEngine().createPlaybackSource(samples)
+  // rAF tick:
+  //   setCursorTime(elapsed + firstTime)
+}, [])
+
+const stop = useCallback(() => {
+  // ... stop source
+  setCursorTime(-1)
+}, [])
+```
+
+**useAnalysis 和 usePlayback 是平级关系，都 import `recordingBuffer`，互不依赖。**
+
+### 关键设计决策
+
+1. **消除 Phase**：引擎控制走直接回调，不需要 `idle → requesting → recording` 的间接层
+2. **recordingBuffer 模块级共享**：useAnalysis 写入，usePlayback 读取。不经过 props、Store 或 Context 传递
+3. **AudioEngine 不持有数据**：纯硬件接口
+4. **Pipeline 独立于 AudioEngine**：唯一耦合是 callback
+5. **Config 快照**：录音开始时读取，录音中修改不传播到 pipeline
+6. **isCapturing 是本地 state**：不放入 Store，只有 useAnalysis 内部使用
+
+---
+
+## UI Layer
+
+### AnalysisPage（薄层，组装 + 接线）
+
+```tsx
+export function AnalysisPage() {
+  const frames = useAppStore(s => s.frames)
+  const { onRecord, onImport, onClear, isCapturing, isRequesting,
+          fileInputRef, handleFileChange } = useAnalysis()
+  const { play, stop, isPlaying, cursorTime } = usePlayback()
+
+  const hasData = isCapturing || frames.length > 0
+
+  return (
+    <div>
+      <Toolbar
+        isCapturing={isCapturing} isRequesting={isRequesting}
+        hasData={hasData} isPlaying={isPlaying}
+        onRecord={onRecord} onImport={onImport}
+        onPlayback={play} onStopPlayback={stop} onClear={onClear}
+        ...
+      <TargetPresetBar />
+      <F0Chart cursorTime={cursorTime} />
+      <FormantChart cursorTime={cursorTime} />
+      <ConfigDrawer ... />
+      ...
+    </div>
+  )
+}
+```
+
+### Toolbar
+
+- 接收 `isCapturing` + `isRequesting` + `hasData` + `isPlaying` + 回调 props
+- 录音按钮：
+  - `isRequesting` → "麦克风授权中…"（disabled）
+  - `isCapturing` → "停止录音"
+  - `!isCapturing && hasData` → "继续录音"
+  - `!isCapturing && !hasData` → "开始录音"
+
+### F0Chart / FormantChart
+
+- 从 `appStore` 订阅 `frames`、`bands`
+- `cursorTime` 从 props 接收（由 usePlayback 返回 → AnalysisPage 传入）
+
+```typescript
+function F0Chart({ cursorTime }: { cursorTime: number }) {
+  const frames = useAppStore(s => s.frames)
+  const bands = useAppStore(s => s.bands)
+  // ... cursorTime 直接使用 props，不再订阅 Store
+}
+```
+
+### TargetPresetBar
+
+- `activePreset` 改为局部 `useState('vowel-a')`
+- 点击预设时：`setActivePreset(name)` + `appStore.setBands(presetBands)`
+- 从 `appStore` 订阅 `bands` 用于显示当前区间值
+
+### 组件变更汇总
+
+| 组件 | 变更 |
+|---|---|
+| AnalysisPage | cursorTime 从 usePlayback 获取后传 props 给 Charts |
+| Toolbar | hasData = `isCapturing \|\| frames.length > 0` |
+| F0Chart / FormantChart | cursorTime 改为 prop |
+| TargetPresetBar | activePreset 局部 useState |
+| ConfigDrawer | 不变（读写 appStore） |
+
+### 未变更的部分
+
+- `src/hooks/useECharts.ts` — 不变
+- CSS modules — 不变
+- `vite.config.ts` — 不变
+
+---
+
+## Data Flow（端到端，回调驱动）
+
+用户操作 → 回调直接调引擎/Pipeline。数据通过 Store 和 recordingBuffer 流动。
+
+### 录音
+
+```
+用户点击"开始录音"
+→ Toolbar.onRecord → useAnalysis.onRecord()
+  → 如果 isCapturing: stopCapture() + setIsCapturing(false) + return
+  → 快照 config = appStore.getState().config
+  → dataSource='file'? 清空 rawBuffer + frames : 追加录音
+  → pipeline = new AnalysisPipeline({config, onFrame: appStore.appendFrame})
+  → audioEngine.startCapture(chunk => {
+      recordingBuffer.write(chunk)              // 写入共享模块
+      pipeline.pushChunk(chunk, rate)           // DSP 分析
+    })
+    → getUserMedia → ScriptProcessorNode (~15.6次/秒)
+      → onFrame (100帧/秒): VAD → formants → FormantSmoother
+        → appStore.appendFrame(frame)
+  → setIsCapturing(true)
+
+用户点击"停止录音"
+→ Toolbar.onRecord → useAnalysis.onRecord()
+  → isCapturing=true → 走停止分支
+    → pipeline.flush() → 最后一帧
+    → frameOffset 累加 pipeline.frameCount
+    → pipeline.reset() + pipeline = null
+    → audioEngine.stopCapture()
+    → setIsCapturing(false)
+    // recordingBuffer 保留，供回放使用
+```
+
+### 导入 WAV
+
+```
+用户选择 .wav 文件
+→ handleFileChange → useAnalysis
+  → 如果 isCapturing: stopCapture()
+  → parseWav → Resampler → 10s 检查
+  → recordingBuffer.clear() + recordingBuffer.write(samples)
+  → appStore.clear()
+  → AnalysisPipeline.analyze(samples) → frames[]
+  → appStore.setFrames(frames)
+  → dataSourceRef.current = 'file'
+```
+
+### 回放
+
+```
+用户点击播放 (hasData=true)
+→ Toolbar.onPlayback → usePlayback.play()
+  → samples = recordingBuffer.read()           ← 直接读共享模块
+  → audioEngine.createPlaybackSource(samples)
+  → rAF tick → setCursorTime (local state)(elapsed)
+  → Charts 订阅 cursorTime → useECharts 更新 markLine
+```
+
+### 清空
+
+```
+用户点击清空
+→ Toolbar.onClear → useAnalysis.onClear()
+  → 如果 isCapturing: stopCapture()
+  → recordingBuffer.clear()
+  → appStore.clear()
+  → appStore.reset()
+  → setIsCapturing(false)
+```
+
+---
+
+## DSP 迁移计划 (Phase 4)
+
+### 迁移策略
+
+每个 DSP 模块单独迁移，顺序从无状态到有状态：
+
+| 顺序 | 模块 | 状态 | 备注 |
+|---|---|---|---|
+| 1 | fft.ts | 无状态 | 纯函数，最简单 |
+| 2 | resampler.ts | 有状态 (Resampler class) | 可直接移植 |
+| 3 | wav-parser.ts | 无状态 | 纯函数 |
+| 4 | vad.ts | 有状态 (VoiceActivityDetector) | 可直接移植 |
+| 5 | lpc.ts | 无状态 | 导出函数 |
+| 6 | cepstral.ts | 无状态 | 导出函数 |
+| 7 | formant-smoother.ts | 有状态 | 修改 import 路径 |
+| 8 | frame-processor.ts | 有状态 | 需配合 pipeline |
+| 9 | analysis-pipeline.ts | 有状态 | 核心编排，最后移 |
+
+迁移 == 重写为 .ts + 添加类型，逻辑不改。测试从 `node --test` 迁移到 Vitest。
+
+### 接口约定
+
+所有 DSP 模块通过 `src/dsp/index.ts` 统一导出：
+
+```typescript
+export { FFT, fftMagnitudes } from './fft'
+export { Resampler } from './resampler'
+export { parseWav } from './wav-parser'
+export { VoiceActivityDetector } from './vad'
+export { detectPitch, extractFormants, isHarmonicLocked } from './lpc'
+export { extractFormantsCepstral } from './cepstral'
+export { FormantSmoother } from './formant-smoother'
+export { FrameProcessor } from './frame-processor'
+export { AnalysisPipeline } from './analysis-pipeline'
+```
+
+---
+
+## 移除的文件清单
+
+| 文件 | 替代 |
+|---|---|
+| `src/contexts/AnalysisContext.tsx` | `src/store/appStore.ts` |
+| `src/store/analysisStore.ts` + `frameStore.ts` | 合并为 `src/store/appStore.ts` |
+| `src/ts/AudioEngine.ts` | → `src/audio/AudioEngine.ts`（精简为纯硬件接口） |
+| `src/ts/RingBuffer.ts` | → `src/dsp/RingBuffer.ts`（数据归属 Service） |
+| `src/ts/index.ts` | → `src/audio/index.ts` |
+| AudioEngine 的 `getBuffer()` / `importBuffer()` / `clear()` | 删除（数据存储移入 AnalysisService.rawBuffer） |
+| AudioEngine 的 `startStream()` / `stopStream()` | 重命名为 `startCapture()` / `stopCapture()` |
+| `js/analysis-pipeline.js` | `src/dsp/analysis-pipeline.ts` (迁移后) |
+| `js/cepstral.js` | `src/dsp/cepstral.ts` (迁移后) |
+| `js/lpc.js` | `src/dsp/lpc.ts` (迁移后) |
+| `js/fft.js` | `src/dsp/fft.ts` (迁移后) |
+| `js/formant-smoother.js` | `src/dsp/formant-smoother.ts` (迁移后) |
+| `js/frame-processor.js` | `src/dsp/frame-processor.ts` (迁移后) |
+| `js/resampler.js` | `src/dsp/resampler.ts` (迁移后) |
+| `js/vad.js` | `src/dsp/vad.ts` (迁移后) |
+| `js/wav-parser.js` | `src/dsp/wav-parser.ts` (迁移后) |
+| `js/complex.js` | `src/dsp/complex.ts` (迁移后) |
+| `js/__tests__/*.test.js` | 迁移到 `src/__tests__/` (Vitest) |
+| `src/types/index.ts` 中的 ChartHandles | 完全移除（所有方法被 store 或 useECharts 替代） |
+| `src/types/index.ts` 中的 AppPhase | 完全移除（引擎控制走直接回调，不需要 phase 状态） |
+| `src/types/index.ts` 中的 `dataSource` | 移除 |
+| `src/services/` | 删除整个目录 |
+| `activePreset` (原在 analysisStore) | → TargetPresetBar 局部 useState |
+| `cursorTime` (原在 frameStore) | → usePlayback 内部 state，通过 props 传给 Charts |
+| `AppPhase` 类型 | 完全移除 |
+| `ChartHandles` 接口 | 完全移除 |
+
+---
+

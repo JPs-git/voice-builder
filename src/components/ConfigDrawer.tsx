@@ -1,16 +1,17 @@
 import { FORMANT_METHODS } from '../types'
-import type { AppConfig, FormantMethod as FM } from '../types'
+import type { FormantMethod as FM } from '../types'
+import { useAppStore } from '../store/appStore'
 import { Drawer } from './Drawer'
 import styles from './ConfigDrawer.module.css'
 
 interface ConfigDrawerProps {
   open: boolean
-  config: AppConfig
-  onChange: (config: Partial<AppConfig>) => void
   onClose: () => void
 }
 
-export function ConfigDrawer({ open, config, onChange, onClose }: ConfigDrawerProps) {
+export function ConfigDrawer({ open, onClose }: ConfigDrawerProps) {
+  const config = useAppStore(s => s.config)
+  const setConfig = useAppStore(s => s.setConfig)
   return (
     <Drawer open={open} title="配置" onClose={onClose}>
       <section>
@@ -21,7 +22,7 @@ export function ConfigDrawer({ open, config, onChange, onClose }: ConfigDrawerPr
               <input
                 type="radio" name="formantMethod" value={m.value}
                 checked={config.formantMethod === m.value}
-                onChange={() => onChange({ formantMethod: m.value })}
+                onChange={() => setConfig({ formantMethod: m.value })}
               />
               <span>{m.label} <small>（{m.description}）</small></span>
             </label>
@@ -35,7 +36,7 @@ export function ConfigDrawer({ open, config, onChange, onClose }: ConfigDrawerPr
           <input
             type="checkbox"
             checked={config.formantSmoothing}
-            onChange={e => onChange({ formantSmoothing: e.target.checked })}
+            onChange={e => setConfig({ formantSmoothing: e.target.checked })}
           />
           <span>中值滤波平滑 <small>（减少毛刺跳变）</small></span>
         </label>

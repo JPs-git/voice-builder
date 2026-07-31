@@ -1,26 +1,16 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { TargetPresetBar } from '../components/TargetPresetBar'
+import { useAppStore } from '../store/appStore'
 import { VOWEL_PRESETS } from '../types'
-import type { TargetBands } from '../types'
-
-const vowelA = VOWEL_PRESETS['vowel-a']
-const defaultBands: TargetBands = {
-  f0: { range: vowelA.f0, color: '#10B981' },
-  f1: { range: vowelA.f1, color: '#3B82F6' },
-  f2: { range: vowelA.f2, color: '#F59E0B' },
-}
 
 describe('TargetPresetBar', () => {
+  beforeEach(() => {
+    useAppStore.getState().reset()
+  })
+
   it('renders vowel preset buttons', () => {
-    render(
-      <TargetPresetBar
-        activePreset="vowel-a"
-        bands={defaultBands}
-        onPresetSelect={() => {}}
-        onBandsChange={() => {}}
-      />
-    )
+    render(<TargetPresetBar />)
     expect(screen.getByText('a')).toBeTruthy()
     expect(screen.getByText('o')).toBeTruthy()
     expect(screen.getByText('e')).toBeTruthy()
@@ -29,45 +19,27 @@ describe('TargetPresetBar', () => {
     expect(screen.getByText('ü')).toBeTruthy()
   })
 
-  it('calls onPresetSelect when vowel button clicked', () => {
-    const onSelect = vi.fn()
-    render(
-      <TargetPresetBar
-        activePreset="vowel-a"
-        bands={defaultBands}
-        onPresetSelect={onSelect}
-        onBandsChange={() => {}}
-      />
-    )
+  it('updates bands in store when vowel button clicked', () => {
+    render(<TargetPresetBar />)
     fireEvent.click(screen.getByText('i'))
-    expect(onSelect).toHaveBeenCalledWith('vowel-i')
+    const vowelI = VOWEL_PRESETS['vowel-i']
+    const { bands } = useAppStore.getState()
+    expect(bands.f0.range).toEqual(vowelI.f0)
+    expect(bands.f1.range).toEqual(vowelI.f1)
   })
 
-  it('displays current band values from props', () => {
-    render(
-      <TargetPresetBar
-        activePreset="vowel-a"
-        bands={defaultBands}
-        onPresetSelect={() => {}}
-        onBandsChange={() => {}}
-      />
-    )
+  it('displays current band values from store', () => {
+    const vowelA = VOWEL_PRESETS['vowel-a']
+    render(<TargetPresetBar />)
     const f0Lo = screen.getByLabelText('F0下限') as HTMLInputElement
     const f0Hi = screen.getByLabelText('F0上限') as HTMLInputElement
     expect(f0Lo.value).toBe(String(vowelA.f0[0]))
     expect(f0Hi.value).toBe(String(vowelA.f0[1]))
   })
 
-  it('allows clearing and typing new value in input', () => {
-    const onBandsChange = vi.fn()
-    render(
-      <TargetPresetBar
-        activePreset="vowel-a"
-        bands={defaultBands}
-        onPresetSelect={() => {}}
-        onBandsChange={onBandsChange}
-      />
-    )
+  it('allows editing band values via input', () => {
+    const vowelA = VOWEL_PRESETS['vowel-a']
+    render(<TargetPresetBar />)
     const f0Lo = screen.getByLabelText('F0下限') as HTMLInputElement
 
     fireEvent.change(f0Lo, { target: { value: '' } })
@@ -77,42 +49,28 @@ describe('TargetPresetBar', () => {
     expect(f0Lo.value).toBe('250')
 
     fireEvent.blur(f0Lo)
-    expect(onBandsChange).toHaveBeenCalledWith({ f0: [250, vowelA.f0[1]] })
+    expect(useAppStore.getState().bands.f0.range).toEqual([250, vowelA.f0[1]])
   })
 
-  it('reverts to original value on blur with invalid input', () => {
-    const onBandsChange = vi.fn()
-    render(
-      <TargetPresetBar
-        activePreset="vowel-a"
-        bands={defaultBands}
-        onPresetSelect={() => {}}
-        onBandsChange={onBandsChange}
-      />
-    )
+  it('reverts invalid input on blur', () => {
+    const vowelA = VOWEL_PRESETS['vowel-a']
+    render(<TargetPresetBar />)
     const f0Lo = screen.getByLabelText('F0下限') as HTMLInputElement
 
     fireEvent.change(f0Lo, { target: { value: 'abc' } })
     fireEvent.blur(f0Lo)
     expect(f0Lo.value).toBe(String(vowelA.f0[0]))
-    expect(onBandsChange).not.toHaveBeenCalled()
+    expect(useAppStore.getState().bands.f0.range).toEqual(vowelA.f0)
   })
 
-  it('reverts when low >= high after blur', () => {
-    const onBandsChange = vi.fn()
-    render(
-      <TargetPresetBar
-        activePreset="vowel-a"
-        bands={defaultBands}
-        onPresetSelect={() => {}}
-        onBandsChange={onBandsChange}
-      />
-    )
+  it('reverts when low >= high', () => {
+    const vowelA = VOWEL_PRESETS['vowel-a']
+    render(<TargetPresetBar />)
     const f0Lo = screen.getByLabelText('F0下限') as HTMLInputElement
 
     fireEvent.change(f0Lo, { target: { value: '500' } })
     fireEvent.blur(f0Lo)
     expect(f0Lo.value).toBe(String(vowelA.f0[0]))
-    expect(onBandsChange).not.toHaveBeenCalled()
+    expect(useAppStore.getState().bands.f0.range).toEqual(vowelA.f0)
   })
 })
