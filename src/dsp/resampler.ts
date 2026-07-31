@@ -23,6 +23,11 @@ export class Resampler {
       return new Float32Array(0)
     }
 
+    if (this.ratio === 1) {
+      this.buffer = new Float32Array(0)
+      return combined
+    }
+
     if (combined.length < Math.ceil(4 / this.ratio)) {
       this.buffer = combined
       return new Float32Array(0)

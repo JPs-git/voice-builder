@@ -3,6 +3,7 @@ import { FrameProcessor } from './frame-processor'
 import type { FrameData } from './frame-processor'
 import { fftMagnitudes } from './fft'
 import { detectPitch, extractFormants, isHarmonicLocked } from './lpc'
+import type { FormantPeak } from './lpc'
 import { extractFormantsCepstral } from './cepstral'
 import { VoiceActivityDetector } from './vad'
 import { FormantSmoother } from './formant-smoother'
@@ -12,17 +13,14 @@ const TARGET_RATE = 16000
 const FRAME_SIZE = 800
 const HOP_SIZE = 160
 
+export type FormantMethod = 'hybrid' | 'lpc' | 'cepstral'
+
 export interface PipelineOptions {
   onFrame?: (frame: SmootherFrame) => void
   vadThreshold?: number
-  formantMethod?: 'hybrid' | 'lpc' | 'cepstral'
+  formantMethod?: FormantMethod
   frameOffset?: number
   formantSmoothing?: boolean
-}
-
-export interface FormantResult {
-  freq: number
-  bw: number
 }
 
 export class AnalysisPipeline {
@@ -32,7 +30,7 @@ export class AnalysisPipeline {
   private _frameCount = 0
   private _frameOffset: number
   private _vad: VoiceActivityDetector
-  private _formantMethod: string
+  private _formantMethod: FormantMethod
   private _prevGoodF1: number | null = null
   private _smoother: FormantSmoother | null
 
@@ -62,7 +60,7 @@ export class AnalysisPipeline {
       this._frameProcessor.onFrame = (frame: FrameData) => {
         const { voiced } = this._vad.compute(frame.samples)
         let f0: number | null = null
-        let formants: (FormantResult | null)[] = []
+        let formants: (FormantPeak | null)[] = []
         if (voiced) {
           f0 = detectPitch(frame.samples, frame.sampleRate)
           if (this._formantMethod === 'cepstral') {
@@ -70,7 +68,7 @@ export class AnalysisPipeline {
             formants = result.formants
           } else if (this._formantMethod === 'lpc') {
             const result = extractFormants(frame.samples, frame.sampleRate, 2)
-            const fmts: (FormantResult | null)[] = result.formants
+            const fmts: (FormantPeak | null)[] = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
                 fmts[0] = null
@@ -79,12 +77,12 @@ export class AnalysisPipeline {
             formants = fmts
           } else {
             let result = extractFormants(frame.samples, frame.sampleRate, 2)
-            let fmts: (FormantResult | null)[] = result.formants
+            let fmts: (FormantPeak | null)[] = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               const f1Jump = this._prevGoodF1 != null ? Math.abs(fmts[0]!.freq - this._prevGoodF1) : 0
               if (f1Jump > 300 && fmts[0]!.freq > 600) {
                 const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2)
-                const cepFormants: (FormantResult | null)[] = cepResult.formants
+                const cepFormants: (FormantPeak | null)[] = cepResult.formants
                 if (cepFormants[1] && cepFormants[1].freq > 0) {
                   if (cepFormants[0] && isHarmonicLocked(cepResult.f0, cepFormants[0].freq, cepFormants[0].bw)) {
                     cepFormants[0] = null
@@ -102,7 +100,7 @@ export class AnalysisPipeline {
               }
             } else {
               const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2)
-              const cepFormants: (FormantResult | null)[] = cepResult.formants
+              const cepFormants: (FormantPeak | null)[] = cepResult.formants
               if (cepFormants[1] && cepFormants[1].freq > 0) {
                 if (cepFormants[0] && isHarmonicLocked(cepResult.f0, cepFormants[0].freq, cepFormants[0].bw)) {
                   cepFormants[0] = null
@@ -158,14 +156,14 @@ export class AnalysisPipeline {
   static analyze(
     samples: Float32Array,
     sampleRate: number,
-    formantMethod: string,
+    formantMethod: FormantMethod,
     formantSmoothing: boolean = true,
   ): SmootherFrame[] {
     if (samples.length === 0) return []
     const frames: SmootherFrame[] = []
     const pipeline = new AnalysisPipeline({
       onFrame: (frame) => frames.push(frame),
-      formantMethod: formantMethod as 'hybrid' | 'lpc' | 'cepstral',
+      formantMethod,
       formantSmoothing,
     })
     pipeline.pushChunk(samples, sampleRate)

@@ -6,7 +6,7 @@ export interface WavResult {
   audioFormat: number
 }
 
-function readSample(view: DataView, offset: number, bitsPerSample: number): number {
+function readSample(view: DataView, offset: number, bitsPerSample: number, audioFormat: number): number {
   switch (bitsPerSample) {
     case 8:
       return (view.getUint8(offset) - 128) / 128
@@ -20,7 +20,9 @@ function readSample(view: DataView, offset: number, bitsPerSample: number): numb
       return val / 8388608
     }
     case 32:
-      return view.getFloat32(offset, true)
+      return audioFormat === 3
+        ? view.getFloat32(offset, true)
+        : view.getInt32(offset, true) / 2147483648
     default:
       throw new Error(`Unsupported bitsPerSample: ${bitsPerSample}`)
   }
@@ -39,9 +41,10 @@ export function parseWav(arrayBuffer: ArrayBuffer): WavResult {
   let audioFormat = 0, numChannels = 0, sampleRate = 0, bitsPerSample = 0
   let fmtFound = false
   let dataStart = 0, dataSize = 0
+  let dataFound = false
 
   let offset = 12
-  while (offset < arrayBuffer.byteLength - 8) {
+  while (offset + 8 <= arrayBuffer.byteLength) {
     const chunkId = String.fromCharCode(...new Uint8Array(arrayBuffer, offset, 4))
     const chunkSize = view.getUint32(offset + 4, true)
 
@@ -54,24 +57,31 @@ export function parseWav(arrayBuffer: ArrayBuffer): WavResult {
     } else if (chunkId === 'data') {
       if (!fmtFound) throw new Error('fmt chunk not found before data')
       dataStart = offset + 8
-      dataSize = chunkSize
+      dataSize = Math.min(chunkSize, arrayBuffer.byteLength - dataStart)
+      dataFound = true
       break
     }
 
-    offset += 8 + chunkSize
-    if (chunkSize % 2 !== 0) offset++
+    let nextOffset = offset + 8 + chunkSize
+    if (nextOffset > arrayBuffer.byteLength) break
+    if (chunkSize % 2 !== 0) nextOffset++
+    if (nextOffset > arrayBuffer.byteLength) break
+    offset = nextOffset
   }
 
-  if (!dataSize) throw new Error('data chunk not found')
+  if (!dataFound) throw new Error('data chunk not found')
+  if (dataSize === 0) {
+    return { samples: new Float32Array(0), sampleRate, numChannels, bitsPerSample, audioFormat }
+  }
 
   const bytesPerSample = bitsPerSample / 8
-  const totalSamples = dataSize / bytesPerSample
-  const totalFrames = totalSamples / numChannels
+  const totalSamples = Math.floor(dataSize / bytesPerSample)
+  const totalFrames = Math.floor(totalSamples / numChannels)
 
   const samples = new Float32Array(totalFrames)
   for (let i = 0; i < totalFrames; i++) {
     const byteOff = dataStart + i * numChannels * bytesPerSample
-    samples[i] = readSample(view, byteOff, bitsPerSample)
+    samples[i] = readSample(view, byteOff, bitsPerSample, audioFormat)
   }
 
   return { samples, sampleRate, numChannels, bitsPerSample, audioFormat }

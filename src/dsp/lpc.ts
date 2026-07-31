@@ -1,4 +1,5 @@
 import { Complex } from './complex'
+import { applyHamming, applyPreEmphasis } from './signal-utils'
 
 export function autocorrelate(signal: Float32Array, order: number): number[] {
   const r = new Array(order + 1).fill(0)
@@ -254,17 +255,8 @@ export function extractFormants(
 ): { f0: number | null; formants: FormantPeak[] } {
   const order = Math.min(16, Math.floor(signal.length / 3), Math.floor(sampleRate / 1000 + 4))
 
-  const n = signal.length
-  const emphasized = new Float32Array(n)
-  emphasized[0] = signal[0]
-  for (let i = 1; i < n; i++) {
-    emphasized[i] = signal[i] - 0.99 * signal[i - 1]
-  }
-
-  const windowed = new Float32Array(n)
-  for (let i = 0; i < n; i++) {
-    windowed[i] = emphasized[i] * (0.54 - 0.46 * Math.cos(2 * Math.PI * i / (n - 1)))
-  }
+  const emphasized = applyPreEmphasis(signal)
+  const windowed = applyHamming(emphasized)
 
   const r = autocorrelate(windowed, order)
   const a = levinsonDurbin(r, order)

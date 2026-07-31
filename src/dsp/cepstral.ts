@@ -2,30 +2,13 @@ import { Complex } from './complex'
 import { complexFft, ifft } from './fft'
 import { detectPitch } from './lpc'
 import type { FormantPeak } from './lpc'
+import { applyHamming, applyPreEmphasis } from './signal-utils'
 
-const PRE_EMPHASIS = 0.99
 const FFT_SIZE = 2048
 const LIFTER_CUTOFF = 35
 const MIN_FORMANT_FREQ = 50
 const MAX_FORMANT_FREQ = 3500
 const BW_DROP = 0.5 * Math.log(2)
-
-function applyPreEmphasis(signal: Float32Array, coeff: number): Float32Array {
-  const n = signal.length
-  const out = new Float32Array(n)
-  out[0] = signal[0]
-  for (let i = 1; i < n; i++) out[i] = signal[i] - coeff * signal[i - 1]
-  return out
-}
-
-function applyHamming(signal: Float32Array): Float32Array {
-  const n = signal.length
-  const out = new Float32Array(n)
-  for (let i = 0; i < n; i++) {
-    out[i] = signal[i] * (0.54 - 0.46 * Math.cos(2 * Math.PI * i / (n - 1)))
-  }
-  return out
-}
 
 function cepstralEnvelope(signal: Float32Array, fftSize: number, lifterCutoff: number): Float32Array {
   const n = signal.length
@@ -156,7 +139,7 @@ export function extractFormantsCepstral(
   sampleRate: number,
   maxFormants: number = 5,
 ): { f0: number | null; formants: FormantPeak[] } {
-  const emphasized = applyPreEmphasis(signal, PRE_EMPHASIS)
+  const emphasized = applyPreEmphasis(signal)
   const windowed = applyHamming(emphasized)
   const envelope = cepstralEnvelope(windowed, FFT_SIZE, LIFTER_CUTOFF)
   const peaks = pickPeaks(envelope, sampleRate, FFT_SIZE)
