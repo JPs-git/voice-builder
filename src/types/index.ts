@@ -25,7 +25,9 @@ export const FORMANT_METHODS: FormantMethod[] = [
   { value: 'cepstral', label: '纯倒谱法', description: '封闭元音 F2 偏大' },
 ]
 
-export type AppPhase = 'idle' | 'requesting' | 'recording' | 'paused' | 'analyzing' | 'uploaded'
+export type AppPhase = 'idle' | 'requesting' | 'recording' | 'ready'
+
+export type DataSource = 'mic' | 'file' | null
 
 export interface TargetBands {
   f0: TargetBand
@@ -59,6 +61,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   formantSmoothing: true,
 }
 
+/** @deprecated 将在 Phase 3 被 frameStore 响应式订阅替代 */
 export interface ChartHandles {
   pushFrame: (frame: AnalysisFrame) => void
   displayAll: (frames: AnalysisFrame[]) => void
