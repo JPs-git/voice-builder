@@ -32,7 +32,7 @@ export function useToolbar(
 
   const hasData = isCapturing || frames.length > 0
 
-  // ── Constrained callbacks ──
+  // ── Constrained callbacks (纯操作，不含前置检查) ──
 
   const handleRecord = useCallback(() => {
     analysisRecord()
@@ -43,24 +43,22 @@ export function useToolbar(
   }, [analysisImport])
 
   const handlePlayback = useCallback(() => {
-    if (isPlaying) {
-      stop()
-    } else {
-      if (isCapturing) analysisRecord()
-      play()
-    }
-  }, [isPlaying, isCapturing, analysisRecord, play, stop])
+    isPlaying ? stop() : play()
+  }, [isPlaying, play, stop])
 
   const handleClear = useCallback(() => {
-    if (isPlaying) stop()
-    if (isCapturing) analysisRecord()
     analysisClear()
-  }, [isPlaying, isCapturing, analysisRecord, analysisClear, stop])
+  }, [analysisClear])
+
+  // ── 统一约束入口 ──
 
   const handleClickTool = useCallback((toolId: string) => {
-    // 统一前置：record/import 前停止回放
-    if (toolId === 'record' || toolId === 'import') {
-      if (isPlaying) stop()
+    // 1. 回放中 → 任何操作前先停回放
+    if (isPlaying) stop()
+
+    // 2. 录音中 → 非录音操作前先停录音
+    if (toolId !== 'record' && isCapturing) {
+      analysisRecord()
     }
 
     switch (toolId) {
@@ -72,7 +70,9 @@ export function useToolbar(
       case 'help':     onHelp(); break
       case 'about':    onAbout(); break
     }
-  }, [isPlaying, stop, handleRecord, handleImport, handlePlayback, handleClear, onConfig, onHelp, onAbout])
+  }, [isPlaying, isCapturing, stop, analysisRecord,
+      handleRecord, handleImport, handlePlayback, handleClear,
+      onConfig, onHelp, onAbout])
 
   // ── Resolved tool items with dynamic props ──
 
