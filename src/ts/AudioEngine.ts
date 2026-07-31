@@ -7,6 +7,7 @@ export class AudioEngine {
   private _stream: MediaStream | null = null
   private _source: MediaStreamAudioSourceNode | null = null
   private _processor: ScriptProcessorNode | null = null
+  private _silentGain: GainNode | null = null
   private _sampleRate: number
   private _isCapturing: boolean = false
 
@@ -26,7 +27,17 @@ export class AudioEngine {
   async startCapture(onChunk: (chunk: Float32Array, rate: number) => void): Promise<void> {
     if (this._isCapturing) return
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    // Disable echo cancellation / noise suppression / auto gain control.
+    // Chrome detects the mic→speaker path in the audio graph (regardless of
+    // actual gain) and activates AEC, which progressively attenuates the mic
+    // signal. Explicit constraints are required to prevent that.
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    })
     this._stream = stream
 
     const ctx = this.audioContext
@@ -39,7 +50,15 @@ export class AudioEngine {
       onChunk(chunk, ctx.sampleRate)
     }
     this._source.connect(this._processor)
-    this._processor.connect(ctx.destination)
+    // Connect via silent gain node to keep the audio graph alive
+    // (ScriptProcessorNode only fires onaudioprocess when connected downstream).
+    // Direct connection to destination would create acoustic feedback that
+    // triggers browser AEC to suppress the mic signal.
+    const silentGain = ctx.createGain()
+    silentGain.gain.value = 0
+    this._processor.connect(silentGain)
+    silentGain.connect(ctx.destination)
+    this._silentGain = silentGain
 
     this._isCapturing = true
   }
@@ -49,6 +68,10 @@ export class AudioEngine {
     if (this._processor) {
       this._processor.disconnect()
       this._processor = null
+    }
+    if (this._silentGain) {
+      this._silentGain.disconnect()
+      this._silentGain = null
     }
     if (this._source) {
       this._source.disconnect()
