@@ -41,9 +41,10 @@ function buildMarkLine(band: { range: [number, number]; color: string }, name: s
 interface FormantChartProps {
   cursorTime?: number
   onFrameClick?: (frame: AnalysisFrame) => void
+  seriesVisible?: Record<'f0' | 'f1' | 'f2', boolean>
 }
 
-export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProps) {
+export function FormantChart({ cursorTime = -1, onFrameClick, seriesVisible }: FormantChartProps) {
   const frames = useAppStore(s => s.frames)
   const bands = useAppStore(s => s.bands)
   const { chartRef, setOption, getInstance } = useECharts()
@@ -69,6 +70,12 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   useEffect(() => {
     isLiveRef.current = frames.length > 1
   }, [frames.length])
+
+  useEffect(() => {
+    seriesVisibleRef.current = { f0: true, f1: true, f2: true, ...seriesVisible }
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesVisible])
 
   // Chart click → find nearest frame
   useEffect(() => {
@@ -175,8 +182,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
           color: COLORS[k],
           lineStyle: { color: COLORS[k], width: k === 'f0' ? 2 : 1.5 },
           itemStyle: { color: COLORS[k] },
-          markArea: currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k]) } : undefined,
-          markLine: buildMarkLine(currentBands[k], `${k.toUpperCase()} 目标`),
+          markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k]) } : undefined,
+          markLine: visible[k] ? buildMarkLine(currentBands[k], `${k.toUpperCase()} 目标`) : undefined,
           data: seriesData[k],
         })),
         {
