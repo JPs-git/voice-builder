@@ -235,11 +235,19 @@ export function isHarmonicLocked(f0: number | null, freq: number | null, bw: num
 
   const ratio = freq / f0
 
+  // If freq is too close to F0 (< 1.5x), it's F1 itself not a harmonic.
+  // F1 can have very narrow bandwidth when it almost coincides with F0.
   if (ratio < 1.5) return false
 
+  // Bandwidth anomaly: formant bandwidth < 30Hz is unphysiologically narrow,
+  // almost certainly a harmonic peak rather than a true formant.
   if (bw != null && bw < 30) return true
+
+  // If bandwidth is available and normal (>30Hz), it's a real formant regardless of ratio.
   if (bw != null && bw >= 30) return false
 
+  // Fallback when bandwidth is unavailable: check if freq is within 10% of an
+  // integer multiple of F0 (2x-4x) — likely a harmonic.
   const nearestInt = Math.round(ratio)
   if (nearestInt >= 2 && nearestInt <= 4) {
     if (Math.abs(ratio - nearestInt) / nearestInt < 0.10) return true

@@ -13,12 +13,12 @@ const TARGET_RATE = 16000
 const FRAME_SIZE = 800
 const HOP_SIZE = 160
 
-export type FormantMethod = 'hybrid' | 'lpc' | 'cepstral'
+export type FormantMethodValue = 'hybrid' | 'lpc' | 'cepstral'
 
 export interface PipelineOptions {
   onFrame?: (frame: SmootherFrame) => void
   vadThreshold?: number
-  formantMethod?: FormantMethod
+  formantMethod?: FormantMethodValue
   frameOffset?: number
   formantSmoothing?: boolean
 }
@@ -30,7 +30,7 @@ export class AnalysisPipeline {
   private _frameCount = 0
   private _frameOffset: number
   private _vad: VoiceActivityDetector
-  private _formantMethod: FormantMethod
+  private _formantMethod: FormantMethodValue
   private _prevGoodF1: number | null = null
   private _smoother: FormantSmoother | null
 
@@ -156,7 +156,7 @@ export class AnalysisPipeline {
   static analyze(
     samples: Float32Array,
     sampleRate: number,
-    formantMethod: FormantMethod,
+    formantMethod: FormantMethodValue,
     formantSmoothing: boolean = true,
   ): SmootherFrame[] {
     if (samples.length === 0) return []
