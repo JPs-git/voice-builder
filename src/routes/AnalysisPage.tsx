@@ -11,10 +11,28 @@ import { AboutModal } from '../components/AboutModal'
 import { TipWidget } from '../components/TipWidget'
 import styles from './AnalysisPage.module.css'
 
+const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
+type LegendKey = typeof LEGEND_KEYS[number]
+
+const COLORS: Record<LegendKey, string> = {
+  f0: '#1F2937',
+  f1: '#E23E57',
+  f2: '#3B82F6',
+}
+
 export function AnalysisPage() {
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [seriesVisible, setSeriesVisible] = useState<Record<LegendKey, boolean>>({
+    f0: true,
+    f1: true,
+    f2: true,
+  })
+
+  const handleToggleSeries = (key: LegendKey) => {
+    setSeriesVisible(prev => ({ ...prev, [key]: !prev[key] }))
+  }
 
   const { toolItems, handleClickTool, hasData, cursorTime, fileInputRef, handleFileChange }
     = useToolbar(
@@ -52,13 +70,21 @@ export function AnalysisPage() {
               <div className={`${styles.chartHeader} ${styles.chartHeaderLegend}`}>
                 <h2 className={styles.cardTitle}>共振峰</h2>
                 <div className={styles.cardLegend} aria-label="图例">
-                  <button className={styles.legendItem} data-key="f0" data-active="true"><i style={{ background: '#1F2937' }}></i>F0</button>
-                  <button className={styles.legendItem} data-key="f1" data-active="true"><i style={{ background: '#E23E57' }}></i>F1</button>
-                  <button className={styles.legendItem} data-key="f2" data-active="true"><i style={{ background: '#3B82F6' }}></i>F2</button>
+                  {LEGEND_KEYS.map(key => (
+                    <button
+                      key={key}
+                      className={styles.legendItem}
+                      data-key={key}
+                      data-active={String(seriesVisible[key])}
+                      onClick={() => handleToggleSeries(key)}
+                    >
+                      <i style={{ background: COLORS[key] }}></i>{key.toUpperCase()}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div className={styles.chartArea}>
-                <FormantChart cursorTime={cursorTime} />
+                <FormantChart cursorTime={cursorTime} seriesVisible={seriesVisible} />
                 <EmptyState
                   title="曲线待生成"
                   description="录音或导入音频后显示共振峰曲线"
