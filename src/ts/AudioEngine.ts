@@ -27,7 +27,17 @@ export class AudioEngine {
   async startCapture(onChunk: (chunk: Float32Array, rate: number) => void): Promise<void> {
     if (this._isCapturing) return
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    // Disable echo cancellation / noise suppression / auto gain control.
+    // Chrome detects the mic→speaker path in the audio graph (regardless of
+    // actual gain) and activates AEC, which progressively attenuates the mic
+    // signal. Explicit constraints are required to prevent that.
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    })
     this._stream = stream
 
     const ctx = this.audioContext
