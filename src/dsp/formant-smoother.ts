@@ -1,17 +1,35 @@
 const JUMP_THRESHOLD = 300
 const DEAD_ZONE = 50
 
+type FormantKey = 'f0' | 'f1' | 'f2'
+
+export interface SmootherFrame {
+  time: number
+  f0: number | null
+  f1: number | null
+  f2: number | null
+  f3?: number | null
+  f4?: number | null
+  voiced?: boolean
+  magnitudes?: Float32Array
+}
+
 export class FormantSmoother {
-  constructor(windowSize = 5) {
+  private _windowSize: number
+  private _buffers: Record<FormantKey, number[]>
+  private _lastOutput: Partial<Record<FormantKey, number>>
+  private _lastFrame: { f0: number; f1: number; f2: number } | undefined
+
+  constructor(windowSize: number = 5) {
     this._windowSize = windowSize
     this._buffers = { f0: [], f1: [], f2: [] }
     this._lastOutput = {}
     this._lastFrame = undefined
   }
 
-  push(frame) {
+  push(frame: SmootherFrame): SmootherFrame {
     const out = { ...frame }
-    for (const key of ['f0', 'f1', 'f2']) {
+    for (const key of ['f0', 'f1', 'f2'] as FormantKey[]) {
       const value = frame[key]
       if (value == null) {
         this._buffers[key] = []
@@ -50,11 +68,11 @@ export class FormantSmoother {
     }
 
     if (this._lastFrame !== undefined) {
-      const keys = ['f0', 'f1', 'f2']
+      const keys: FormantKey[] = ['f0', 'f1', 'f2']
       let ordered = true
       for (let i = 0; i < keys.length - 1; i++) {
-        const a = out[keys[i]]
-        const b = out[keys[i + 1]]
+        const a = out[keys[i]] as number | null
+        const b = out[keys[i + 1]] as number | null
         if (a != null && b != null && a >= b) {
           ordered = false
           break
@@ -63,7 +81,7 @@ export class FormantSmoother {
       if (!ordered) {
         for (const key of keys) {
           if (frame[key] != null && out[key] !== frame[key]) {
-            this._lastOutput[key] = frame[key]
+            this._lastOutput[key] = frame[key] as number
           }
           out[key] = this._lastFrame[key]
         }
@@ -71,8 +89,8 @@ export class FormantSmoother {
       }
     }
 
-    for (const key of ['f0', 'f1', 'f2']) {
-      if (out[key] != null) this._lastOutput[key] = out[key]
+    for (const key of ['f0', 'f1', 'f2'] as FormantKey[]) {
+      if (out[key] != null) this._lastOutput[key] = out[key] as number
     }
     if (out.f0 != null && out.f1 != null && out.f2 != null) {
       this._lastFrame = { f0: out.f0, f1: out.f1, f2: out.f2 }
@@ -80,9 +98,9 @@ export class FormantSmoother {
     return out
   }
 
-  reset() {
+  reset(): void {
     for (const key of Object.keys(this._buffers)) {
-      this._buffers[key] = []
+      this._buffers[key as FormantKey] = []
     }
     this._lastOutput = {}
     this._lastFrame = undefined

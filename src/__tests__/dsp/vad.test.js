@@ -1,6 +1,6 @@
-import { describe, it } from 'node:test'
+import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { VoiceActivityDetector, DEFAULT_VAD_THRESHOLD } from '../vad.js'
+import { VoiceActivityDetector, DEFAULT_VAD_THRESHOLD } from '../../dsp/vad'
 
 describe('VoiceActivityDetector', () => {
   it('returns voiced=false for silence (all zeros)', () => {

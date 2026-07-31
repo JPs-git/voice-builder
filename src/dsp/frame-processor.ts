@@ -1,5 +1,21 @@
+export interface FrameData {
+  samples: Float32Array
+  time: number
+  sampleRate: number
+}
+
 export class FrameProcessor {
-  constructor({ sampleRate = 16000, frameSize = 400, hopSize = 160 } = {}) {
+  sampleRate: number
+  frameSize: number
+  hopSize: number
+  buffer: Float32Array
+  onFrame: ((frame: FrameData) => void) | null
+
+  constructor({ sampleRate = 16000, frameSize = 400, hopSize = 160 }: {
+    sampleRate?: number
+    frameSize?: number
+    hopSize?: number
+  } = {}) {
     this.sampleRate = sampleRate
     this.frameSize = frameSize
     this.hopSize = hopSize
@@ -7,13 +23,13 @@ export class FrameProcessor {
     this.onFrame = null
   }
 
-  push(input) {
+  push(input: Float32Array): FrameData[] {
     const combined = new Float32Array(this.buffer.length + input.length)
     combined.set(this.buffer, 0)
     combined.set(input, this.buffer.length)
 
     let offset = 0
-    const framesToExtract = []
+    const framesToExtract: FrameData[] = []
 
     while (offset + this.frameSize <= combined.length) {
       const frame = new Float32Array(this.frameSize)
@@ -39,7 +55,7 @@ export class FrameProcessor {
     return framesToExtract
   }
 
-  reset() {
+  reset(): void {
     this.buffer = new Float32Array(0)
   }
 }

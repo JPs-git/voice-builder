@@ -1,6 +1,6 @@
-import { Complex } from './complex.js'
+import { Complex } from './complex'
 
-function bitReverse(x, log2N) {
+function bitReverse(x: number, log2N: number): number {
   let r = 0
   for (let i = 0; i < log2N; i++) {
     r = (r << 1) | (x & 1)
@@ -9,7 +9,7 @@ function bitReverse(x, log2N) {
   return r
 }
 
-export function complexFft(data) {
+export function complexFft(data: Complex[]): void {
   const N = data.length
   const log2N = Math.round(Math.log2(N))
 
@@ -35,18 +35,18 @@ export function complexFft(data) {
   }
 }
 
-export function ifft(data) {
+export function ifft(data: Complex[]): void {
   const N = data.length
   for (let i = 0; i < N; i++) data[i] = data[i].conj()
   complexFft(data)
   for (let i = 0; i < N; i++) data[i] = new Complex(data[i].re / N, -data[i].im / N)
 }
 
-export function fftMagnitudes(signal, fftSize) {
+export function fftMagnitudes(signal: Float32Array, fftSize: number): Float32Array {
   const N = fftSize
-
-  const data = new Array(N)
   const sigLen = signal.length
+
+  const data: Complex[] = new Array(N)
   let sumWindow = 0
   for (let i = 0; i < sigLen; i++) {
     const w = 0.5 * (1 - Math.cos(2 * Math.PI * i / (sigLen - 1)))

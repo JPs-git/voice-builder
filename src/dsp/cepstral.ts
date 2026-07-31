@@ -1,36 +1,20 @@
-import { Complex } from './complex.js'
-import { complexFft, ifft } from './fft.js'
-import { detectPitch } from './lpc.js'
+import { Complex } from './complex'
+import { complexFft, ifft } from './fft'
+import { detectPitch } from './lpc'
+import type { FormantPeak } from './lpc'
+import { applyHamming, applyPreEmphasis } from './signal-utils'
 
-const PRE_EMPHASIS = 0.99
 const FFT_SIZE = 2048
 const LIFTER_CUTOFF = 35
 const MIN_FORMANT_FREQ = 50
 const MAX_FORMANT_FREQ = 3500
 const BW_DROP = 0.5 * Math.log(2)
 
-function applyPreEmphasis(signal, coeff) {
-  const n = signal.length
-  const out = new Float32Array(n)
-  out[0] = signal[0]
-  for (let i = 1; i < n; i++) out[i] = signal[i] - coeff * signal[i - 1]
-  return out
-}
-
-function applyHamming(signal) {
-  const n = signal.length
-  const out = new Float32Array(n)
-  for (let i = 0; i < n; i++) {
-    out[i] = signal[i] * (0.54 - 0.46 * Math.cos(2 * Math.PI * i / (n - 1)))
-  }
-  return out
-}
-
-function cepstralEnvelope(signal, fftSize, lifterCutoff) {
+function cepstralEnvelope(signal: Float32Array, fftSize: number, lifterCutoff: number): Float32Array {
   const n = signal.length
   const N = fftSize
 
-  const data = new Array(N)
+  const data: Complex[] = new Array(N)
   for (let i = 0; i < n; i++) data[i] = new Complex(signal[i], 0)
   for (let i = n; i < N; i++) data[i] = new Complex(0, 0)
   complexFft(data)
@@ -41,7 +25,7 @@ function cepstralEnvelope(signal, fftSize, lifterCutoff) {
     logMag[i] = Math.log(Math.max(mag, 1e-30))
   }
 
-  const cepstrum = new Array(N)
+  const cepstrum: Complex[] = new Array(N)
   for (let i = 0; i < N; i++) cepstrum[i] = new Complex(logMag[i], 0)
   ifft(cepstrum)
 
@@ -58,7 +42,7 @@ function cepstralEnvelope(signal, fftSize, lifterCutoff) {
   return envelope
 }
 
-function parabolicInterp(y0, y1, y2) {
+function parabolicInterp(y0: number, y1: number, y2: number): [number, number] {
   const a = (y0 + y2 - 2 * y1) / 2
   const b = (y2 - y0) / 2
   if (a === 0) return [0, y1]
@@ -67,10 +51,18 @@ function parabolicInterp(y0, y1, y2) {
   return [delta, peak]
 }
 
-function pickPeaks(envelope, sampleRate, fftSize) {
+interface RawPeak {
+  bin: number
+  delta: number
+  freq: number
+  value: number
+  prominence?: number
+}
+
+function pickPeaks(envelope: Float32Array, sampleRate: number, fftSize: number): RawPeak[] {
   const N = fftSize
   const bins = envelope.length
-  const raw = []
+  const raw: RawPeak[] = []
 
   for (let k = 1; k < bins - 1; k++) {
     if (!(envelope[k] > envelope[k - 1] && envelope[k] >= envelope[k + 1])) continue
@@ -114,12 +106,17 @@ function pickPeaks(envelope, sampleRate, fftSize) {
     pk.prominence = pk.value - Math.max(leftMin, rightMin)
   }
 
-  const sig = raw.filter(p => p.prominence > BW_DROP)
+  const sig = raw.filter(p => (p.prominence ?? 0) > BW_DROP)
   sig.sort((a, b) => a.freq - b.freq)
   return sig
 }
 
-function estimateBandwidth(envelope, peakBin, sampleRate, fftSize) {
+function estimateBandwidth(
+  envelope: Float32Array,
+  peakBin: number,
+  sampleRate: number,
+  fftSize: number,
+): number {
   const N = fftSize
   const peakVal = envelope[peakBin]
   const threshold = peakVal - BW_DROP
@@ -137,8 +134,12 @@ function estimateBandwidth(envelope, peakBin, sampleRate, fftSize) {
   return Math.max(bw, 0)
 }
 
-export function extractFormantsCepstral(signal, sampleRate, maxFormants = 5) {
-  const emphasized = applyPreEmphasis(signal, PRE_EMPHASIS)
+export function extractFormantsCepstral(
+  signal: Float32Array,
+  sampleRate: number,
+  maxFormants: number = 5,
+): { f0: number | null; formants: FormantPeak[] } {
+  const emphasized = applyPreEmphasis(signal)
   const windowed = applyHamming(emphasized)
   const envelope = cepstralEnvelope(windowed, FFT_SIZE, LIFTER_CUTOFF)
   const peaks = pickPeaks(envelope, sampleRate, FFT_SIZE)

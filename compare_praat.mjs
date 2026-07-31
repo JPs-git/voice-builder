@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
-import { parseWav } from './js/wav-parser.js'
-import { AnalysisPipeline } from './js/analysis-pipeline.js'
+import { parseWav } from './src/dsp/wav-parser.ts'
+import { AnalysisPipeline } from './src/dsp/analysis-pipeline.ts'
 
 // Load WAV
 const buf = readFileSync('assets/aoe.wav')

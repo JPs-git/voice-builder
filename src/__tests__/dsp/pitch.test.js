@@ -1,6 +1,6 @@
-import { describe, it } from 'node:test'
+import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { detectPitch } from '../lpc.js'
+import { detectPitch } from '../../dsp/lpc'
 
 function generateSine(freqHz, sampleRate, numSamples) {
   const signal = new Float32Array(numSamples)

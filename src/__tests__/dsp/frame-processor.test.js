@@ -1,6 +1,6 @@
-import { describe, it } from 'node:test'
+import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { FrameProcessor } from '../frame-processor.js'
+import { FrameProcessor } from '../../dsp/frame-processor'
 
 describe('FrameProcessor', () => {
   it('extracts frames with correct size and hop', () => {

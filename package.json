@@ -10,9 +10,9 @@
     "start": "vite preview --port 3000",
     "start:serve": "serve .",
     "start:py": "python3 -m http.server 3000",
-    "test": "node --test js/__tests__/*.test.js && npx vitest run",
-    "test:unit": "npx vitest run",
-    "test:dsp": "node --test js/__tests__/*.test.js"
+    "test": "npx vitest run",
+    "test:unit": "npx vitest run --project unit",
+    "test:dsp": "npx vitest run --project dsp"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -31,6 +31,6 @@
     "jsdom": "^25.0.1",
     "typescript": "^6.0.3",
     "vite": "^5.4.21",
-    "vitest": "^2.1.9"
+    "vitest": "^3.2.7"
   }
 }
