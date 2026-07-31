@@ -1,6 +1,8 @@
-import { useRef, useCallback, forwardRef, useImperativeHandle, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { useECharts } from '../hooks/useECharts'
-import type { AnalysisFrame, ChartHandles, TargetBands } from '../types'
+import { useFrameStore } from '../store/frameStore'
+import { useAnalysisStore } from '../store/analysisStore'
+import type { AnalysisFrame, TargetBands } from '../types'
 import { VOWEL_PRESETS } from '../types'
 
 const WINDOW = 10
@@ -46,26 +48,64 @@ function buildMarkLine(band: { range: [number, number]; color: string }, name: s
 }
 
 interface FormantChartProps {
-  batchMode?: boolean
   onFrameClick?: (frame: AnalysisFrame) => void
 }
 
-export const FormantChart = forwardRef<ChartHandles, FormantChartProps>((props, ref) => {
-  const batchMode = props.batchMode ?? false
-  const onFrameClick = props.onFrameClick
+export function FormantChart({ onFrameClick }: FormantChartProps) {
+  const frames = useFrameStore(s => s.frames)
+  const cursorTime = useFrameStore(s => s.cursorTime)
+  const bands = useAnalysisStore(s => s.bands)
   const { chartRef, setOption, getInstance } = useECharts()
-  const dataRef = useRef<AnalysisFrame[]>([])
-  const isBatchRef = useRef(batchMode)
-  const latestTimeRef = useRef(0)
-  const throttledRef = useRef(false)
-  const cursorTimeRef = useRef(-1)
+  const rafRef = useRef<number | null>(null)
+  const isLiveRef = useRef(false)
   const seriesVisibleRef = useRef({ f0: true, f1: true, f2: true })
-  const bandsRef = useRef(DEFAULT_BANDS)
 
-  isBatchRef.current = batchMode
+  useEffect(() => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+      rafRef.current = null
+    })
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [frames])
 
-  const render = useCallback((useAnimation: boolean) => {
-    const data = dataRef.current
+  useEffect(() => {
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+  }, [cursorTime, bands])
+
+  useEffect(() => {
+    isLiveRef.current = frames.length > 1
+  }, [frames.length])
+
+  // Chart click → find nearest frame
+  useEffect(() => {
+    const instance = getInstance()
+    if (!instance || !onFrameClick) return
+    const handler = (params: any) => {
+      const t = params.value?.[0]
+      if (t == null) return
+      const data = useFrameStore.getState().frames
+      let best: AnalysisFrame | null = null
+      let bestDist = Infinity
+      for (const f of data) {
+        const d = Math.abs(f.time - t)
+        if (d < bestDist) { bestDist = d; best = f }
+      }
+      if (best) onFrameClick(best)
+    }
+    instance.on('click', handler)
+    return () => { instance.off('click', handler) }
+  }, [getInstance, onFrameClick])
+
+  function renderChart(
+    data: AnalysisFrame[],
+    cursor: number,
+    currentBands: TargetBands,
+    isLive: boolean,
+    useAnimation: boolean,
+  ) {
     const visible = seriesVisibleRef.current
     const keys = ['f0', 'f1', 'f2'] as const
     const seriesData: Record<string, any[]> = {}
@@ -75,21 +115,15 @@ export const FormantChart = forwardRef<ChartHandles, FormantChartProps>((props, 
 
     const hasData = data.length > 0
     let minTime: number, maxTime: number
-    if (isBatchRef.current) {
+    if (isLive && hasData) {
+      const currentTime = data[data.length - 1].time
+      minTime = currentTime - WINDOW
+      maxTime = currentTime
+    } else {
       minTime = hasData ? data[0].time : 0
       maxTime = hasData ? data[data.length - 1].time : WINDOW
-    } else {
-      if (hasData) {
-        const currentTime = data[data.length - 1].time
-        minTime = currentTime - WINDOW
-        maxTime = currentTime
-      } else {
-        minTime = 0
-        maxTime = WINDOW
-      }
     }
 
-    const bands = bandsRef.current
     const tooltipKeys = ['f2', 'f1', 'f0']
 
     setOption({
@@ -104,7 +138,7 @@ export const FormantChart = forwardRef<ChartHandles, FormantChartProps>((props, 
           const byName: Record<string, any> = {}
           for (const p of params) byName[p.seriesName] = p
           const time = params[0].value[0]
-          let html = `<div style="font-size:11px;color:#667085;margin-bottom:4px;">\u65F6\u95F4 ${Number(time).toFixed(2)} s</div>`
+          let html = `<div style="font-size:11px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>`
           for (const k of tooltipKeys) {
             const name = k.toUpperCase()
             const p = byName[name]
@@ -147,8 +181,8 @@ export const FormantChart = forwardRef<ChartHandles, FormantChartProps>((props, 
           color: COLORS[k],
           lineStyle: { color: COLORS[k], width: k === 'f0' ? 2 : 1.5 },
           itemStyle: { color: COLORS[k] },
-          markArea: bands[k] ? { silent: true, data: buildMarkArea(bands[k]) } : undefined,
-          markLine: (k === 'f0' || k === 'f1' || k === 'f2') ? buildMarkLine(bands[k], `${k.toUpperCase()} \u76EE\u6807`) : undefined,
+          markArea: currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k]) } : undefined,
+          markLine: buildMarkLine(currentBands[k], `${k.toUpperCase()} 目标`),
           data: seriesData[k],
         })),
         {
@@ -156,87 +190,21 @@ export const FormantChart = forwardRef<ChartHandles, FormantChartProps>((props, 
           type: 'line' as const,
           showSymbol: false,
           data: [],
-          markLine: cursorTimeRef.current >= 0 ? {
+          markLine: cursor >= 0 ? {
             silent: true,
             symbol: 'none',
             lineStyle: { color: '#E23E57', width: 2, type: 'solid' as const },
             label: { show: false },
-            data: [{ xAxis: cursorTimeRef.current }],
+            data: [{ xAxis: cursor }],
           } : undefined,
         },
       ],
     } as any)
-  }, [setOption])
+  }
 
   useEffect(() => {
-    render(false)
-  }, [render])
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleChartClick = useCallback((params: any) => {
-    if (!onFrameClick) return
-    const t = params.value?.[0]
-    if (t == null) return
-    const data = dataRef.current
-    let best: AnalysisFrame | null = null
-    let bestDist = Infinity
-    for (const f of data) {
-      const d = Math.abs(f.time - t)
-      if (d < bestDist) { bestDist = d; best = f }
-    }
-    if (best) onFrameClick(best)
-  }, [onFrameClick])
-
-  useImperativeHandle(ref, () => ({
-    pushFrame(frame: AnalysisFrame) {
-      if (isBatchRef.current) return
-      const data = dataRef.current
-      data.push({ ...frame })
-      latestTimeRef.current = frame.time
-      const cutoff = frame.time - WINDOW
-      while (data.length > 0 && data[0].time < cutoff) data.shift()
-      if (!throttledRef.current) {
-        throttledRef.current = true
-        requestAnimationFrame(() => {
-          render(false)
-          throttledRef.current = false
-        })
-      }
-    },
-    displayAll(frames: AnalysisFrame[]) {
-      dataRef.current = frames
-      if (frames.length > 0) latestTimeRef.current = frames[frames.length - 1].time
-      render(true)
-    },
-    setLiveMode() {
-      isBatchRef.current = false
-      render(false)
-    },
-    setTargetBands(bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) {
-      for (const k of ['f0', 'f1', 'f2'] as const) {
-        const r = bands[k]
-        if (r && r.length === 2 && r[0] < r[1]) {
-          bandsRef.current[k].range = r
-        }
-      }
-      render(true)
-    },
-    setCursorTime(time: number) {
-      cursorTimeRef.current = time
-      render(false)
-    },
-    clear() {
-      dataRef.current = []
-      isBatchRef.current = false
-      latestTimeRef.current = 0
-      throttledRef.current = false
-      cursorTimeRef.current = -1
-      render(false)
-    },
-  }), [render])
-
-  return (
-    <div id="formantChart" ref={chartRef} />
-  )
-})
-
-FormantChart.displayName = 'FormantChart'
+  return <div id="formantChart" ref={chartRef} />
+}

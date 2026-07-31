@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { getAudioEngine } from '../ts'
+import { getAnalysisService } from '../services/AnalysisService'
+import { useAnalysisStore } from '../store/analysisStore'
+import { useFrameStore } from '../store/frameStore'
 
 export function usePlayback() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -17,12 +20,20 @@ export function usePlayback() {
       rafRef.current = null
     }
     setIsPlaying(false)
+    useFrameStore.getState().setCursorTime(-1)
   }, [])
 
-  const play = useCallback((onProgress?: (elapsed: number) => void, onEnd?: () => void) => {
-    const ae = getAudioEngine()
-    const audioCtx = ae.audioContext
-    const samples = ae.getBuffer()
+  const play = useCallback(() => {
+    const phase = useAnalysisStore.getState().phase
+
+    // Stop recording if active
+    if (phase === 'recording') {
+      useAnalysisStore.getState().setPhase('ready')
+    }
+
+    // Get samples from Service
+    const service = getAnalysisService()
+    const samples = service.getPlaybackSamples()
     if (samples.length === 0) return
 
     if (sourceRef.current) {
@@ -33,16 +44,11 @@ export function usePlayback() {
       cancelAnimationFrame(rafRef.current)
     }
 
-    audioCtx.resume()
-    const buffer = audioCtx.createBuffer(1, samples.length, ae.sampleRate)
-    buffer.getChannelData(0).set(samples)
+    const ae = getAudioEngine()
+    const { source, totalDuration } = ae.createPlaybackSource(samples)
 
-    const source = audioCtx.createBufferSource()
-    source.buffer = buffer
-    source.connect(audioCtx.destination)
-
-    const totalDuration = samples.length / ae.sampleRate
-    startTimeRef.current = audioCtx.currentTime
+    const firstTime = useFrameStore.getState().frames[0]?.time ?? 0
+    startTimeRef.current = ae.audioContext.currentTime
 
     source.onended = () => {
       if (rafRef.current !== null) {
@@ -51,7 +57,7 @@ export function usePlayback() {
       }
       sourceRef.current = null
       setIsPlaying(false)
-      if (onEnd) onEnd()
+      useFrameStore.getState().setCursorTime(-1)
     }
 
     source.start()
@@ -60,8 +66,11 @@ export function usePlayback() {
 
     const tick = () => {
       if (!sourceRef.current) return
-      const elapsed = Math.min(audioCtx.currentTime - startTimeRef.current, totalDuration)
-      if (onProgress) onProgress(elapsed)
+      const elapsed = Math.min(
+        ae.audioContext.currentTime - startTimeRef.current,
+        totalDuration,
+      )
+      useFrameStore.getState().setCursorTime(elapsed + firstTime)
       if (elapsed < totalDuration) {
         rafRef.current = requestAnimationFrame(tick)
       }

@@ -1,4 +1,6 @@
 import type { AppPhase } from '../types'
+import { useAnalysisStore } from '../store/analysisStore'
+import { useFrameStore } from '../store/frameStore'
 import logo from '../../assets/logo.png'
 import { Button } from './Button'
 import styles from './Toolbar.module.css'
@@ -6,10 +8,9 @@ import styles from './Toolbar.module.css'
 interface ToolbarProps {
   phase: AppPhase
   isPlaying: boolean
-  onRecord: () => void
   onImport: () => void
   onPlayback: () => void
-  onClear: () => void
+  onStopPlayback: () => void
   onConfig: () => void
   onHelp: () => void
   onAbout: () => void
@@ -19,16 +20,40 @@ const LABELS: Record<AppPhase, string> = {
   idle: '开始录音',
   requesting: '麦克风授权中…',
   recording: '停止录音',
-  paused: '继续录音',
-  analyzing: '分析中…',
-  uploaded: '开始录音',
+  ready: '继续录音',
 }
 
-export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onClear, onConfig, onHelp, onAbout }: ToolbarProps) {
+export function Toolbar({
+  phase,
+  isPlaying,
+  onImport,
+  onPlayback,
+  onStopPlayback,
+  onConfig,
+  onHelp,
+  onAbout,
+}: ToolbarProps) {
+  const setPhase = useAnalysisStore(s => s.setPhase)
+  const hasFrames = useFrameStore(s => s.frames.length > 0)
+
   const label = LABELS[phase]
   const isRecording = phase === 'recording'
   const isRequesting = phase === 'requesting'
-  const isPaused = phase === 'paused' || phase === 'uploaded'
+  const isReady = phase === 'ready'
+
+  const onRecord = () => {
+    if (isRecording) {
+      setPhase('ready')
+    } else {
+      setPhase('requesting')
+    }
+  }
+
+  const onClear = () => {
+    setPhase('idle')
+  }
+
+  const canPlayOrClear = isReady || isRecording
 
   return (
     <header className={styles.toolbar}>
@@ -43,9 +68,9 @@ export function Toolbar({ phase, isPlaying, onRecord, onImport, onPlayback, onCl
 
         <Button id="btnImport" variant="ghost" icon="📁" label="导入 WAV" onClick={onImport} />
 
-        <Button id="btnPlayback" variant="ghost" icon={isPlaying ? '■' : '♫'} label={isPlaying ? '停止' : '回放'} onClick={onPlayback} disabled={!isPaused && phase !== 'recording'} />
+        <Button id="btnPlayback" variant="ghost" icon={isPlaying ? '■' : '♫'} label={isPlaying ? '停止' : '回放'} onClick={isPlaying ? onStopPlayback : onPlayback} disabled={!canPlayOrClear} />
 
-        <Button id="btnClear" variant="ghost" icon="↺" label="清空" onClick={onClear} />
+        <Button id="btnClear" variant="ghost" icon="↺" label="清空" onClick={onClear} disabled={!canPlayOrClear && !hasFrames} />
 
         <Button id="btnConfig" variant="ghost" icon="⚙" label="配置" aria-label="配置" onClick={onConfig} />
 

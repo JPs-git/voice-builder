@@ -1,5 +1,8 @@
-import { useRef, useCallback, useEffect, useState } from 'react'
-import { useAnalysis } from '../contexts/AnalysisContext'
+import { useEffect, useState } from 'react'
+import { useAnalysisStore } from '../store/analysisStore'
+import { useFrameStore } from '../store/frameStore'
+import { useAnalysisService } from '../hooks/useAnalysisService'
+import { usePlayback } from '../hooks/usePlayback'
 import { Toolbar } from '../components/Toolbar'
 import { TargetPresetBar } from '../components/TargetPresetBar'
 import { F0Chart } from '../components/F0Chart'
@@ -9,256 +12,37 @@ import { ConfigDrawer } from '../components/ConfigDrawer'
 import { HelpDrawer } from '../components/HelpDrawer'
 import { AboutModal } from '../components/AboutModal'
 import { TipWidget } from '../components/TipWidget'
-import { VOWEL_PRESETS } from '../types'
-import type { AnalysisFrame, ChartHandles } from '../types'
-import { getAudioEngine } from '../ts'
-import { usePlayback } from '../hooks/usePlayback'
-import { AnalysisPipeline } from '../../js/analysis-pipeline.js'
-import { parseWav } from '../../js/wav-parser.js'
-import { Resampler } from '../../js/resampler.js'
 import styles from './AnalysisPage.module.css'
 
 export function AnalysisPage() {
-  const { state, dispatch } = useAnalysis()
-  const f0Ref = useRef<ChartHandles>(null)
-  const formantRef = useRef<ChartHandles>(null)
-  const pipelineRef = useRef<InstanceType<typeof AnalysisPipeline> | null>(null)
-  const wavInputRef = useRef<HTMLInputElement>(null)
-  const sessionFramesRef = useRef<AnalysisFrame[]>([])
-  const WINDOW_FRAMES = 1000
+  const phase = useAnalysisStore(s => s.phase)
+  const config = useAnalysisStore(s => s.config)
+  const setConfig = useAnalysisStore(s => s.setConfig)
+  const hasFrames = useFrameStore(s => s.frames.length > 0)
+  const { importWav, fileInputRef, handleFileChange } = useAnalysisService()
   const { play: startPlayback, stop: stopPlayback, isPlaying } = usePlayback()
 
-  useEffect(() => {
-    formantRef.current?.setTargetBands({
-      f0: state.bands.f0.range,
-      f1: state.bands.f1.range,
-      f2: state.bands.f2.range,
-    })
-  }, [])
+  const [configOpen, setConfigOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
 
-  const onFrame = useCallback((frame: AnalysisFrame) => {
-    sessionFramesRef.current.push(frame)
-    if (sessionFramesRef.current.length > WINDOW_FRAMES) {
-      sessionFramesRef.current.shift()
-    }
-    dispatch({ type: 'SET_LATEST_FRAME', frame })
-    f0Ref.current?.pushFrame(frame)
-    formantRef.current?.pushFrame(frame)
-  }, [dispatch])
-
-  const startStream = useCallback(async (frameOffsetOverride?: number) => {
-    f0Ref.current?.setLiveMode()
-    formantRef.current?.setLiveMode()
-    const frameOffset = frameOffsetOverride ?? state.frameCount
-    pipelineRef.current = new (AnalysisPipeline as any)({
-      onFrame,
-      formantMethod: state.config.formantMethod,
-      formantSmoothing: state.config.formantSmoothing,
-      frameOffset,
-    })
-    getAudioEngine().startStream(
-      (chunk: Float32Array, rate: number) => pipelineRef.current?.pushChunk(chunk, rate)
-    )
-    dispatch({ type: 'SET_PHASE', phase: 'recording' })
-  }, [onFrame, state.config, state.frameCount, dispatch])
-
-  const startNewRecording = useCallback(async () => {
-    pipelineRef.current?.reset()
-    getAudioEngine().clear()
-    await startStream()
-  }, [startStream])
-
-  const onRecord = useCallback(async () => {
-    if (state.phase === 'recording') {
-      getAudioEngine().stopStream()
-      if (pipelineRef.current) {
-        pipelineRef.current.flush()
-        const totalFrames = state.frameCount + pipelineRef.current.frameCount
-        dispatch({ type: 'SET_FRAME_COUNT', count: totalFrames })
-        pipelineRef.current.reset()
-        pipelineRef.current = null
-      }
-      if (sessionFramesRef.current.length > WINDOW_FRAMES) {
-        sessionFramesRef.current.splice(0, sessionFramesRef.current.length - WINDOW_FRAMES)
-      }
-      dispatch({ type: 'SET_PHASE', phase: 'paused' })
-      return
-    }
-
-    if (state.phase === 'uploaded') {
-      if (isPlaying) {
-        stopPlayback()
-        f0Ref.current?.setCursorTime(-1)
-        formantRef.current?.setCursorTime(-1)
-      }
-      getAudioEngine().clear()
-      dispatch({ type: 'SET_FRAME_COUNT', count: 0 })
-      f0Ref.current?.clear()
-      formantRef.current?.clear()
-      sessionFramesRef.current = []
-      pipelineRef.current?.reset()
-      pipelineRef.current = null
-      await startStream(0)
-      return
-    }
-
-    if (state.phase === 'paused') {
-      if (isPlaying) {
-        stopPlayback()
-        f0Ref.current?.setCursorTime(-1)
-        formantRef.current?.setCursorTime(-1)
-      }
-      pipelineRef.current?.reset()
-      pipelineRef.current = null
-      await startStream()
-      return
-    }
-
-    try {
-      dispatch({ type: 'SET_PHASE', phase: 'requesting' })
-      await startNewRecording()
-    } catch (err) {
-      console.error('Stream start failed:', err)
-      dispatch({ type: 'SET_PHASE', phase: 'idle' })
-    }
-  }, [state.phase, state.frameCount, startNewRecording, startStream, dispatch, isPlaying, stopPlayback])
-
-  const clearAll = useCallback(() => {
-    pipelineRef.current?.reset()
-    pipelineRef.current = null
-    stopPlayback()
-    getAudioEngine().stopStream()
-    getAudioEngine().clear()
-    f0Ref.current?.clear()
-    formantRef.current?.clear()
-    f0Ref.current?.setCursorTime(-1)
-    formantRef.current?.setCursorTime(-1)
-    sessionFramesRef.current = []
-    dispatch({ type: 'RESET' })
-  }, [dispatch, stopPlayback])
-
-  const onImport = useCallback(() => {
-    if (state.phase === 'recording') clearAll()
-    wavInputRef.current?.click()
-  }, [state.phase, clearAll])
-
-  const onWavSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    try {
-      const buf = await file.arrayBuffer()
-      const parsed: any = parseWav(buf)
-      let samples = parsed.samples as Float32Array
-      let rate = parsed.sampleRate as number
-      if (rate !== 16000) {
-        const r = new Resampler(rate, 16000)
-        samples = r.process(samples)
-        rate = 16000
-      }
-      const MAX_SAMPLES = 16000 * 10
-      if (samples.length > MAX_SAMPLES) {
-        alert('导入的音频不能超过 10 秒，请裁剪后重试。')
-        return
-      }
-      clearAll()
-      getAudioEngine().importBuffer(samples)
-      const frames: AnalysisFrame[] = AnalysisPipeline.analyze(
-        samples as any, rate, state.config.formantMethod, state.config.formantSmoothing
-      )
-      sessionFramesRef.current = frames
-      dispatch({ type: 'SET_FRAME_COUNT', count: frames.length })
-      f0Ref.current?.displayAll(frames)
-      formantRef.current?.displayAll(frames)
-      if (frames.length > 0) {
-        dispatch({ type: 'SET_PHASE', phase: 'uploaded' })
-      }
-    } catch (err) {
-      console.error('WAV analysis failed:', err)
-      dispatch({ type: 'SET_PHASE', phase: 'idle' })
-    }
-  }, [state.config, clearAll, dispatch])
-
-  const onPresetSelect = useCallback((name: string) => {
-    const preset = VOWEL_PRESETS[name]
-    if (!preset) return
-    dispatch({ type: 'SET_ACTIVE_PRESET', name })
-    dispatch({ type: 'SET_BANDS', bands: { f0: preset.f0, f1: preset.f1, f2: preset.f2 } })
-    formantRef.current?.setTargetBands({ f0: preset.f0, f1: preset.f1, f2: preset.f2 })
-  }, [dispatch])
-
-  const onPlayback = useCallback(() => {
-    if (isPlaying) {
-      stopPlayback()
-      f0Ref.current?.setCursorTime(-1)
-      formantRef.current?.setCursorTime(-1)
-      return
-    }
-    if (state.phase === 'recording') {
-      getAudioEngine().stopStream()
-      if (pipelineRef.current) {
-        pipelineRef.current.flush()
-        const totalFrames = state.frameCount + pipelineRef.current.frameCount
-        dispatch({ type: 'SET_FRAME_COUNT', count: totalFrames })
-        pipelineRef.current.reset()
-        pipelineRef.current = null
-      }
-      if (sessionFramesRef.current.length > WINDOW_FRAMES) {
-        sessionFramesRef.current.splice(0, sessionFramesRef.current.length - WINDOW_FRAMES)
-      }
-      dispatch({ type: 'SET_PHASE', phase: 'paused' })
-    }
-    const firstTime = sessionFramesRef.current[0]?.time ?? 0
-    startPlayback(
-      (elapsed) => {
-        f0Ref.current?.setCursorTime(elapsed + firstTime)
-        formantRef.current?.setCursorTime(elapsed + firstTime)
-      },
-      () => {
-        f0Ref.current?.setCursorTime(-1)
-        formantRef.current?.setCursorTime(-1)
-      }
-    )
-  }, [isPlaying, state.phase, state.frameCount, dispatch, startPlayback, stopPlayback])
-
-  const onBandsChange = useCallback(
-    (bands: Partial<Record<'f0' | 'f1' | 'f2', [number, number]>>) => {
-      dispatch({ type: 'SET_BANDS', bands })
-      formantRef.current?.setTargetBands(bands)
-    },
-    [dispatch]
-  )
-
-  const [hasData, setHasData] = useState(false)
-  useEffect(() => {
-    if (state.phase === 'recording' || state.phase === 'paused' || state.phase === 'uploaded' || state.frameCount > 0) {
-      setHasData(true)
-    } else {
-      setHasData(false)
-    }
-  }, [state.phase, state.frameCount])
+  const hasData = phase === 'recording' || phase === 'ready' || hasFrames
 
   return (
     <div>
       <Toolbar
-        phase={state.phase}
+        phase={phase}
         isPlaying={isPlaying}
-        onRecord={onRecord}
-        onImport={onImport}
-        onPlayback={onPlayback}
-        onClear={clearAll}
-        onConfig={() => dispatch({ type: 'SET_CONFIG_DRAWER', open: true })}
-        onHelp={() => dispatch({ type: 'SET_HELP_DRAWER', open: true })}
-        onAbout={() => dispatch({ type: 'SET_ABOUT_MODAL', open: true })}
+        onImport={importWav}
+        onPlayback={startPlayback}
+        onStopPlayback={stopPlayback}
+        onConfig={() => setConfigOpen(true)}
+        onHelp={() => setHelpOpen(true)}
+        onAbout={() => setAboutOpen(true)}
       />
 
       <main className={styles.content}>
-        <TargetPresetBar
-          activePreset={state.activePreset}
-          bands={state.bands}
-          onPresetSelect={onPresetSelect}
-          onBandsChange={onBandsChange}
-        />
+        <TargetPresetBar />
 
         <div className={styles.chartsColumn}>
           <section className={`${styles.card} ${styles.chartsColumnCard}`}>
@@ -267,7 +51,7 @@ export function AnalysisPage() {
                 <h2 className={styles.cardTitle}>基频</h2>
               </div>
               <div className={styles.chartArea}>
-                <F0Chart ref={f0Ref} batchMode={false} />
+                <F0Chart />
                 <EmptyState
                   title="还没有声音数据"
                   description="🎤 点击顶栏'开始录音'试试"
@@ -288,7 +72,7 @@ export function AnalysisPage() {
                 </div>
               </div>
               <div className={styles.chartArea}>
-                <FormantChart ref={formantRef} batchMode={false} />
+                <FormantChart />
                 <EmptyState
                   title="曲线待生成"
                   description="录音或导入音频后显示共振峰曲线"
@@ -303,23 +87,23 @@ export function AnalysisPage() {
       <TipWidget />
 
       <ConfigDrawer
-        open={state.configDrawerOpen}
-        config={state.config}
-        onChange={cfg => dispatch({ type: 'SET_CONFIG', config: cfg })}
-        onClose={() => dispatch({ type: 'SET_CONFIG_DRAWER', open: false })}
+        open={configOpen}
+        config={config}
+        onChange={cfg => setConfig(cfg)}
+        onClose={() => setConfigOpen(false)}
       />
 
       <HelpDrawer
-        open={state.helpDrawerOpen}
-        onClose={() => dispatch({ type: 'SET_HELP_DRAWER', open: false })}
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
       />
 
       <AboutModal
-        open={state.aboutModalOpen}
-        onClose={() => dispatch({ type: 'SET_ABOUT_MODAL', open: false })}
+        open={aboutOpen}
+        onClose={() => setAboutOpen(false)}
       />
 
-      <input ref={wavInputRef} type="file" accept=".wav" hidden onChange={onWavSelected} />
+      <input ref={fileInputRef} type="file" accept=".wav" hidden onChange={handleFileChange} />
     </div>
   )
 }

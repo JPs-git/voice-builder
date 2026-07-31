@@ -1,6 +1,7 @@
-import { useRef, useCallback, forwardRef, useImperativeHandle, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { useECharts } from '../hooks/useECharts'
-import type { AnalysisFrame, ChartHandles } from '../types'
+import { useFrameStore } from '../store/frameStore'
+import type { AnalysisFrame } from '../types'
 
 const WINDOW = 10
 
@@ -42,39 +43,50 @@ function buildMarkLineData(zones: typeof TARGET_ZONES) {
   })
 }
 
-interface F0ChartProps {
-  batchMode?: boolean
-}
-
-export const F0Chart = forwardRef<ChartHandles, F0ChartProps>((props, ref) => {
-  const batchMode = props.batchMode ?? false
+export function F0Chart() {
+  const frames = useFrameStore(s => s.frames)
+  const cursorTime = useFrameStore(s => s.cursorTime)
   const { chartRef, setOption } = useECharts()
-  const dataRef = useRef<AnalysisFrame[]>([])
-  const isBatchRef = useRef(batchMode)
-  const latestTimeRef = useRef(0)
-  const throttledRef = useRef(false)
-  const cursorTimeRef = useRef(-1)
+  const rafRef = useRef<number | null>(null)
+  const isLiveRef = useRef(false)
 
-  isBatchRef.current = batchMode
+  useEffect(() => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      renderChart(frames, cursorTime, isLiveRef.current, false)
+      rafRef.current = null
+    })
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [frames])
 
-  const render = useCallback((useAnimation: boolean) => {
-    const data = dataRef.current
+  useEffect(() => {
+    renderChart(frames, cursorTime, isLiveRef.current, false)
+  }, [cursorTime])
+
+  // Detect live vs batch mode
+  useEffect(() => {
+    isLiveRef.current = frames.length > 1
+  }, [frames.length])
+
+  function renderChart(
+    data: AnalysisFrame[],
+    cursor: number,
+    isLive: boolean,
+    useAnimation: boolean,
+  ) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
 
     const hasData = data.length > 0
     let minTime: number, maxTime: number
-    if (isBatchRef.current) {
+    if (isLive && hasData) {
+      const currentTime = data[data.length - 1].time
+      minTime = currentTime - WINDOW
+      maxTime = currentTime
+    } else {
       minTime = hasData ? data[0].time : 0
       maxTime = hasData ? data[data.length - 1].time : WINDOW
-    } else {
-      if (hasData) {
-        const currentTime = data[data.length - 1].time
-        minTime = currentTime - WINDOW
-        maxTime = currentTime
-      } else {
-        minTime = 0
-        maxTime = WINDOW
-      }
     }
 
     setOption({
@@ -132,65 +144,21 @@ export const F0Chart = forwardRef<ChartHandles, F0ChartProps>((props, ref) => {
           type: 'line' as const,
           showSymbol: false,
           data: [],
-          markLine: cursorTimeRef.current >= 0 ? {
+          markLine: cursor >= 0 ? {
             silent: true,
             symbol: 'none',
             lineStyle: { color: '#E23E57', width: 2, type: 'solid' as const },
             label: { show: false },
-            data: [{ xAxis: cursorTimeRef.current }],
+            data: [{ xAxis: cursor }],
           } : undefined,
         },
       ],
     } as any)
-  }, [setOption])
+  }
 
   useEffect(() => {
-    render(false)
-  }, [render])
+    renderChart(frames, cursorTime, isLiveRef.current, false)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useImperativeHandle(ref, () => ({
-    pushFrame(frame: AnalysisFrame) {
-      if (isBatchRef.current) return
-      const data = dataRef.current
-      data.push({ ...frame })
-      latestTimeRef.current = frame.time
-      const cutoff = frame.time - WINDOW
-      while (data.length > 0 && data[0].time < cutoff) data.shift()
-      if (!throttledRef.current) {
-        throttledRef.current = true
-        requestAnimationFrame(() => {
-          render(false)
-          throttledRef.current = false
-        })
-      }
-    },
-    displayAll(frames: AnalysisFrame[]) {
-      dataRef.current = frames
-      if (frames.length > 0) latestTimeRef.current = frames[frames.length - 1].time
-      render(true)
-    },
-    setLiveMode() {
-      isBatchRef.current = false
-      render(false)
-    },
-    setTargetBands() {},
-    setCursorTime(time: number) {
-      cursorTimeRef.current = time
-      render(false)
-    },
-    clear() {
-      dataRef.current = []
-      isBatchRef.current = false
-      latestTimeRef.current = 0
-      throttledRef.current = false
-      cursorTimeRef.current = -1
-      render(false)
-    },
-  }), [render])
-
-  return (
-    <div id="f0Chart" ref={chartRef} />
-  )
-})
-
-F0Chart.displayName = 'F0Chart'
+  return <div id="f0Chart" ref={chartRef} />
+}
