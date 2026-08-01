@@ -4,6 +4,19 @@
   padding: 16px 20px;
   width: 100%;
 }
+.page {
+  display: flex;
+  flex-direction: column;
+}
+.sidePanel {
+  position: absolute;
+  top: 16px;
+  right: calc(50% + 466px);
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 .chartsColumn {
   display: flex;
   flex-direction: column;
@@ -97,8 +110,35 @@
 }
 
 @media (max-width: 768px) {
+  .page {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
   .content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     padding: 14px;
   }
-  .chartWrapper { height: 280px; }
+  .sidePanel {
+    position: static;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .chartsColumn {
+    flex: 1;
+    min-height: 0;
+  }
+  .chartWrapper {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    margin: 8px auto;
+  }
 }

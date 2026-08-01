@@ -113,4 +113,43 @@ describe('appStore', () => {
       expect(state.latestFrame).toBeNull()
     })
   })
+
+  describe('formantVisible', () => {
+    it('defaults to all visible', () => {
+      const { formantVisible } = useAppStore.getState()
+      expect(formantVisible).toEqual({ f0: true, f1: true, f2: true })
+    })
+
+    it('toggleFormantVisible flips a single key', () => {
+      useAppStore.getState().toggleFormantVisible('f1')
+      const { formantVisible } = useAppStore.getState()
+      expect(formantVisible.f0).toBe(true)
+      expect(formantVisible.f1).toBe(false)
+      expect(formantVisible.f2).toBe(true)
+    })
+
+    it('toggleFormantVisible flips back', () => {
+      useAppStore.getState().toggleFormantVisible('f0')
+      useAppStore.getState().toggleFormantVisible('f0')
+      expect(useAppStore.getState().formantVisible.f0).toBe(true)
+    })
+  })
+
+  describe('clearFrames preserves formantVisible', () => {
+    it('keeps hidden state across clear', () => {
+      useAppStore.getState().toggleFormantVisible('f1')
+      useAppStore.getState().appendFrame(makeFrame({ time: 0.01, f0: 220 }))
+      useAppStore.getState().clearFrames()
+      expect(useAppStore.getState().formantVisible.f1).toBe(false)
+      expect(useAppStore.getState().frames).toEqual([])
+    })
+  })
+
+  describe('reset restores formantVisible', () => {
+    it('restores all visible', () => {
+      useAppStore.getState().toggleFormantVisible('f2')
+      useAppStore.getState().reset()
+      expect(useAppStore.getState().formantVisible).toEqual({ f0: true, f1: true, f2: true })
+    })
+  })
 })

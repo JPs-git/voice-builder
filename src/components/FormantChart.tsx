@@ -41,12 +41,12 @@ function buildMarkLine(band: { range: [number, number]; color: string }, name: s
 interface FormantChartProps {
   cursorTime?: number
   onFrameClick?: (frame: AnalysisFrame) => void
-  seriesVisible?: Record<'f0' | 'f1' | 'f2', boolean>
 }
 
-export function FormantChart({ cursorTime = -1, onFrameClick, seriesVisible }: FormantChartProps) {
+export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProps) {
   const frames = useAppStore(s => s.frames)
   const bands = useAppStore(s => s.bands)
+  const formantVisible = useAppStore(s => s.formantVisible)
   const { chartRef, setOption, getInstance } = useECharts()
   const rafRef = useRef<number | null>(null)
   const isLiveRef = useRef(false)
@@ -72,10 +72,10 @@ export function FormantChart({ cursorTime = -1, onFrameClick, seriesVisible }: F
   }, [frames.length])
 
   useEffect(() => {
-    seriesVisibleRef.current = { f0: true, f1: true, f2: true, ...seriesVisible }
+    seriesVisibleRef.current = formantVisible
     renderChart(frames, cursorTime, bands, isLiveRef.current, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seriesVisible])
+  }, [formantVisible])
 
   // Chart click → find nearest frame
   useEffect(() => {
