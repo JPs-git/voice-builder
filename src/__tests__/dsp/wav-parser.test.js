@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { parseWav } from '../../dsp/wav-parser'
+import { parseWav, isWavFile } from '../../dsp/wav-parser'
 
 function makeWav({ sampleRate = 44100, numChannels = 1, bitsPerSample = 16, samples = null }) {
   const bytesPerSample = bitsPerSample / 8
@@ -174,5 +174,32 @@ describe('parseWav', () => {
   it('throws for unsupported bitsPerSample', () => {
     const samples = new Float32Array(10)
     assert.throws(() => parseWav(makeWav({ sampleRate: 44100, bitsPerSample: 64, samples })), /Unsupported/)
+  })
+})
+
+describe('isWavFile', () => {
+  it('returns true for a valid WAV buffer', () => {
+    assert.equal(isWavFile(makeWav({})), true)
+  })
+
+  it('returns false for a non-RIFF buffer', () => {
+    const buf = new ArrayBuffer(44)
+    assert.equal(isWavFile(buf), false)
+  })
+
+  it('returns false for a RIFF buffer that is not WAVE', () => {
+    const buf = new ArrayBuffer(12)
+    const view = new DataView(buf)
+    let off = 0
+    const w = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); off += s.length }
+    w('RIFF')
+    view.setUint32(off, 4, true); off += 4
+    w('AVI ')
+    assert.equal(isWavFile(buf), false)
+  })
+
+  it('returns false for a too-short buffer', () => {
+    const buf = new ArrayBuffer(4)
+    assert.equal(isWavFile(buf), false)
   })
 })
