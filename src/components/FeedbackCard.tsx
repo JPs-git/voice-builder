@@ -1,12 +1,45 @@
+import { useAppStore } from '../store/appStore'
 import { useFeedback } from '../feedback'
+import { getFormantStatus } from '../feedback/status'
+import type { FormantStatus } from '../feedback/status'
 import styles from './FeedbackCard.module.css'
 
+const KEYS = ['f0', 'f1', 'f2'] as const
+type FormantKey = typeof KEYS[number]
+
+const STATUS_CLASS: Record<FormantStatus, string> = {
+  hit: styles.valueHit,
+  low: styles.valueWarn,
+  high: styles.valueWarn,
+  none: styles.valueMute,
+}
+
+function formatValue(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '--'
+  return `${Math.round(value)} Hz`
+}
+
 export function FeedbackCard() {
+  const latestFrame = useAppStore(s => s.latestFrame)
+  const bands = useAppStore(s => s.bands)
   const results = useFeedback()
-  if (results.length === 0) return null
+
   return (
     <aside className={styles.card} aria-label="实时反馈">
       <div className={styles.header}>实时反馈</div>
+      <div className={styles.values}>
+        {KEYS.map(key => {
+          const status = getFormantStatus(latestFrame?.[key], bands[key].range)
+          return (
+            <div key={key} className={styles.valueRow} data-status={status}>
+              <span className={styles.valueLabel}>{key.toUpperCase()}</span>
+              <span className={`${styles.valueNum} ${STATUS_CLASS[status]}`}>
+                {formatValue(latestFrame?.[key])}
+              </span>
+            </div>
+          )
+        })}
+      </div>
       <ul className={styles.list}>
         {results.map(result => (
           <li
