@@ -1155,3 +1155,469 @@ Expected: build succeeds, `dist/` produced.
 
 Run: `git status --short` and `git log --oneline -8`
 Expected: all work committed, clean status.
+
+---
+
+# 修订计划（2026-08-01）：图例可见性 store 驱动，实时反馈联动
+
+> 用户需求变更：在 FormantChart 图例隐藏某 series（f0/f1/f2）时，实时反馈卡片也不显示该项目——数值行整行不渲染，汇总判定忽略隐藏维度（如隐藏 f1/f2 后仅 f0 命中即显示"完美"）。图例可见性从 AnalysisPage 局部 `useState` 提升到 Zustand store（`formantVisible`），遵循"命令驱动控制、数据经 store 流向组件"原则。更新后的 spec：`docs/superpowers/specs/2026-08-01-hit-target-feedback-design.md`。
+
+**修订目标：** 新增 `formantVisible` 至 appStore（与 bands 同级），图例按钮写 store，FormantChart / FeedbackCard / useFeedback 全部订阅 store；`FeedbackContext.visible` 必填；evaluateHitRate 跳过隐藏维度；FeedbackCard 数值行按可见性过滤。
+
+---
+
+### Task 12: 类型 + store 图例可见性（TDD）
+
+**Files:**
+- Modify: `src/types/index.ts`
+- Modify: `src/store/appStore.ts`
+- Test: `src/__tests__/appStore.test.ts`
+
+- [ ] **Step 1: 追加测试到 `appStore.test.ts`**
+
+在 `describe('reset')` 后追加：
+
+```ts
+describe('formantVisible', () => {
+  it('defaults to all visible', () => {
+    const { formantVisible } = useAppStore.getState()
+    expect(formantVisible).toEqual({ f0: true, f1: true, f2: true })
+  })
+
+  it('toggleFormantVisible flips a single key', () => {
+    useAppStore.getState().toggleFormantVisible('f1')
+    const { formantVisible } = useAppStore.getState()
+    expect(formantVisible.f0).toBe(true)
+    expect(formantVisible.f1).toBe(false)
+    expect(formantVisible.f2).toBe(true)
+  })
+
+  it('toggleFormantVisible flips back', () => {
+    useAppStore.getState().toggleFormantVisible('f0')
+    useAppStore.getState().toggleFormantVisible('f0')
+    expect(useAppStore.getState().formantVisible.f0).toBe(true)
+  })
+})
+
+describe('clearFrames preserves formantVisible', () => {
+  it('keeps hidden state across clear', () => {
+    useAppStore.getState().toggleFormantVisible('f1')
+    useAppStore.getState().appendFrame(makeFrame({ time: 0.01, f0: 220 }))
+    useAppStore.getState().clearFrames()
+    expect(useAppStore.getState().formantVisible.f1).toBe(false)
+    expect(useAppStore.getState().frames).toEqual([])
+  })
+})
+
+describe('reset restores formantVisible', () => {
+  it('restores all visible', () => {
+    useAppStore.getState().toggleFormantVisible('f2')
+    useAppStore.getState().reset()
+    expect(useAppStore.getState().formantVisible).toEqual({ f0: true, f1: true, f2: true })
+  })
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/__tests__/appStore.test.ts`
+Expected: FAIL — `formantVisible` / `toggleFormantVisible` 不存在。
+
+- [ ] **Step 3: 更新 `src/types/index.ts`**
+
+追加到文件末尾：
+
+```ts
+export type FormantSeries = 'f0' | 'f1' | 'f2'
+export type FormantVisibility = Record<FormantSeries, boolean>
+
+export interface FeedbackContext {
+  latestFrame: AnalysisFrame | null
+  bands: TargetBands
+  visible: FormantVisibility
+}
+```
+
+（替换现有 `FeedbackContext`，删除旧的 `latestFrame`/`bands` 定义，补 `visible`。）
+
+- [ ] **Step 4: 更新 `src/store/appStore.ts`**
+
+- import 增加 `FormantSeries, FormantVisibility`
+- `AppState` 增加 `formantVisible: FormantVisibility`
+- `AppActions` 增加 `toggleFormantVisible: (key: FormantSeries) => void`
+- `initialState` 增加 `formantVisible: { f0: true, f1: true, f2: true }`
+- store 实现增加：
+
+```ts
+toggleFormantVisible: (key) => set((state) => ({
+  formantVisible: { ...state.formantVisible, [key]: !state.formantVisible[key] },
+})),
+```
+
+`clearFrames()` 不触碰 `formantVisible`（自然保留）；`reset()` 恢复 initialState（自然恢复）。
+
+- [ ] **Step 5: Run test to verify it passes**
+
+Run: `npx vitest run src/__tests__/appStore.test.ts`
+Expected: 新增 5 个测试 PASS。
+
+- [ ] **Step 6: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: 无错误。注意：`FeedbackContext` 增加必填 `visible` 后，`hitRate.ts` / `index.ts` 若未传会报错，此处在下一步一并修复。
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/types/index.ts src/store/appStore.ts src/__tests__/appStore.test.ts
+git commit -m "feat(feedback): add formantVisible to store with toggle action"
+```
+
+---
+
+### Task 13: evaluateHitRate + useFeedback 接入 visible（TDD）
+
+**Files:**
+- Modify: `src/feedback/hitRate.ts`
+- Modify: `src/feedback/index.ts`
+- Test: `src/__tests__/hitRate.test.ts`
+- Test: `src/__tests__/useFeedback.test.tsx`
+
+- [ ] **Step 1: 更新 `hitRate.test.ts`**
+
+`makeCtx` 增加 `visible` 参数，并追加图例联动用例：
+
+```ts
+function makeCtx(overrides: {
+  f0?: number | null
+  f1?: number | null
+  f2?: number | null
+  visible?: Partial<Record<'f0' | 'f1' | 'f2', boolean>>
+}): FeedbackContext {
+  const frame: AnalysisFrame = {
+    time: 0.1,
+    f0: overrides.f0 ?? null,
+    f1: overrides.f1 ?? null,
+    f2: overrides.f2 ?? null,
+  }
+  return {
+    latestFrame: frame,
+    bands: {
+      f0: { range: vowelA.f0, color: '#10B981' },
+      f1: { range: vowelA.f1, color: '#3B82F6' },
+      f2: { range: vowelA.f2, color: '#F59E0B' },
+    },
+    visible: { f0: true, f1: true, f2: true, ...overrides.visible },
+  }
+}
+```
+
+追加用例：
+
+```ts
+it('ignores hidden out-of-range dims (returns hit)', () => {
+  const result = evaluateHitRate(makeCtx({
+    f0: (vowelA.f0[0] + vowelA.f0[1]) / 2,
+    f1: vowelA.f1[1] + 200,
+    f2: vowelA.f2[1] + 200,
+    visible: { f1: false, f2: false },
+  }))
+  expect(result).toEqual({
+    id: 'hit-rate',
+    label: '目标区间',
+    status: 'hit',
+    message: '完美',
+  })
+})
+
+it('hides deviation hints for hidden dims', () => {
+  const result = evaluateHitRate(makeCtx({
+    f0: vowelA.f0[0] - 50,
+    f1: vowelA.f1[1] + 200,
+    f2: (vowelA.f2[0] + vowelA.f2[1]) / 2,
+    visible: { f1: false },
+  }))
+  expect(result?.status).toBe('miss')
+  expect(result?.message).toBe('F0偏低')
+})
+
+it('returns null when all dims hidden', () => {
+  const result = evaluateHitRate(makeCtx({
+    f0: (vowelA.f0[0] + vowelA.f0[1]) / 2,
+    visible: { f0: false, f1: false, f2: false },
+  }))
+  expect(result).toBeNull()
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/__tests__/hitRate.test.ts`
+Expected: FAIL — 用例红（实现未跳过隐藏维度）。
+
+- [ ] **Step 3: 更新 `src/feedback/hitRate.ts`**
+
+`evaluateHitRate` 循环开头增加可见性跳过：
+
+```ts
+for (const k of KEYS) {
+  if (!visible[k]) continue
+  const status = getFormantStatus(latestFrame[k], bands[k].range)
+  ...
+}
+```
+
+- [ ] **Step 4: Run hitRate test to verify it passes**
+
+Run: `npx vitest run src/__tests__/hitRate.test.ts`
+Expected: 10 个测试 PASS（7 旧 + 3 新）。
+
+- [ ] **Step 5: 更新 `useFeedback.test.tsx` 追加用例**
+
+```ts
+it('respects store formantVisible (hidden out-of-range is ignored)', () => {
+  useAppStore.getState().toggleFormantVisible('f2')
+  const mid = (lo: number, hi: number) => Math.round((lo + hi) / 2)
+  act(() => {
+    setFrame(mid(vowelA.f0[0], vowelA.f0[1]), mid(vowelA.f1[0], vowelA.f1[1]), vowelA.f2[1] + 100)
+  })
+  const { result } = renderHook(() => useFeedback())
+  expect(result.current).toHaveLength(1)
+  expect(result.current[0].status).toBe('hit')
+  expect(result.current[0].message).toBe('完美')
+})
+```
+
+- [ ] **Step 6: 更新 `src/feedback/index.ts`**
+
+`useFeedback` 订阅 `formantVisible` 并传入 ctx：
+
+```ts
+export function useFeedback(): FeedbackResult[] {
+  const latestFrame = useAppStore(s => s.latestFrame)
+  const bands = useAppStore(s => s.bands)
+  const visible = useAppStore(s => s.formantVisible)
+  return FEEDBACK_EVALUATORS
+    .map(fn => fn({ latestFrame, bands, visible }))
+    .filter((r): r is FeedbackResult => r !== null)
+}
+```
+
+- [ ] **Step 7: Run useFeedback test to verify it passes**
+
+Run: `npx vitest run src/__tests__/useFeedback.test.tsx`
+Expected: 4 个测试 PASS。
+
+- [ ] **Step 8: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: 无错误。
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/feedback/hitRate.ts src/feedback/index.ts src/__tests__/hitRate.test.ts src/__tests__/useFeedback.test.tsx
+git commit -m "feat(feedback): respect formantVisible in evaluator and hook"
+```
+
+---
+
+### Task 14: FeedbackCard 数值行按可见性过滤（TDD）
+
+**Files:**
+- Modify: `src/components/FeedbackCard.tsx`
+- Test: `src/__tests__/FeedbackCard.test.tsx`
+
+- [ ] **Step 1: 追加测试到 `FeedbackCard.test.tsx`**
+
+```ts
+it('hides value row for hidden series', () => {
+  useAppStore.getState().toggleFormantVisible('f1')
+  setFrame(mid(vowelA.f0[0], vowelA.f0[1]), mid(vowelA.f1[0], vowelA.f1[1]), mid(vowelA.f2[0], vowelA.f2[1]))
+  render(<FeedbackCard />)
+  expect(screen.queryByText('F1')).toBeNull()
+  expect(screen.queryByText(`${mid(vowelA.f1[0], vowelA.f1[1])} Hz`)).toBeNull()
+  expect(screen.getByText('F0')).toBeTruthy()
+  expect(screen.getByText('F2')).toBeTruthy()
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/__tests__/FeedbackCard.test.tsx`
+Expected: FAIL — F1 行仍渲染。
+
+- [ ] **Step 3: 更新 `src/components/FeedbackCard.tsx`**
+
+- 订阅 `formantVisible`：`const formantVisible = useAppStore(s => s.formantVisible)`
+- 数值行遍历改为过滤：
+
+```tsx
+{KEYS.filter(key => formantVisible[key]).map(key => {
+  ...
+})}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run src/__tests__/FeedbackCard.test.tsx`
+Expected: 8 个测试 PASS（7 旧 + 1 新）。
+
+- [ ] **Step 5: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: 无错误。
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/components/FeedbackCard.tsx src/__tests__/FeedbackCard.test.tsx
+git commit -m "feat(feedback): filter FeedbackCard value rows by formantVisible"
+```
+
+---
+
+### Task 15: FormantChart 读 store + AnalysisPage 图例写 store（TDD）
+
+**Files:**
+- Modify: `src/components/FormantChart.tsx`
+- Modify: `src/routes/AnalysisPage.tsx`
+- Test: `src/__tests__/FormantChart.test.tsx`
+- Test: `src/__tests__/AnalysisPage.test.tsx`
+
+- [ ] **Step 1: 更新 `FormantChart.test.tsx`**
+
+删除 `seriesVisible` prop 用法，改为 store 驱动。将两个用例改为：
+
+```tsx
+it('renders data for all series by default', () => {
+  useAppStore.getState().setFrames(FRAMES)
+  render(<FormantChart />)
+  expect(seriesByName('F1').data).toHaveLength(2)
+  expect(seriesByName('F1').markLine).toBeDefined()
+})
+
+it('empties data and removes markLine for hidden series', () => {
+  useAppStore.getState().setFrames(FRAMES)
+  useAppStore.getState().toggleFormantVisible('f1')
+  render(<FormantChart />)
+  expect(seriesByName('F1').data).toEqual([])
+  expect(seriesByName('F1').markLine).toBeUndefined()
+  expect(seriesByName('F0').data).toHaveLength(2)
+  expect(seriesByName('F2').data).toHaveLength(2)
+})
+
+it('re-renders when store formantVisible changes', () => {
+  useAppStore.getState().setFrames(FRAMES)
+  render(<FormantChart />)
+  expect(seriesByName('F0').data).toHaveLength(2)
+
+  useAppStore.getState().toggleFormantVisible('f0')
+
+  expect(seriesByName('F0').data).toEqual([])
+  expect(seriesByName('F0').markLine).toBeUndefined()
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/__tests__/FormantChart.test.tsx`
+Expected: FAIL — 当前 `seriesVisible` prop 逻辑仍在；改 store 后不重渲染。
+
+- [ ] **Step 3: 更新 `src/components/FormantChart.tsx`**
+
+- 移除 `seriesVisible` prop；`FormantChartProps` 仅保留 `cursorTime` / `onFrameClick`
+- 组件内订阅：`const formantVisible = useAppStore(s => s.formantVisible)`
+- `seriesVisibleRef` 初始化改为默认全 true（现已是），同步 effect 改为：
+
+```tsx
+useEffect(() => {
+  seriesVisibleRef.current = formantVisible
+  renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [formantVisible])
+```
+
+（`renderChart` 内部继续用 `seriesVisibleRef.current`，无需改动。）
+
+- [ ] **Step 4: Run FormantChart test to verify it passes**
+
+Run: `npx vitest run src/__tests__/FormantChart.test.tsx`
+Expected: 3 个测试 PASS。
+
+- [ ] **Step 5: 更新 `AnalysisPage.test.tsx`**
+
+用例保持（图例点击改走 store 后行为一致），确认 `data-active` 仍反映 store 状态。若无需改动则跳过；运行确认通过：
+
+Run: `npx vitest run src/__tests__/AnalysisPage.test.tsx`
+Expected: PASS。
+
+- [ ] **Step 6: 更新 `src/routes/AnalysisPage.tsx`**
+
+- 移除 `seriesVisible` 局部 state 与 `handleToggleSeries`
+- import `useAppStore`，订阅 `formantVisible` 与 `toggleFormantVisible`：
+
+```tsx
+const formantVisible = useAppStore(s => s.formantVisible)
+const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
+```
+
+- `LegendKey` 改用共享类型 `FormantSeries`（import 自 types），`LEGEND_KEYS` 保留
+- 图例按钮改为：
+
+```tsx
+<button
+  key={key}
+  className={styles.legendItem}
+  data-key={key}
+  data-active={String(formantVisible[key])}
+  onClick={() => toggleFormantVisible(key)}
+>
+  <i style={{ background: COLORS[key] }}></i>{key.toUpperCase()}
+</button>
+```
+
+- `<FormantChart>` 调用去掉 `seriesVisible` prop：`<FormantChart cursorTime={cursorTime} />`
+
+- [ ] **Step 7: Run AnalysisPage test to verify it passes**
+
+Run: `npx vitest run src/__tests__/AnalysisPage.test.tsx`
+Expected: PASS（图例点击切换数据可见性）。
+
+- [ ] **Step 8: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: 无错误。
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/components/FormantChart.tsx src/routes/AnalysisPage.tsx src/__tests__/FormantChart.test.tsx src/__tests__/AnalysisPage.test.tsx
+git commit -m "feat(feedback): drive chart legend from store formantVisible"
+```
+
+---
+
+### Task 16: 最终验证
+
+**Files:** none
+
+- [ ] **Step 1: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: no errors.
+
+- [ ] **Step 2: Full test suite**
+
+Run: `npm test`
+Expected: all test files pass, 0 failures.
+
+- [ ] **Step 3: Production build**
+
+Run: `npm run build`
+Expected: build succeeds, `dist/` produced.
+
+- [ ] **Step 4: Final commit check**
+
+Run: `git status --short` and `git log --oneline -8`
+Expected: all work committed, clean status.
