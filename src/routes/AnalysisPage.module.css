@@ -4,6 +4,10 @@
   padding: 16px 20px;
   width: 100%;
 }
+.page {
+  display: flex;
+  flex-direction: column;
+}
 .sidePanel {
   position: absolute;
   top: 16px;
@@ -106,13 +110,34 @@
 }
 
 @media (max-width: 768px) {
+  .page {
+    height: 100dvh;
+    overflow: hidden;
+  }
   .content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     padding: 14px;
   }
   .sidePanel {
     position: static;
     width: 100%;
-    margin-bottom: 14px;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    flex-shrink: 0;
   }
-  .chartWrapper { height: 280px; }
+  .chartsColumn {
+    flex: 1;
+    min-height: 0;
+  }
+  .chartWrapper {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    margin: 8px auto;
+  }
 }

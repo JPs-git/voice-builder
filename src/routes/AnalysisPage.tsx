@@ -44,7 +44,7 @@ export function AnalysisPage() {
     )
 
   return (
-    <div>
+    <div className={styles.page}>
       <Toolbar toolItems={toolItems} onToolClick={handleClickTool} />
 
       <main className={styles.content}>
