@@ -5,7 +5,6 @@ import type { FormantStatus } from '../feedback/status'
 import styles from './FeedbackCard.module.css'
 
 const KEYS = ['f0', 'f1', 'f2'] as const
-type FormantKey = typeof KEYS[number]
 
 const STATUS_CLASS: Record<FormantStatus, string> = {
   hit: styles.valueHit,
