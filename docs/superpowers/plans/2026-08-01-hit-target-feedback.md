@@ -585,3 +585,573 @@ Expected: build succeeds, `dist/` produced.
 
 Run: `git status --short` and `git log --oneline -8`
 Expected: all work committed, clean status.
+
+---
+
+# 修订计划（2026-08-01）：常驻显示 + 同侧下方布局 + F0/F1/F2 实时数值
+
+> 用户需求变更：1) 反馈卡片常驻显示（不再无数据时消失）；2) 位置移到 TargetPresetBar 同侧（左侧）正下方；3) 卡片显示 F0/F1/F2 实时具体数值。汇总行「完美/提示」保留。更新后的 spec：`docs/superpowers/specs/2026-08-01-hit-target-feedback-design.md`。
+
+**修订目标：** FeedbackCard 常驻显示，含 F0/F1/F2 实时数值行（命中绿/偏低偏高橙/无数据 `--` 灰，不带文字），保留汇总行；布局改为左侧容器包裹 TargetPresetBar + FeedbackCard。
+
+---
+
+### Task 7: getFormantStatus 共享判定函数（TDD）
+
+**Files:**
+- Create: `src/feedback/status.ts`
+- Test: `src/__tests__/status.test.ts`
+
+- [ ] **Step 1: Write the failing test**
+
+Create `src/__tests__/status.test.ts`:
+
+```ts
+import { describe, it, expect } from 'vitest'
+import { getFormantStatus } from '../feedback/status'
+
+describe('getFormantStatus', () => {
+  it('returns hit when value is inside range', () => {
+    expect(getFormantStatus(300, [200, 400])).toBe('hit')
+  })
+
+  it('returns hit when value equals lower bound', () => {
+    expect(getFormantStatus(200, [200, 400])).toBe('hit')
+  })
+
+  it('returns hit when value equals upper bound', () => {
+    expect(getFormantStatus(400, [200, 400])).toBe('hit')
+  })
+
+  it('returns low when value is below lower bound', () => {
+    expect(getFormantStatus(100, [200, 400])).toBe('low')
+  })
+
+  it('returns high when value is above upper bound', () => {
+    expect(getFormantStatus(500, [200, 400])).toBe('high')
+  })
+
+  it('returns none for null', () => {
+    expect(getFormantStatus(null, [200, 400])).toBe('none')
+  })
+
+  it('returns none for undefined', () => {
+    expect(getFormantStatus(undefined, [200, 400])).toBe('none')
+  })
+
+  it('returns none for non-finite value', () => {
+    expect(getFormantStatus(NaN, [200, 400])).toBe('none')
+    expect(getFormantStatus(Infinity, [200, 400])).toBe('none')
+  })
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/__tests__/status.test.ts`
+Expected: FAIL — `Cannot find module '../feedback/status'`.
+
+- [ ] **Step 3: Write minimal implementation**
+
+Create `src/feedback/status.ts`:
+
+```ts
+export type FormantStatus = 'hit' | 'low' | 'high' | 'none'
+
+export function getFormantStatus(
+  value: number | null | undefined,
+  range: [number, number],
+): FormantStatus {
+  if (value == null || !Number.isFinite(value)) return 'none'
+  if (value < range[0]) return 'low'
+  if (value > range[1]) return 'high'
+  return 'hit'
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run src/__tests__/status.test.ts`
+Expected: 8 tests PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/feedback/status.ts src/__tests__/status.test.ts
+git commit -m "feat(feedback): add getFormantStatus shared evaluator"
+```
+
+---
+
+### Task 8: 重构 evaluateHitRate 复用 getFormantStatus
+
+**Files:**
+- Modify: `src/feedback/hitRate.ts`
+- Test: `src/__tests__/hitRate.test.ts`
+
+- [ ] **Step 1: Refactor implementation to use getFormantStatus**
+
+Modify `src/feedback/hitRate.ts` — replace the inline boundary checks with the shared function:
+
+```ts
+import type { FeedbackContext, FeedbackResult } from '../types'
+import { getFormantStatus } from './status'
+
+const KEYS = ['f0', 'f1', 'f2'] as const
+
+export function evaluateHitRate(ctx: FeedbackContext): FeedbackResult | null {
+  const { latestFrame, bands } = ctx
+  if (!latestFrame) return null
+
+  const hints: string[] = []
+  let hasData = false
+  let allHit = true
+
+  for (const k of KEYS) {
+    const status = getFormantStatus(latestFrame[k], bands[k].range)
+    if (status === 'none') continue
+    hasData = true
+    if (status === 'low') {
+      allHit = false
+      hints.push(`${k.toUpperCase()}偏低`)
+    } else if (status === 'high') {
+      allHit = false
+      hints.push(`${k.toUpperCase()}偏高`)
+    }
+  }
+
+  if (!hasData) return null
+  if (allHit) {
+    return { id: 'hit-rate', label: '目标区间', status: 'hit', message: '完美' }
+  }
+  return { id: 'hit-rate', label: '目标区间', status: 'miss', message: hints.join(' ') }
+}
+```
+
+- [ ] **Step 2: Run existing hitRate tests to verify behavior unchanged**
+
+Run: `npx vitest run src/__tests__/hitRate.test.ts`
+Expected: 7 tests PASS (no behavior change).
+
+- [ ] **Step 3: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: no errors.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/feedback/hitRate.ts
+git commit -m "refactor(feedback): reuse getFormantStatus in evaluateHitRate"
+```
+
+---
+
+### Task 9: FeedbackCard 常驻显示 + 实时数值行（TDD）
+
+**Files:**
+- Modify: `src/components/FeedbackCard.tsx`
+- Modify: `src/components/FeedbackCard.module.css`
+- Test: `src/__tests__/FeedbackCard.test.tsx`
+
+- [ ] **Step 1: Rewrite the failing test**
+
+Modify `src/__tests__/FeedbackCard.test.tsx`:
+
+```tsx
+import { describe, it, expect, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { FeedbackCard } from '../components/FeedbackCard'
+import { useAppStore } from '../store/appStore'
+import { VOWEL_PRESETS } from '../types'
+
+const vowelA = VOWEL_PRESETS['vowel-a']
+
+function setFrame(f0: number | null, f1: number | null, f2: number | null) {
+  useAppStore.getState().setFrames([{ time: 0.1, f0, f1, f2 }])
+}
+
+const mid = (lo: number, hi: number) => Math.round((lo + hi) / 2)
+
+describe('FeedbackCard', () => {
+  beforeEach(() => {
+    useAppStore.getState().reset()
+  })
+
+  it('renders header even with no data', () => {
+    render(<FeedbackCard />)
+    expect(screen.getByText('实时反馈')).toBeTruthy()
+  })
+
+  it('shows -- placeholders for values when no data', () => {
+    render(<FeedbackCard />)
+    expect(screen.getAllByText('--')).toHaveLength(3)
+  })
+
+  it('shows real-time F0/F1/F2 values in Hz', () => {
+    setFrame(mid(vowelA.f0[0], vowelA.f0[1]), mid(vowelA.f1[0], vowelA.f1[1]), mid(vowelA.f2[0], vowelA.f2[1]))
+    render(<FeedbackCard />)
+    expect(screen.getByText(`${mid(vowelA.f0[0], vowelA.f0[1])} Hz`)).toBeTruthy()
+    expect(screen.getByText(`${mid(vowelA.f1[0], vowelA.f1[1])} Hz`)).toBeTruthy()
+    expect(screen.getByText(`${mid(vowelA.f2[0], vowelA.f2[1])} Hz`)).toBeTruthy()
+  })
+
+  it('marks value rows with correct data-status', () => {
+    const midF0 = mid(vowelA.f0[0], vowelA.f0[1])
+    setFrame(midF0, vowelA.f1[0] - 50, vowelA.f2[1] + 100)
+    render(<FeedbackCard />)
+    const container = document.querySelector('aside')!
+    const rows = Array.from(container.querySelectorAll('[data-status]'))
+    const rowByLabel = (label: string) =>
+      rows.find(r => r.firstChild?.textContent === label) as HTMLElement
+    expect(rowByLabel('F0').dataset.status).toBe('hit')
+    expect(rowByLabel('F1').dataset.status).toBe('low')
+    expect(rowByLabel('F2').dataset.status).toBe('high')
+  })
+
+  it('renders summary row with 完美 when all hit', () => {
+    setFrame(mid(vowelA.f0[0], vowelA.f0[1]), mid(vowelA.f1[0], vowelA.f1[1]), mid(vowelA.f2[0], vowelA.f2[1]))
+    render(<FeedbackCard />)
+    expect(screen.getByText('目标区间')).toBeTruthy()
+    expect(screen.getByText('完美')).toBeTruthy()
+  })
+
+  it('renders summary row with deviation hints when miss', () => {
+    setFrame(mid(vowelA.f0[0], vowelA.f0[1]), mid(vowelA.f1[0], vowelA.f1[1]), vowelA.f2[1] + 100)
+    render(<FeedbackCard />)
+    expect(screen.getByText('F2偏高')).toBeTruthy()
+  })
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/__tests__/FeedbackCard.test.tsx`
+Expected: FAIL — current component returns null on no data, no value rows.
+
+- [ ] **Step 3: Rewrite minimal implementation**
+
+Modify `src/components/FeedbackCard.tsx`:
+
+```tsx
+import { useAppStore } from '../store/appStore'
+import { useFeedback } from '../feedback'
+import { getFormantStatus } from '../feedback/status'
+import type { FormantStatus } from '../feedback/status'
+import styles from './FeedbackCard.module.css'
+
+const KEYS = ['f0', 'f1', 'f2'] as const
+type FormantKey = typeof KEYS[number]
+
+const STATUS_CLASS: Record<FormantStatus, string> = {
+  hit: styles.valueHit,
+  low: styles.valueWarn,
+  high: styles.valueWarn,
+  none: styles.valueMute,
+}
+
+function formatValue(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '--'
+  return `${Math.round(value)} Hz`
+}
+
+export function FeedbackCard() {
+  const latestFrame = useAppStore(s => s.latestFrame)
+  const bands = useAppStore(s => s.bands)
+  const results = useFeedback()
+
+  return (
+    <aside className={styles.card} aria-label="实时反馈">
+      <div className={styles.header}>实时反馈</div>
+      <div className={styles.values}>
+        {KEYS.map(key => {
+          const status = getFormantStatus(latestFrame?.[key], bands[key].range)
+          return (
+            <div key={key} className={styles.valueRow} data-status={status}>
+              <span className={styles.valueLabel}>{key.toUpperCase()}</span>
+              <span className={`${styles.valueNum} ${STATUS_CLASS[status]}`}>
+                {formatValue(latestFrame?.[key])}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      <ul className={styles.list}>
+        {results.map(result => (
+          <li
+            key={result.id}
+            className={styles.row}
+            data-status={result.status}
+          >
+            <span className={styles.label}>{result.label}</span>
+            <span
+              className={`${styles.value} ${result.status === 'hit' ? styles.valueHit : ''}`}
+            >
+              {result.message}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  )
+}
+```
+
+- [ ] **Step 4: Update CSS module**
+
+Modify `src/components/FeedbackCard.module.css` — add value-row styles, keep existing summary styles. Note `.card` positioning will be changed in Task 10:
+
+```css
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+}
+.header {
+  font-size: 12px;
+  color: var(--text-soft);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.values {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px dashed var(--border);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.valueRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.valueLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-soft);
+  min-width: 20px;
+}
+.valueNum {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.valueHit {
+  color: var(--hit);
+}
+.valueWarn {
+  color: var(--warn);
+}
+.valueMute {
+  color: var(--text-mute);
+}
+.list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.label {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+.value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-mute);
+}
+.row[data-status="hit"] .value {
+  color: var(--hit);
+  animation: pulseGlow 1.6s ease-out infinite;
+}
+.row[data-status="miss"] .value {
+  color: var(--warn);
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row[data-status="hit"] .value {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .card {
+    width: 100%;
+    margin-bottom: 14px;
+  }
+}
+```
+
+- [ ] **Step 5: Run test to verify it passes**
+
+Run: `npx vitest run src/__tests__/FeedbackCard.test.tsx`
+Expected: 6 tests PASS.
+
+- [ ] **Step 6: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: no errors.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/components/FeedbackCard.tsx src/components/FeedbackCard.module.css src/__tests__/FeedbackCard.test.tsx
+git commit -m "feat(feedback): always-on card with real-time F0/F1/F2 values"
+```
+
+---
+
+### Task 10: 布局改为左侧容器包裹
+
+**Files:**
+- Modify: `src/routes/AnalysisPage.tsx`
+- Modify: `src/routes/AnalysisPage.module.css`
+- Modify: `src/components/TargetPresetBar.module.css`
+- Modify: `src/components/FeedbackCard.module.css`
+
+- [ ] **Step 1: Modify `AnalysisPage.tsx`**
+
+Wrap `TargetPresetBar` and `FeedbackCard` in a side panel container. Change the current `<main>` block:
+
+```tsx
+<main className={styles.content}>
+  <div className={styles.sidePanel}>
+    <TargetPresetBar />
+    <FeedbackCard />
+  </div>
+
+  <div className={styles.chartsColumn}>
+    ...
+  </div>
+</main>
+```
+
+- [ ] **Step 2: Add `.sidePanel` to `AnalysisPage.module.css`**
+
+Add:
+
+```css
+.sidePanel {
+  position: absolute;
+  top: 16px;
+  right: calc(50% + 466px);
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .sidePanel {
+    position: static;
+    width: 100%;
+    margin-bottom: 14px;
+  }
+}
+```
+
+Merge the `.sidePanel` media query into the existing `@media (max-width: 768px)` block.
+
+- [ ] **Step 3: Modify `TargetPresetBar.module.css`**
+
+Remove absolute positioning from `.bar` (the side panel now positions it). `.bar` becomes:
+
+```css
+.bar {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 14px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+}
+```
+
+Also update the mobile media query — remove `.bar` `position: static; width: 100%;` since the panel handles it:
+
+```css
+@media (max-width: 768px) {
+  .vowels {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+```
+
+- [ ] **Step 4: Modify `FeedbackCard.module.css`**
+
+Remove the `position: static` from the mobile media query (panel handles stacking):
+
+```css
+@media (max-width: 768px) {
+  .card {
+    width: 100%;
+    margin-bottom: 14px;
+  }
+}
+```
+
+- [ ] **Step 5: Verify layout**
+
+Run: `npx tsc --noEmit`
+Expected: no errors.
+
+Run: `npx vitest run src/__tests__/`
+Expected: all tests PASS.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/routes/AnalysisPage.tsx src/routes/AnalysisPage.module.css src/components/TargetPresetBar.module.css src/components/FeedbackCard.module.css
+git commit -m "feat(feedback): stack FeedbackCard below TargetPresetBar in left panel"
+```
+
+---
+
+### Task 11: 最终验证
+
+**Files:** none
+
+- [ ] **Step 1: Typecheck**
+
+Run: `npx tsc --noEmit`
+Expected: no errors.
+
+- [ ] **Step 2: Full test suite**
+
+Run: `npm test`
+Expected: all test files pass, 0 failures.
+
+- [ ] **Step 3: Production build**
+
+Run: `npm run build`
+Expected: build succeeds, `dist/` produced.
+
+- [ ] **Step 4: Final commit check**
+
+Run: `git status --short` and `git log --oneline -8`
+Expected: all work committed, clean status.
