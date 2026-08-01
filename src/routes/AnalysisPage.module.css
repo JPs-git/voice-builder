@@ -111,6 +111,7 @@
 
 @media (max-width: 768px) {
   .page {
+    height: 100vh;
     height: 100dvh;
     overflow: hidden;
   }
