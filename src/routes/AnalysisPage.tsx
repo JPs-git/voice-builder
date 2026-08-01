@@ -48,8 +48,10 @@ export function AnalysisPage() {
       <Toolbar toolItems={toolItems} onToolClick={handleClickTool} />
 
       <main className={styles.content}>
-        <TargetPresetBar />
-        <FeedbackCard />
+        <div className={styles.sidePanel}>
+          <TargetPresetBar />
+          <FeedbackCard />
+        </div>
 
         <div className={styles.chartsColumn}>
           <section className={`${styles.card} ${styles.chartsColumnCard}`}>

@@ -4,10 +4,6 @@
   border-radius: var(--radius);
   padding: 14px;
   box-shadow: var(--shadow-card);
-  position: absolute;
-  top: 16px;
-  left: calc(50% + 466px);
-  width: 220px;
 }
 .header {
   font-size: 12px;
@@ -98,8 +94,6 @@
 
 @media (max-width: 768px) {
   .card {
-    position: static;
-    width: 100%;
-    margin-bottom: 14px;
+    width: auto;
   }
 }

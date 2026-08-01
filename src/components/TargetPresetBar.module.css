@@ -7,10 +7,6 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  position: absolute;
-  top: 16px;
-  right: calc(50% + 466px);
-  width: 220px;
   max-height: calc(100vh - 88px);
   overflow-y: auto;
 }
@@ -116,13 +112,6 @@
 }
 
 @media (max-width: 768px) {
-  .bar {
-    position: static;
-    width: 100%;
-    max-height: none;
-    overflow: visible;
-    margin-bottom: 14px;
-  }
   .vowels {
     grid-template-columns: repeat(6, 1fr);
   }

@@ -4,6 +4,15 @@
   padding: 16px 20px;
   width: 100%;
 }
+.sidePanel {
+  position: absolute;
+  top: 16px;
+  right: calc(50% + 466px);
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 .chartsColumn {
   display: flex;
   flex-direction: column;
@@ -99,6 +108,11 @@
 @media (max-width: 768px) {
   .content {
     padding: 14px;
+  }
+  .sidePanel {
+    position: static;
+    width: 100%;
+    margin-bottom: 14px;
   }
   .chartWrapper { height: 280px; }
 }
