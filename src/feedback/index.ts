@@ -9,7 +9,8 @@ export const FEEDBACK_EVALUATORS: FeedbackEvaluator[] = [
 export function useFeedback(): FeedbackResult[] {
   const latestFrame = useAppStore(s => s.latestFrame)
   const bands = useAppStore(s => s.bands)
+  const visible = useAppStore(s => s.formantVisible)
   return FEEDBACK_EVALUATORS
-    .map(fn => fn({ latestFrame, bands }))
+    .map(fn => fn({ latestFrame, bands, visible }))
     .filter((r): r is FeedbackResult => r !== null)
 }

@@ -4,7 +4,7 @@ import { getFormantStatus } from './status'
 const KEYS = ['f0', 'f1', 'f2'] as const
 
 export function evaluateHitRate(ctx: FeedbackContext): FeedbackResult | null {
-  const { latestFrame, bands } = ctx
+  const { latestFrame, bands, visible } = ctx
   if (!latestFrame) return null
 
   const hints: string[] = []
@@ -12,6 +12,7 @@ export function evaluateHitRate(ctx: FeedbackContext): FeedbackResult | null {
   let allHit = true
 
   for (const k of KEYS) {
+    if (!visible[k]) continue
     const status = getFormantStatus(latestFrame[k], bands[k].range)
     if (status === 'none') continue
     hasData = true

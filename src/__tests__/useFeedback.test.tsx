@@ -42,4 +42,16 @@ describe('useFeedback', () => {
     expect(result.current[0].status).toBe('miss')
     expect(result.current[0].message).toBe('F2偏高')
   })
+
+  it('respects store formantVisible (hidden out-of-range is ignored)', () => {
+    useAppStore.getState().toggleFormantVisible('f2')
+    const mid = (lo: number, hi: number) => Math.round((lo + hi) / 2)
+    act(() => {
+      setFrame(mid(vowelA.f0[0], vowelA.f0[1]), mid(vowelA.f1[0], vowelA.f1[1]), vowelA.f2[1] + 100)
+    })
+    const { result } = renderHook(() => useFeedback())
+    expect(result.current).toHaveLength(1)
+    expect(result.current[0].status).toBe('hit')
+    expect(result.current[0].message).toBe('完美')
+  })
 })
