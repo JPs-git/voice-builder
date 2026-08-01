@@ -85,6 +85,32 @@ export function isWavFile(arrayBuffer: ArrayBuffer): boolean
 
 校验 `RIFF`(0-3)+ `WAVE`(8-11)魔数,与 `parseWav` 的检查保持一致。
 
+**原理**
+
+魔数(magic number)是文件开头固定的标识字节序列,用作文件类型的"指纹"。WAV 属于 RIFF 容器格式,头部布局:
+
+```
+偏移 0-3:  "RIFF"   RIFF 容器标识
+偏移 4-7:  文件大小 (小端 uint32,本函数不读取)
+偏移 8-11: "WAVE"   具体容器格式
+```
+
+`isWavFile` 只在 `ArrayBuffer` 上创建 `Uint8Array` 视图(零拷贝),取字节 0-3 与 8-11 各转成 ASCII 字符串后逐一比较:
+
+```ts
+const uint8 = new Uint8Array(arrayBuffer, 0, 12)
+const riff = String.fromCharCode(...uint8.subarray(0, 4))
+const wave = String.fromCharCode(...uint8.subarray(8, 12))
+return riff === 'RIFF' && wave === 'WAVE'
+```
+
+- **为什么双魔数?** `RIFF` 是通用容器(RIFF 家族还包括 `AVI `、`WEBP` 等),`WAVE` 才指明是音频;只查 `RIFF` 会把 AVI 视频误判为 WAV。
+- **字节序无关:** 魔数字符串按字节顺序直接比较,不受小端/大端影响(字节序只影响偏移 4-7 的长度字段)。
+- **与 `parseWav` 一致:** 使用与其开头两个断言 (`wav-parser.ts` 的 `Not a RIFF file` / `Not a WAV file`) 完全相同的检查,故校验通过后 `parseWav` 不会抛这两类错误。
+- **边界:** `byteLength < 12` 直接返回 `false`,避免越界读取。
+
+**为什么预校验而非仅靠 try/catch:** 提前拦截可给用户更具体的提示(「不支持的文件格式」),且避免对非 WAV 文件做无谓的完整解析。
+
 ### `src/hooks/useAnalysis.ts` 改动
 
 `handleFileChange`:
