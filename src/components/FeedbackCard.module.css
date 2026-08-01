@@ -60,6 +60,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .valueHit {
+    animation: none;
+  }
+}
+
 @media (max-width: 768px) {
   .card {
     position: static;
