@@ -65,3 +65,19 @@ export interface AnalysisStats {
   hitRate: number | null
   duration: number
 }
+
+export type FeedbackStatus = 'hit' | 'miss' | 'idle'
+
+export interface FeedbackResult {
+  id: string
+  label: string
+  status: FeedbackStatus
+  message: string
+}
+
+export interface FeedbackContext {
+  latestFrame: AnalysisFrame | null
+  bands: TargetBands
+}
+
+export type FeedbackEvaluator = (ctx: FeedbackContext) => FeedbackResult | null
