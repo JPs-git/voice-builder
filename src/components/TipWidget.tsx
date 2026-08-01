@@ -1,4 +1,4 @@
-import { useTipStateMachine } from './useTipStateMachine'
+import { useEffect, useState } from 'react'
 import styles from './TipWidget.module.css'
 
 const DEFAULT_TIPS = [
@@ -19,26 +19,63 @@ interface TipWidgetProps {
   interval?: number
 }
 
-export function TipWidget({ tips = DEFAULT_TIPS, interval = 5000 }: TipWidgetProps) {
-  const initialIndex = Math.floor(Math.random() * tips.length)
-  const { state, dispatch, cardRef } = useTipStateMachine(tips, interval, initialIndex)
+function randomTipIndex(length: number, currentIndex?: number) {
+  if (length < 2) return 0
 
-  const isHidden = state.status === 'idle' || state.status === 'stopped' || state.status === 'closing'
+  const nextIndex = Math.floor(Math.random() * length)
+  return nextIndex === currentIndex ? (nextIndex + 1) % length : nextIndex
+}
+
+export function TipWidget({ tips = DEFAULT_TIPS, interval = 5000 }: TipWidgetProps) {
+  const availableTips = tips.length > 0 ? tips : DEFAULT_TIPS
+  const [isVisible, setIsVisible] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [isDismissed, setIsDismissed] = useState(false)
+  const [tipIndex, setTipIndex] = useState(() => randomTipIndex(availableTips.length))
+
+  useEffect(() => {
+    if (isDismissed || isPaused) return
+
+    const timer = window.setTimeout(() => {
+      if (isVisible) {
+        setIsVisible(false)
+      } else {
+        setTipIndex(index => randomTipIndex(availableTips.length, index))
+        setIsVisible(true)
+      }
+    }, interval)
+
+    return () => clearTimeout(timer)
+  }, [availableTips.length, interval, isDismissed, isPaused, isVisible])
+
+  const handleClose = () => {
+    setIsDismissed(true)
+    setIsPaused(false)
+    setIsVisible(false)
+  }
+
+  const handleOpen = () => {
+    setTipIndex(index => randomTipIndex(availableTips.length, index))
+    setIsDismissed(false)
+    setIsPaused(false)
+    setIsVisible(true)
+  }
+
+  const isHidden = !isVisible
 
   return (
-    <div className={`${styles.widget}${state.status === 'stopped' ? ` ${styles.widgetClosed}` : ''}`}>
-      <button className={styles.trigger} onClick={() => dispatch({ type: 'OPEN' })} aria-label="小提示">
+    <div className={`${styles.widget}${isDismissed ? ` ${styles.widgetClosed}` : ''}`}>
+      <button className={styles.trigger} onClick={handleOpen} aria-label="小提示">
         ℹ
       </button>
       <div
-        ref={cardRef}
         className={`${styles.card}${isHidden ? ` ${styles.cardHidden}` : ''}`}
-        onMouseEnter={() => dispatch({ type: 'MOUSE_ENTER' })}
-        onMouseLeave={() => dispatch({ type: 'MOUSE_LEAVE' })}
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
       >
-        <button className={styles.close} onClick={() => dispatch({ type: 'CLOSE' })} aria-label="关闭小提示">×</button>
+        <button className={styles.close} onClick={handleClose} aria-label="关闭小提示">×</button>
         <h4 className={styles.title}>💡 小提示</h4>
-        <p className={styles.text}>{tips[state.index]}</p>
+        <p className={styles.text}>{availableTips[tipIndex]}</p>
       </div>
     </div>
   )
