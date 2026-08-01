@@ -112,7 +112,18 @@
 }
 
 @media (max-width: 768px) {
+  .bar {
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
+    gap: 10px;
+    max-height: none;
+  }
   .vowels {
     grid-template-columns: repeat(6, 1fr);
+  }
+  .bandLo,
+  .bandHi {
+    height: 20px;
   }
 }
