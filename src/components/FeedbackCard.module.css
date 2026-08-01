@@ -38,7 +38,6 @@
 .valueHit {
   color: var(--hit);
   border-radius: 4px;
-  animation: pulseGlow 1.6s ease-out infinite;
 }
 .valueWarn {
   color: var(--warn);
@@ -76,6 +75,10 @@
 .row[data-status="miss"] .value {
   color: var(--warn);
 }
+.row[data-status="hit"] .value {
+  color: var(--hit);
+  animation: pulseGlow 1.6s ease-out infinite;
+}
 
 @keyframes pulseGlow {
   0%, 100% {
@@ -87,7 +90,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .valueHit {
+  .row[data-status="hit"] .value {
     animation: none;
   }
 }
