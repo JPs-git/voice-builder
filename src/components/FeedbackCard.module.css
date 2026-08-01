@@ -97,6 +97,8 @@
 
 @media (max-width: 768px) {
   .card {
-    width: auto;
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
   }
 }
