@@ -27,6 +27,12 @@ describe('FeedbackCard', () => {
     expect(screen.getAllByText('--')).toHaveLength(3)
   })
 
+  it('shows idle summary row with — when no data', () => {
+    render(<FeedbackCard />)
+    expect(screen.getByText('目标区间')).toBeTruthy()
+    expect(screen.getByText('—')).toBeTruthy()
+  })
+
   it('shows real-time F0/F1/F2 values in Hz', () => {
     setFrame(mid(vowelA.f0[0], vowelA.f0[1]), mid(vowelA.f1[0], vowelA.f1[1]), mid(vowelA.f2[0], vowelA.f2[1]))
     render(<FeedbackCard />)

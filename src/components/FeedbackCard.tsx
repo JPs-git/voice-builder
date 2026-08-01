@@ -40,20 +40,27 @@ export function FeedbackCard() {
         })}
       </div>
       <ul className={styles.list}>
-        {results.map(result => (
-          <li
-            key={result.id}
-            className={styles.row}
-            data-status={result.status}
-          >
-            <span className={styles.label}>{result.label}</span>
-            <span
-              className={`${styles.value} ${result.status === 'hit' ? styles.valueHit : ''}`}
-            >
-              {result.message}
-            </span>
+        {results.length === 0 ? (
+          <li className={styles.row} data-status="idle">
+            <span className={styles.label}>目标区间</span>
+            <span className={styles.value}>—</span>
           </li>
-        ))}
+        ) : (
+          results.map(result => (
+            <li
+              key={result.id}
+              className={styles.row}
+              data-status={result.status}
+            >
+              <span className={styles.label}>{result.label}</span>
+              <span
+                className={`${styles.value} ${result.status === 'hit' ? styles.valueHit : ''}`}
+              >
+                {result.message}
+              </span>
+            </li>
+          ))
+        )}
       </ul>
     </aside>
   )
