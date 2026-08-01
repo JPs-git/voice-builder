@@ -28,9 +28,52 @@ interface Toast {
 
 ### Toast 组件 — `src/components/Toast.tsx` + `Toast.module.css`
 
-- 订阅 store,右上角 fixed 定位(视觉参考 TipWidget 的 fixed + CSS 变量)
-- error 类型用红色系视觉区分,每条带关闭按钮
-- 挂载在 `AnalysisPage.tsx`(`<TipWidget />` 旁)
+纯渲染组件,零业务逻辑,只订阅 store 并渲染。挂载在 `AnalysisPage.tsx`(`<TipWidget />` 旁)。
+
+**组件 API**
+
+```tsx
+export function Toast(): JSX.Element | null
+```
+
+无 props。内部通过 `useToastStore((s) => s.toasts)` 和 `useToastStore((s) => s.dismissToast)`
+订阅,Zustand selector 保证只在 toasts 变化时重渲染。
+
+**渲染行为**
+
+- `toasts.length === 0` 时返回 `null`(不渲染 DOM)
+- 否则渲染根容器 `<div className={styles.stack} aria-live="polite">`,内部每一条:
+  ```tsx
+  <div role="alert" className={`${styles.toast} ${toast.type === 'error' ? styles.error : ''}`}>
+    <span className={styles.message}>{toast.message}</span>
+    <button className={styles.close} onClick={() => dismissToast(toast.id)} aria-label="关闭提示">×</button>
+  </div>
+  ```
+- `key={toast.id}` 复用现有 DOM;新 toast 通过 CSS 动画 `toast-in` 滑入
+
+**视觉规范** — `Toast.module.css`
+
+| 元素 | 规格 |
+|---|---|
+| 容器 `.stack` | `position: fixed; top: 24px; right: 24px; z-index: 50`,flex 纵向堆叠,`gap: 8px`,`max-width: 320px`,`pointer-events: none` |
+| 单条 `.toast` | 白色面板(`--panel`),`--border` 边框,左边框 4px 主题色(`--info`),圆角 `--radius`,`--shadow-hover` 阴影,`pointer-events: auto` |
+| error 变体 `.error` | 左边框改 `#E23E57`(与图表 F1 红色一致) |
+| 消息 `.message` | `font-size: 13px`, `line-height: 1.5`, `color: var(--text)` |
+| 关闭按钮 `.close` | 20×20 透明按钮,悬停 `#F3F4F6` 背景 + `--text` 前景 |
+| 移动端 `@media (max-width: 768px)` | 容器 `top/right/left: 12px`,铺满宽度 |
+
+全部 CSS 变量均取自 `css/style.css` 已有的 `--panel/--border/--info/--radius/--shadow-hover/--text` 等。
+
+**无障碍**
+
+- 容器 `aria-live="polite"`:新 toast 出现时屏幕阅读器播报,不打断用户
+- 每条 `role="alert"`:语义化标识为提醒内容
+- 关闭按钮带 `aria-label="关闭提示"`(无可见文字)
+
+**交互**
+
+- 自动消失:由 store 的 3s 定时器触发,组件本身不持有定时器
+- 手动关闭:点击 `×` 调 `dismissToast(id)`
 
 ### WAV 魔数预校验 — `src/dsp/wav-parser.ts`
 
