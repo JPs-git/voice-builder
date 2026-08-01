@@ -1,6 +1,6 @@
 # 移动端一屏适配 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** On mobile (`max-width: 768px`) constrain all UI within one viewport height (no page scroll): Toolbar fixed, TargetPresetBar + FeedbackCard side-by-side in one row, two charts flex-fill remaining height.
 
@@ -28,7 +28,7 @@
 - Modify: `src/routes/AnalysisPage.tsx:47`
 - Modify: `src/routes/AnalysisPage.module.css:108-118`
 
-- [ ] **Step 1: Add `.page` class to AnalysisPage root**
+- [x] **Step 1: Add `.page` class to AnalysisPage root**
 
 In `src/routes/AnalysisPage.tsx`, change the root wrapper from a bare `<div>` to `<div className={styles.page}>`:
 
@@ -40,7 +40,7 @@ In `src/routes/AnalysisPage.tsx`, change the root wrapper from a bare `<div>` to
 
 `styles` is already imported (`import styles from './AnalysisPage.module.css'`).
 
-- [ ] **Step 2: Add `.page` base rule and rework the mobile media query**
+- [x] **Step 2: Add `.page` base rule and rework the mobile media query**
 
 In `src/routes/AnalysisPage.module.css`, add a `.page` base rule right after `.content` (desktop: plain block, no effect). Current lines 1-6:
 
@@ -120,7 +120,7 @@ Notes:
 - `.chartWrapper` keeps its base `width: calc(100% - 20px)`; only height/flex change.
 - `.card` and `.chartsColumnCard` base rules already provide `flex: 1; min-height: 0` for the chart cards; `.chartArea` already has `flex: 1 1 auto; min-height: 120px`.
 
-- [ ] **Step 3: Run unit tests + typecheck**
+- [x] **Step 3: Run unit tests + typecheck**
 
 Run: `npx vitest run src/__tests__/`
 Expected: all existing tests pass (jsdom ignores CSS media queries; no test should change).
@@ -128,7 +128,7 @@ Expected: all existing tests pass (jsdom ignores CSS media queries; no test shou
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/routes/AnalysisPage.tsx src/routes/AnalysisPage.module.css
@@ -142,7 +142,7 @@ git commit -m "feat(mobile): single-screen flex column layout for mobile"
 **Files:**
 - Modify: `src/components/TargetPresetBar.module.css:114-118`
 
-- [ ] **Step 1: Add mobile `.bar` flex + compaction rules**
+- [x] **Step 1: Add mobile `.bar` flex + compaction rules**
 
 The current mobile media query (lines 114-118):
 
@@ -181,7 +181,7 @@ Notes:
 - `min-width: 0` allows the bar to shrink below its content width inside the flex row.
 - Band input compaction reduces `.bandLo`/`.bandHi` height from 22px to 20px. Their base rule (lines 83-97) also contains `flex: 1; min-width: 0` which is preserved.
 
-- [ ] **Step 2: Run TargetPresetBar tests + typecheck**
+- [x] **Step 2: Run TargetPresetBar tests + typecheck**
 
 Run: `npx vitest run src/__tests__/TargetPresetBar.test.tsx src/__tests__/FeedbackCard.test.tsx`
 Expected: all pass.
@@ -189,7 +189,7 @@ Expected: all pass.
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/TargetPresetBar.module.css
@@ -204,7 +204,7 @@ git commit -m "feat(mobile): compact TargetPresetBar in side-panel row"
 - Modify: `src/components/FeedbackCard.module.css:98-102`
 - Modify: `src/components/Toolbar.module.css:1-12`
 
-- [ ] **Step 1: Add mobile `.card` flex + compaction rules**
+- [x] **Step 1: Add mobile `.card` flex + compaction rules**
 
 The current FeedbackCard mobile media query (lines 98-102):
 
@@ -230,7 +230,7 @@ Replace it with:
 
 Notes: `flex: 1` grows the card to fill its half of the `.sidePanel` row (matching TargetPresetBar's `flex: 1`). `min-width: 0` allows shrinking inside the flex row. `width: auto` is removed — the flex item sizes itself.
 
-- [ ] **Step 2: Add `flex-shrink: 0` to Toolbar**
+- [x] **Step 2: Add `flex-shrink: 0` to Toolbar**
 
 In `src/components/Toolbar.module.css`, add `flex-shrink: 0;` to the `.toolbar` base rule (lines 1-12), e.g. after `z-index: 20;`:
 
@@ -252,7 +252,7 @@ In `src/components/Toolbar.module.css`, add `flex-shrink: 0;` to the `.toolbar` 
 
 This prevents the sticky toolbar from shrinking when `.page` becomes a height-constrained flex column on mobile. It is harmless on desktop.
 
-- [ ] **Step 3: Run tests + typecheck**
+- [x] **Step 3: Run tests + typecheck**
 
 Run: `npx vitest run src/__tests__/`
 Expected: all pass.
@@ -260,7 +260,7 @@ Expected: all pass.
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/FeedbackCard.module.css src/components/Toolbar.module.css
@@ -273,22 +273,22 @@ git commit -m "feat(mobile): compact FeedbackCard in row, prevent toolbar shrink
 
 **Files:** none
 
-- [ ] **Step 1: Typecheck**
+- [x] **Step 1: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 2: Full test suite**
+- [x] **Step 2: Full test suite**
 
 Run: `npm test`
 Expected: all test files pass, 0 failures.
 
-- [ ] **Step 3: Production build**
+- [x] **Step 3: Production build**
 
 Run: `npm run build`
 Expected: build succeeds, `dist/` produced.
 
-- [ ] **Step 4: Manual mobile check (browser DevTools)**
+- [x] **Step 4: Manual mobile check (browser DevTools)**
 
 Verify in the browser (Vite dev server or `dist/` build) with DevTools device emulation (e.g. iPhone SE 375×667):
 1. Entire page fits in one viewport — no vertical page scrollbar.
@@ -297,7 +297,7 @@ Verify in the browser (Vite dev server or `dist/` build) with DevTools device em
 4. Desktop viewport (>768px, e.g. 1280×800) is unchanged: TargetPresetBar left, FeedbackCard right, charts centered.
 5. Narrow screen (e.g. 320×568) still fits one screen; charts stay ≥120px (`.chartArea` min-height).
 
-- [ ] **Step 5: Final commit check**
+- [x] **Step 5: Final commit check**
 
 Run: `git status --short` and `git log --oneline -6`
 Expected: all work committed, clean status.
