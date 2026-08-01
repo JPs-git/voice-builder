@@ -66,4 +66,14 @@ describe('FeedbackCard', () => {
     render(<FeedbackCard />)
     expect(screen.getByText('F2偏高')).toBeTruthy()
   })
+
+  it('hides value row for hidden series', () => {
+    useAppStore.getState().toggleFormantVisible('f1')
+    setFrame(mid(vowelA.f0[0], vowelA.f0[1]), mid(vowelA.f1[0], vowelA.f1[1]), mid(vowelA.f2[0], vowelA.f2[1]))
+    render(<FeedbackCard />)
+    expect(screen.queryByText('F1')).toBeNull()
+    expect(screen.queryByText(`${mid(vowelA.f1[0], vowelA.f1[1])} Hz`)).toBeNull()
+    expect(screen.getByText('F0')).toBeTruthy()
+    expect(screen.getByText('F2')).toBeTruthy()
+  })
 })

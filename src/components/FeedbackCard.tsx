@@ -21,13 +21,14 @@ function formatValue(value: number | null | undefined): string {
 export function FeedbackCard() {
   const latestFrame = useAppStore(s => s.latestFrame)
   const bands = useAppStore(s => s.bands)
+  const formantVisible = useAppStore(s => s.formantVisible)
   const results = useFeedback()
 
   return (
     <aside className={styles.card} aria-label="实时反馈">
       <div className={styles.header}>实时反馈</div>
       <div className={styles.values}>
-        {KEYS.map(key => {
+        {KEYS.filter(key => formantVisible[key]).map(key => {
           const status = getFormantStatus(latestFrame?.[key], bands[key].range)
           return (
             <div key={key} className={styles.valueRow} data-status={status}>
