@@ -1,9 +1,24 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAppStore } from '../store/appStore'
+import { useToastStore } from '../store/toastStore'
 import { getAudioEngine } from '../ts'
 import { recordingBuffer } from '../audio/recordingBuffer'
-import { AnalysisPipeline, parseWav, Resampler } from '../dsp'
+import { AnalysisPipeline, parseWav, isWavFile, Resampler } from '../dsp'
 import type { AnalysisFrame } from '../types'
+
+function importErrorMessage(err: unknown): string {
+  const message = err instanceof Error ? err.message : ''
+  if (/Not a RIFF file|Not a WAV file/.test(message)) {
+    return '不支持的文件格式，请选择 .wav 文件。'
+  }
+  if (/chunk not found/.test(message)) {
+    return '文件已损坏或不是有效的 WAV 文件。'
+  }
+  if (/Unsupported bitsPerSample/.test(message)) {
+    return '不支持的编码，仅支持 8/16/24/32 位 PCM。'
+  }
+  return '导入失败，请检查文件后重试。'
+}
 
 export function useAnalysis() {
   const pipelineRef = useRef<InstanceType<typeof AnalysisPipeline> | null>(null)
@@ -88,6 +103,7 @@ export function useAnalysis() {
       setIsRequesting(false)
     } catch (err) {
       console.error('Failed to start recording:', err)
+      useToastStore.getState().showToast('error', '无法启动录音,请检查麦克风权限。')
       setIsRequesting(false)
     }
   }, [isCapturing, isRequesting, stopRecording, onAudioChunk])
@@ -116,6 +132,11 @@ export function useAnalysis() {
     try {
       const buf = await file.arrayBuffer()
 
+      if (!isWavFile(buf)) {
+        useToastStore.getState().showToast('error', '不支持的文件格式，请选择 .wav 文件。')
+        return
+      }
+
       stopRecording(false)
 
       const parsed = parseWav(buf)
@@ -129,7 +150,7 @@ export function useAnalysis() {
 
       const maxSamples = 16000 * 10
       if (samples.length > maxSamples) {
-        alert('导入的音频不能超过 10 秒，请裁剪后重试。')
+        useToastStore.getState().showToast('error', '导入的音频不能超过 10 秒，请裁剪后重试。')
         return
       }
 
@@ -151,6 +172,7 @@ export function useAnalysis() {
       frameOffsetRef.current = 0
     } catch (err) {
       console.error('WAV import failed:', err)
+      useToastStore.getState().showToast('error', importErrorMessage(err))
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''

@@ -9,6 +9,7 @@ import { ConfigDrawer } from '../components/ConfigDrawer'
 import { HelpDrawer } from '../components/HelpDrawer'
 import { AboutModal } from '../components/AboutModal'
 import { TipWidget } from '../components/TipWidget'
+import { Toast } from '../components/Toast'
 import styles from './AnalysisPage.module.css'
 
 const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
@@ -97,6 +98,8 @@ export function AnalysisPage() {
       </main>
 
       <TipWidget />
+
+      <Toast />
 
       <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />

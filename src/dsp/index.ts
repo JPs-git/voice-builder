@@ -1,7 +1,7 @@
 export { RingBuffer } from './RingBuffer'
 export { Complex } from './complex'
 export { complexFft, ifft, fftMagnitudes } from './fft'
-export { parseWav } from './wav-parser'
+export { parseWav, isWavFile } from './wav-parser'
 export type { WavResult } from './wav-parser'
 export { Resampler } from './resampler'
 export { VoiceActivityDetector, DEFAULT_VAD_THRESHOLD } from './vad'

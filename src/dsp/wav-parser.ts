@@ -28,6 +28,14 @@ function readSample(view: DataView, offset: number, bitsPerSample: number, audio
   }
 }
 
+export function isWavFile(arrayBuffer: ArrayBuffer): boolean {
+  if (arrayBuffer.byteLength < 12) return false
+  const uint8 = new Uint8Array(arrayBuffer, 0, 12)
+  const riff = String.fromCharCode(...uint8.subarray(0, 4))
+  const wave = String.fromCharCode(...uint8.subarray(8, 12))
+  return riff === 'RIFF' && wave === 'WAVE'
+}
+
 export function parseWav(arrayBuffer: ArrayBuffer): WavResult {
   const view = new DataView(arrayBuffer)
   const uint8 = new Uint8Array(arrayBuffer, 0, 4)
