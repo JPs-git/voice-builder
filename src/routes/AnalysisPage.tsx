@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useToolbar } from '../hooks/useToolbar'
 import { Toolbar } from '../components/Toolbar'
 import { TargetPresetBar } from '../components/TargetPresetBar'
+import { FeedbackCard } from '../components/FeedbackCard'
 import { F0Chart } from '../components/F0Chart'
 import { FormantChart } from '../components/FormantChart'
 import { EmptyState } from '../components/EmptyState'
@@ -48,6 +49,7 @@ export function AnalysisPage() {
 
       <main className={styles.content}>
         <TargetPresetBar />
+        <FeedbackCard />
 
         <div className={styles.chartsColumn}>
           <section className={`${styles.card} ${styles.chartsColumnCard}`}>
