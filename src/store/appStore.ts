@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AppConfig, TargetBands, AnalysisFrame, AnalysisStats } from '../types'
+import type { AppConfig, TargetBands, AnalysisFrame, AnalysisStats, FormantSeries, FormantVisibility } from '../types'
 import { DEFAULT_CONFIG, VOWEL_PRESETS } from '../types'
 
 const WINDOW_FRAMES = 1000
@@ -10,6 +10,7 @@ interface AppState {
   frames: AnalysisFrame[]
   latestFrame: AnalysisFrame | null
   stats: AnalysisStats
+  formantVisible: FormantVisibility
 }
 
 interface AppActions {
@@ -18,6 +19,7 @@ interface AppActions {
   appendFrame: (frame: AnalysisFrame) => void
   setFrames: (frames: AnalysisFrame[]) => void
   clearFrames: () => void
+  toggleFormantVisible: (key: FormantSeries) => void
   reset: () => void
 }
 
@@ -36,6 +38,7 @@ const initialState: AppState = {
   frames: [],
   latestFrame: null,
   stats: { f0Mean: null, hitRate: null, duration: 0 },
+  formantVisible: { f0: true, f1: true, f2: true },
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -73,6 +76,10 @@ export const useAppStore = create<AppStore>((set) => ({
     latestFrame: null,
     stats: { f0Mean: null, hitRate: null, duration: 0 },
   }),
+
+  toggleFormantVisible: (key) => set((state) => ({
+    formantVisible: { ...state.formantVisible, [key]: !state.formantVisible[key] },
+  })),
 
   reset: () => set(initialState),
 }))
