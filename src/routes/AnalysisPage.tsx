@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useToolbar } from '../hooks/useToolbar'
+import { useAppStore } from '../store/appStore'
 import { Toolbar } from '../components/Toolbar'
 import { TargetPresetBar } from '../components/TargetPresetBar'
 import { FeedbackCard } from '../components/FeedbackCard'
@@ -11,12 +12,12 @@ import { HelpDrawer } from '../components/HelpDrawer'
 import { AboutModal } from '../components/AboutModal'
 import { TipWidget } from '../components/TipWidget'
 import { Toast } from '../components/Toast'
+import type { FormantSeries } from '../types'
 import styles from './AnalysisPage.module.css'
 
 const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
-type LegendKey = typeof LEGEND_KEYS[number]
 
-const COLORS: Record<LegendKey, string> = {
+const COLORS: Record<FormantSeries, string> = {
   f0: '#1F2937',
   f1: '#E23E57',
   f2: '#3B82F6',
@@ -26,15 +27,9 @@ export function AnalysisPage() {
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-  const [seriesVisible, setSeriesVisible] = useState<Record<LegendKey, boolean>>({
-    f0: true,
-    f1: true,
-    f2: true,
-  })
 
-  const handleToggleSeries = (key: LegendKey) => {
-    setSeriesVisible(prev => ({ ...prev, [key]: !prev[key] }))
-  }
+  const formantVisible = useAppStore(s => s.formantVisible)
+  const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
 
   const { toolItems, handleClickTool, hasData, cursorTime, fileInputRef, handleFileChange }
     = useToolbar(
@@ -80,8 +75,8 @@ export function AnalysisPage() {
                       key={key}
                       className={styles.legendItem}
                       data-key={key}
-                      data-active={String(seriesVisible[key])}
-                      onClick={() => handleToggleSeries(key)}
+                      data-active={String(formantVisible[key])}
+                      onClick={() => toggleFormantVisible(key)}
                     >
                       <i style={{ background: COLORS[key] }}></i>{key.toUpperCase()}
                     </button>
@@ -89,7 +84,7 @@ export function AnalysisPage() {
                 </div>
               </div>
               <div className={styles.chartArea}>
-                <FormantChart cursorTime={cursorTime} seriesVisible={seriesVisible} />
+                <FormantChart cursorTime={cursorTime} />
                 <EmptyState
                   title="曲线待生成"
                   description="录音或导入音频后显示共振峰曲线"

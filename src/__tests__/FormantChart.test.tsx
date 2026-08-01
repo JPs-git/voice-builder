@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
 import { FormantChart } from '../components/FormantChart'
 import { useAppStore } from '../store/appStore'
 
@@ -45,19 +45,22 @@ describe('FormantChart', () => {
 
   it('empties data and removes markLine for hidden series', () => {
     useAppStore.getState().setFrames(FRAMES)
-    render(<FormantChart seriesVisible={{ f0: true, f1: false, f2: true }} />)
+    useAppStore.getState().toggleFormantVisible('f1')
+    render(<FormantChart />)
     expect(seriesByName('F1').data).toEqual([])
     expect(seriesByName('F1').markLine).toBeUndefined()
     expect(seriesByName('F0').data).toHaveLength(2)
     expect(seriesByName('F2').data).toHaveLength(2)
   })
 
-  it('re-renders when seriesVisible prop changes', () => {
+  it('re-renders when store formantVisible changes', () => {
     useAppStore.getState().setFrames(FRAMES)
-    const { rerender } = render(<FormantChart />)
+    render(<FormantChart />)
     expect(seriesByName('F0').data).toHaveLength(2)
 
-    rerender(<FormantChart seriesVisible={{ f0: false, f1: true, f2: true }} />)
+    act(() => {
+      useAppStore.getState().toggleFormantVisible('f0')
+    })
 
     expect(seriesByName('F0').data).toEqual([])
     expect(seriesByName('F0').markLine).toBeUndefined()
