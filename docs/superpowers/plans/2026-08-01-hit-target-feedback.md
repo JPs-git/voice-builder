@@ -602,7 +602,7 @@ Expected: all work committed, clean status.
 - Create: `src/feedback/status.ts`
 - Test: `src/__tests__/status.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/__tests__/status.test.ts`:
 
@@ -646,12 +646,12 @@ describe('getFormantStatus', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/__tests__/status.test.ts`
 Expected: FAIL — `Cannot find module '../feedback/status'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/feedback/status.ts`:
 
@@ -669,12 +669,12 @@ export function getFormantStatus(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/__tests__/status.test.ts`
 Expected: 8 tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/feedback/status.ts src/__tests__/status.test.ts
@@ -689,7 +689,7 @@ git commit -m "feat(feedback): add getFormantStatus shared evaluator"
 - Modify: `src/feedback/hitRate.ts`
 - Test: `src/__tests__/hitRate.test.ts`
 
-- [ ] **Step 1: Refactor implementation to use getFormantStatus**
+- [x] **Step 1: Refactor implementation to use getFormantStatus**
 
 Modify `src/feedback/hitRate.ts` — replace the inline boundary checks with the shared function:
 
@@ -728,17 +728,17 @@ export function evaluateHitRate(ctx: FeedbackContext): FeedbackResult | null {
 }
 ```
 
-- [ ] **Step 2: Run existing hitRate tests to verify behavior unchanged**
+- [x] **Step 2: Run existing hitRate tests to verify behavior unchanged**
 
 Run: `npx vitest run src/__tests__/hitRate.test.ts`
 Expected: 7 tests PASS (no behavior change).
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/feedback/hitRate.ts
@@ -754,7 +754,7 @@ git commit -m "refactor(feedback): reuse getFormantStatus in evaluateHitRate"
 - Modify: `src/components/FeedbackCard.module.css`
 - Test: `src/__tests__/FeedbackCard.test.tsx`
 
-- [ ] **Step 1: Rewrite the failing test**
+- [x] **Step 1: Rewrite the failing test**
 
 Modify `src/__tests__/FeedbackCard.test.tsx`:
 
@@ -824,12 +824,12 @@ describe('FeedbackCard', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/__tests__/FeedbackCard.test.tsx`
 Expected: FAIL — current component returns null on no data, no value rows.
 
-- [ ] **Step 3: Rewrite minimal implementation**
+- [x] **Step 3: Rewrite minimal implementation**
 
 Modify `src/components/FeedbackCard.tsx`:
 
@@ -897,7 +897,7 @@ export function FeedbackCard() {
 }
 ```
 
-- [ ] **Step 4: Update CSS module**
+- [x] **Step 4: Update CSS module**
 
 Modify `src/components/FeedbackCard.module.css` — add value-row styles, keep existing summary styles. Note `.card` positioning will be changed in Task 10:
 
@@ -1003,17 +1003,17 @@ Modify `src/components/FeedbackCard.module.css` — add value-row styles, keep e
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `npx vitest run src/__tests__/FeedbackCard.test.tsx`
 Expected: 6 tests PASS.
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/components/FeedbackCard.tsx src/components/FeedbackCard.module.css src/__tests__/FeedbackCard.test.tsx
@@ -1030,7 +1030,7 @@ git commit -m "feat(feedback): always-on card with real-time F0/F1/F2 values"
 - Modify: `src/components/TargetPresetBar.module.css`
 - Modify: `src/components/FeedbackCard.module.css`
 
-- [ ] **Step 1: Modify `AnalysisPage.tsx`**
+- [x] **Step 1: Modify `AnalysisPage.tsx`**
 
 Wrap `TargetPresetBar` and `FeedbackCard` in a side panel container. Change the current `<main>` block:
 
@@ -1047,7 +1047,7 @@ Wrap `TargetPresetBar` and `FeedbackCard` in a side panel container. Change the 
 </main>
 ```
 
-- [ ] **Step 2: Add `.sidePanel` to `AnalysisPage.module.css`**
+- [x] **Step 2: Add `.sidePanel` to `AnalysisPage.module.css`**
 
 Add:
 
@@ -1073,7 +1073,7 @@ Add:
 
 Merge the `.sidePanel` media query into the existing `@media (max-width: 768px)` block.
 
-- [ ] **Step 3: Modify `TargetPresetBar.module.css`**
+- [x] **Step 3: Modify `TargetPresetBar.module.css`**
 
 Remove absolute positioning from `.bar` (the side panel now positions it). `.bar` becomes:
 
@@ -1102,7 +1102,7 @@ Also update the mobile media query — remove `.bar` `position: static; width: 1
 }
 ```
 
-- [ ] **Step 4: Modify `FeedbackCard.module.css`**
+- [x] **Step 4: Modify `FeedbackCard.module.css`**
 
 Remove the `position: static` from the mobile media query (panel handles stacking):
 
@@ -1115,7 +1115,7 @@ Remove the `position: static` from the mobile media query (panel handles stackin
 }
 ```
 
-- [ ] **Step 5: Verify layout**
+- [x] **Step 5: Verify layout**
 
 Run: `npx tsc --noEmit`
 Expected: no errors.
@@ -1123,7 +1123,7 @@ Expected: no errors.
 Run: `npx vitest run src/__tests__/`
 Expected: all tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/routes/AnalysisPage.tsx src/routes/AnalysisPage.module.css src/components/TargetPresetBar.module.css src/components/FeedbackCard.module.css
@@ -1136,22 +1136,22 @@ git commit -m "feat(feedback): stack FeedbackCard below TargetPresetBar in left 
 
 **Files:** none
 
-- [ ] **Step 1: Typecheck**
+- [x] **Step 1: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 2: Full test suite**
+- [x] **Step 2: Full test suite**
 
 Run: `npm test`
 Expected: all test files pass, 0 failures.
 
-- [ ] **Step 3: Production build**
+- [x] **Step 3: Production build**
 
 Run: `npm run build`
 Expected: build succeeds, `dist/` produced.
 
-- [ ] **Step 4: Final commit check**
+- [x] **Step 4: Final commit check**
 
 Run: `git status --short` and `git log --oneline -8`
 Expected: all work committed, clean status.
