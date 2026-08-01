@@ -1173,7 +1173,7 @@ Expected: all work committed, clean status.
 - Modify: `src/store/appStore.ts`
 - Test: `src/__tests__/appStore.test.ts`
 
-- [ ] **Step 1: 追加测试到 `appStore.test.ts`**
+- [x] **Step 1: 追加测试到 `appStore.test.ts`**
 
 在 `describe('reset')` 后追加：
 
@@ -1218,12 +1218,12 @@ describe('reset restores formantVisible', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/__tests__/appStore.test.ts`
 Expected: FAIL — `formantVisible` / `toggleFormantVisible` 不存在。
 
-- [ ] **Step 3: 更新 `src/types/index.ts`**
+- [x] **Step 3: 更新 `src/types/index.ts`**
 
 追加到文件末尾：
 
@@ -1240,7 +1240,7 @@ export interface FeedbackContext {
 
 （替换现有 `FeedbackContext`，删除旧的 `latestFrame`/`bands` 定义，补 `visible`。）
 
-- [ ] **Step 4: 更新 `src/store/appStore.ts`**
+- [x] **Step 4: 更新 `src/store/appStore.ts`**
 
 - import 增加 `FormantSeries, FormantVisibility`
 - `AppState` 增加 `formantVisible: FormantVisibility`
@@ -1256,17 +1256,17 @@ toggleFormantVisible: (key) => set((state) => ({
 
 `clearFrames()` 不触碰 `formantVisible`（自然保留）；`reset()` 恢复 initialState（自然恢复）。
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `npx vitest run src/__tests__/appStore.test.ts`
 Expected: 新增 5 个测试 PASS。
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: 无错误。注意：`FeedbackContext` 增加必填 `visible` 后，`hitRate.ts` / `index.ts` 若未传会报错，此处在下一步一并修复。
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/types/index.ts src/store/appStore.ts src/__tests__/appStore.test.ts
@@ -1283,7 +1283,7 @@ git commit -m "feat(feedback): add formantVisible to store with toggle action"
 - Test: `src/__tests__/hitRate.test.ts`
 - Test: `src/__tests__/useFeedback.test.tsx`
 
-- [ ] **Step 1: 更新 `hitRate.test.ts`**
+- [x] **Step 1: 更新 `hitRate.test.ts`**
 
 `makeCtx` 增加 `visible` 参数，并追加图例联动用例：
 
@@ -1350,12 +1350,12 @@ it('returns null when all dims hidden', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/__tests__/hitRate.test.ts`
 Expected: FAIL — 用例红（实现未跳过隐藏维度）。
 
-- [ ] **Step 3: 更新 `src/feedback/hitRate.ts`**
+- [x] **Step 3: 更新 `src/feedback/hitRate.ts`**
 
 `evaluateHitRate` 循环开头增加可见性跳过：
 
@@ -1367,12 +1367,12 @@ for (const k of KEYS) {
 }
 ```
 
-- [ ] **Step 4: Run hitRate test to verify it passes**
+- [x] **Step 4: Run hitRate test to verify it passes**
 
 Run: `npx vitest run src/__tests__/hitRate.test.ts`
 Expected: 10 个测试 PASS（7 旧 + 3 新）。
 
-- [ ] **Step 5: 更新 `useFeedback.test.tsx` 追加用例**
+- [x] **Step 5: 更新 `useFeedback.test.tsx` 追加用例**
 
 ```ts
 it('respects store formantVisible (hidden out-of-range is ignored)', () => {
@@ -1388,7 +1388,7 @@ it('respects store formantVisible (hidden out-of-range is ignored)', () => {
 })
 ```
 
-- [ ] **Step 6: 更新 `src/feedback/index.ts`**
+- [x] **Step 6: 更新 `src/feedback/index.ts`**
 
 `useFeedback` 订阅 `formantVisible` 并传入 ctx：
 
@@ -1403,17 +1403,17 @@ export function useFeedback(): FeedbackResult[] {
 }
 ```
 
-- [ ] **Step 7: Run useFeedback test to verify it passes**
+- [x] **Step 7: Run useFeedback test to verify it passes**
 
 Run: `npx vitest run src/__tests__/useFeedback.test.tsx`
 Expected: 4 个测试 PASS。
 
-- [ ] **Step 8: Typecheck**
+- [x] **Step 8: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: 无错误。
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/feedback/hitRate.ts src/feedback/index.ts src/__tests__/hitRate.test.ts src/__tests__/useFeedback.test.tsx
@@ -1428,7 +1428,7 @@ git commit -m "feat(feedback): respect formantVisible in evaluator and hook"
 - Modify: `src/components/FeedbackCard.tsx`
 - Test: `src/__tests__/FeedbackCard.test.tsx`
 
-- [ ] **Step 1: 追加测试到 `FeedbackCard.test.tsx`**
+- [x] **Step 1: 追加测试到 `FeedbackCard.test.tsx`**
 
 ```ts
 it('hides value row for hidden series', () => {
@@ -1442,12 +1442,12 @@ it('hides value row for hidden series', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/__tests__/FeedbackCard.test.tsx`
 Expected: FAIL — F1 行仍渲染。
 
-- [ ] **Step 3: 更新 `src/components/FeedbackCard.tsx`**
+- [x] **Step 3: 更新 `src/components/FeedbackCard.tsx`**
 
 - 订阅 `formantVisible`：`const formantVisible = useAppStore(s => s.formantVisible)`
 - 数值行遍历改为过滤：
@@ -1458,17 +1458,17 @@ Expected: FAIL — F1 行仍渲染。
 })}
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/__tests__/FeedbackCard.test.tsx`
 Expected: 8 个测试 PASS（7 旧 + 1 新）。
 
-- [ ] **Step 5: Typecheck**
+- [x] **Step 5: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: 无错误。
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/FeedbackCard.tsx src/__tests__/FeedbackCard.test.tsx
@@ -1485,7 +1485,7 @@ git commit -m "feat(feedback): filter FeedbackCard value rows by formantVisible"
 - Test: `src/__tests__/FormantChart.test.tsx`
 - Test: `src/__tests__/AnalysisPage.test.tsx`
 
-- [ ] **Step 1: 更新 `FormantChart.test.tsx`**
+- [x] **Step 1: 更新 `FormantChart.test.tsx`**
 
 删除 `seriesVisible` prop 用法，改为 store 驱动。将两个用例改为：
 
@@ -1519,12 +1519,12 @@ it('re-renders when store formantVisible changes', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/__tests__/FormantChart.test.tsx`
 Expected: FAIL — 当前 `seriesVisible` prop 逻辑仍在；改 store 后不重渲染。
 
-- [ ] **Step 3: 更新 `src/components/FormantChart.tsx`**
+- [x] **Step 3: 更新 `src/components/FormantChart.tsx`**
 
 - 移除 `seriesVisible` prop；`FormantChartProps` 仅保留 `cursorTime` / `onFrameClick`
 - 组件内订阅：`const formantVisible = useAppStore(s => s.formantVisible)`
@@ -1540,19 +1540,19 @@ useEffect(() => {
 
 （`renderChart` 内部继续用 `seriesVisibleRef.current`，无需改动。）
 
-- [ ] **Step 4: Run FormantChart test to verify it passes**
+- [x] **Step 4: Run FormantChart test to verify it passes**
 
 Run: `npx vitest run src/__tests__/FormantChart.test.tsx`
 Expected: 3 个测试 PASS。
 
-- [ ] **Step 5: 更新 `AnalysisPage.test.tsx`**
+- [x] **Step 5: 更新 `AnalysisPage.test.tsx`**
 
 用例保持（图例点击改走 store 后行为一致），确认 `data-active` 仍反映 store 状态。若无需改动则跳过；运行确认通过：
 
 Run: `npx vitest run src/__tests__/AnalysisPage.test.tsx`
 Expected: PASS。
 
-- [ ] **Step 6: 更新 `src/routes/AnalysisPage.tsx`**
+- [x] **Step 6: 更新 `src/routes/AnalysisPage.tsx`**
 
 - 移除 `seriesVisible` 局部 state 与 `handleToggleSeries`
 - import `useAppStore`，订阅 `formantVisible` 与 `toggleFormantVisible`：
@@ -1579,17 +1579,17 @@ const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
 
 - `<FormantChart>` 调用去掉 `seriesVisible` prop：`<FormantChart cursorTime={cursorTime} />`
 
-- [ ] **Step 7: Run AnalysisPage test to verify it passes**
+- [x] **Step 7: Run AnalysisPage test to verify it passes**
 
 Run: `npx vitest run src/__tests__/AnalysisPage.test.tsx`
 Expected: PASS（图例点击切换数据可见性）。
 
-- [ ] **Step 8: Typecheck**
+- [x] **Step 8: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: 无错误。
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/components/FormantChart.tsx src/routes/AnalysisPage.tsx src/__tests__/FormantChart.test.tsx src/__tests__/AnalysisPage.test.tsx
@@ -1602,22 +1602,22 @@ git commit -m "feat(feedback): drive chart legend from store formantVisible"
 
 **Files:** none
 
-- [ ] **Step 1: Typecheck**
+- [x] **Step 1: Typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 2: Full test suite**
+- [x] **Step 2: Full test suite**
 
 Run: `npm test`
 Expected: all test files pass, 0 failures.
 
-- [ ] **Step 3: Production build**
+- [x] **Step 3: Production build**
 
 Run: `npm run build`
 Expected: build succeeds, `dist/` produced.
 
-- [ ] **Step 4: Final commit check**
+- [x] **Step 4: Final commit check**
 
 Run: `git status --short` and `git log --oneline -8`
 Expected: all work committed, clean status.
