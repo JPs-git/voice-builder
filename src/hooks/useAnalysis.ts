@@ -132,12 +132,12 @@ export function useAnalysis() {
     try {
       const buf = await file.arrayBuffer()
 
+      stopRecording(false)
+
       if (!isWavFile(buf)) {
         useToastStore.getState().showToast('error', '不支持的文件格式，请选择 .wav 文件。')
         return
       }
-
-      stopRecording(false)
 
       const parsed = parseWav(buf)
       let samples = parsed.samples

@@ -21,21 +21,27 @@ describe('Toast', () => {
   })
 
   it('renders toasts from the store with role=alert', () => {
-    useToastStore.getState().showToast('error', '仅支持 WAV 格式')
+    act(() => {
+      useToastStore.getState().showToast('error', '仅支持 WAV 格式')
+    })
     render(<Toast />)
     const alert = screen.getByRole('alert')
     expect(alert.textContent).toContain('仅支持 WAV 格式')
   })
 
   it('applies the error variant class for error toasts', () => {
-    useToastStore.getState().showToast('error', '出错了')
+    act(() => {
+      useToastStore.getState().showToast('error', '出错了')
+    })
     render(<Toast />)
     const alert = screen.getByRole('alert')
     expect(alert.className).toContain(styles.error)
   })
 
   it('dismisses a toast when its close button is clicked', () => {
-    useToastStore.getState().showToast('info', '关闭我')
+    act(() => {
+      useToastStore.getState().showToast('info', '关闭我')
+    })
     render(<Toast />)
     fireEvent.click(screen.getByRole('button', { name: '关闭提示' }))
     expect(useToastStore.getState().toasts).toHaveLength(0)
@@ -43,7 +49,9 @@ describe('Toast', () => {
 
   it('clears a toast automatically after the store timeout elapses', () => {
     vi.useFakeTimers()
-    useToastStore.getState().showToast('info', '自动消失')
+    act(() => {
+      useToastStore.getState().showToast('info', '自动消失')
+    })
     render(<Toast />)
     expect(screen.getByText('自动消失')).toBeTruthy()
 
