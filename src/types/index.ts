@@ -80,4 +80,5 @@ export interface FeedbackContext {
   bands: TargetBands
 }
 
+// null = 该行不显示（无可用数据）；status: 'idle' = 显示但置灰
 export type FeedbackEvaluator = (ctx: FeedbackContext) => FeedbackResult | null
