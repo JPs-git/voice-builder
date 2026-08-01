@@ -1,4 +1,5 @@
 import type { FeedbackContext, FeedbackResult } from '../types'
+import { getFormantStatus } from './status'
 
 const KEYS = ['f0', 'f1', 'f2'] as const
 
@@ -11,14 +12,13 @@ export function evaluateHitRate(ctx: FeedbackContext): FeedbackResult | null {
   let allHit = true
 
   for (const k of KEYS) {
-    const v = latestFrame[k]
-    const range = bands[k].range
-    if (v == null || !Number.isFinite(v)) continue
+    const status = getFormantStatus(latestFrame[k], bands[k].range)
+    if (status === 'none') continue
     hasData = true
-    if (v < range[0]) {
+    if (status === 'low') {
       allHit = false
       hints.push(`${k.toUpperCase()}偏低`)
-    } else if (v > range[1]) {
+    } else if (status === 'high') {
       allHit = false
       hints.push(`${k.toUpperCase()}偏高`)
     }
