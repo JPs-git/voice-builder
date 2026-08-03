@@ -50,7 +50,7 @@ export function ConfigDrawer({ open, onClose }: ConfigDrawerProps) {
             checked={config.registerDetection}
             onChange={e => setConfig({ registerDetection: e.target.checked })}
           />
-          <span>真声 / 混声 / 假声识别 <small>（H1-H2 谐波结构）</small></span>
+          <span>真声 / 混声 / 假声识别 <small>（谐波数）</small></span>
         </label>
         <p className={styles.configHint}>实时判断发声声区，用于练习反馈</p>
       </section>
