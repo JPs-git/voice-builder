@@ -6,10 +6,7 @@ const SHR_FLOOR_HZ = 50
 const SHR_WINDOW_HZ = 15
 
 export interface HarmonicAmplitudes {
-  h1: number | null
-  h2: number | null
-  h3: number | null
-  h4: number | null
+  valid: boolean
   harmonicCount: number
   shr: number | null
 }
@@ -45,22 +42,16 @@ export function extractHarmonics(
   sampleRate: number,
 ): HarmonicAmplitudes {
   const empty: HarmonicAmplitudes = {
-    h1: null,
-    h2: null,
-    h3: null,
-    h4: null,
+    valid: false,
     harmonicCount: 0,
     shr: null,
   }
   if (f0 == null || f0 <= 0 || magnitudes.length === 0) return empty
 
   const nyquist = sampleRate / 2
+  // H1 是谐波丰富度(harmonicCount)的 dB 参考基准;valid 表示检测到有效基频峰。
   const h1 = findPeakAmplitude(magnitudes, f0, sampleRate)
   if (h1 == null) return empty
-
-  const h2 = findPeakAmplitude(magnitudes, 2 * f0, sampleRate)
-  const h3 = findPeakAmplitude(magnitudes, 3 * f0, sampleRate)
-  const h4 = findPeakAmplitude(magnitudes, 4 * f0, sampleRate)
 
   const maxN = Math.floor(nyquist / f0)
   let harmonicCount = 0
@@ -77,5 +68,5 @@ export function extractHarmonics(
     }
   }
 
-  return { h1, h2, h3, h4, harmonicCount, shr }
+  return { valid: true, harmonicCount, shr }
 }

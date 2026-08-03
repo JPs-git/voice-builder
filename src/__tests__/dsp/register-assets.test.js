@@ -24,7 +24,7 @@ describe('register regression on labeled assets', () => {
     it(`classifies ${id} (${file}) as ${expected}`, () => {
       const buf = readFileSync(path.join(ASSETS, file))
       const wav = parseWav(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
-      const frames = AnalysisPipeline.analyze(wav.samples, wav.sampleRate, 'hybrid', true, true)
+      const frames = AnalysisPipeline.analyze(wav.samples, wav.sampleRate, 'hybrid', true)
       const voiced = frames.filter(f => f.f0 > 0 && f.voiced)
       assert.ok(voiced.length > 0, 'should have voiced frames')
 

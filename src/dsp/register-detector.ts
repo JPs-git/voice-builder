@@ -17,7 +17,6 @@ export interface RegisterOptions {
 
 export interface RegisterResult {
   register: VoiceRegister
-  h1h2: number | null
   confidence: number
 }
 
@@ -30,22 +29,19 @@ export class RegisterDetector {
   private _chestCount: number
   private _falsettoCount: number
   private _window: number
-  private _h1h2Buffer: number[]
   private _countBuffer: number[]
 
   constructor(opts: RegisterOptions = {}) {
     this._chestCount = opts.chestCount ?? DEFAULT_CHEST_COUNT
     this._falsettoCount = opts.falsettoCount ?? DEFAULT_FALSETTO_COUNT
     this._window = opts.window ?? DEFAULT_WINDOW
-    this._h1h2Buffer = []
     this._countBuffer = []
   }
 
   push(input: RegisterFrameInput): RegisterResult {
     if (!input.voiced || input.f0 == null) {
-      this._h1h2Buffer = []
       this._countBuffer = []
-      return { register: 'unvoiced', h1h2: null, confidence: 0 }
+      return { register: 'unvoiced', confidence: 0 }
     }
 
     const amps: HarmonicAmplitudes = extractHarmonics(
@@ -53,16 +49,10 @@ export class RegisterDetector {
       input.f0,
       input.sampleRate,
     )
-    if (amps.h1 == null || amps.h2 == null) {
-      this._h1h2Buffer = []
+    if (!amps.valid) {
       this._countBuffer = []
-      return { register: 'unvoiced', h1h2: null, confidence: 0 }
+      return { register: 'unvoiced', confidence: 0 }
     }
-
-    const h1h2 = amps.h1 - amps.h2
-    this._h1h2Buffer.push(h1h2)
-    if (this._h1h2Buffer.length > this._window) this._h1h2Buffer.shift()
-    const smoothedH1h2 = median(this._h1h2Buffer)
 
     this._countBuffer.push(amps.harmonicCount)
     if (this._countBuffer.length > this._window) this._countBuffer.shift()
@@ -74,11 +64,10 @@ export class RegisterDetector {
     else register = 'mixed'
 
     const confidence = registerConfidence(smoothedCount, this._chestCount, this._falsettoCount)
-    return { register, h1h2: smoothedH1h2, confidence }
+    return { register, confidence }
   }
 
   reset(): void {
-    this._h1h2Buffer = []
     this._countBuffer = []
   }
 }

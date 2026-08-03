@@ -14,9 +14,9 @@
 - 假声：声带薄、闭合相短 → 谐波稀疏，仅基频 + 二次谐波占主导，harmonicCount 低（~1.8）
 - 混声：介于两者之间（~3）
 
-> 本项目测量的是麦克风**辐射谱**（含共振峰与麦克风频率响应），H1-H2 不采用文献（声源谱）的极性判断，**harmonicCount（谐波丰富度）为主判据**，对录音电平不敏感。
+> 本项目测量的是麦克风**辐射谱**（含共振峰与麦克风频率响应），**harmonicCount（谐波丰富度）为主判据**，对录音电平不敏感。
 
-文献支撑：Lee et al. 2023《Differences Among Mixed, Chest, and Falsetto Registers》— H1-H2 与声区的理论关系（源谱层面）；Keating 2014《Acoustic measures of falsetto voice》— 谐波结构差异。
+文献支撑：Lee et al. 2023《Differences Among Mixed, Chest, and Falsetto Registers》与 Keating 2014《Acoustic measures of falsetto voice》— 谐波结构的丰富度差异是区分声区的基础。
 
 ## 特征集
 
@@ -25,7 +25,6 @@
 | 特征 | 定义 | 作用 |
 |---|---|---|
 | harmonicCount | Hn > H1−20dB 的谐波数（n≥2） | **主判据** |
-| H1-H2 | 基频 − 二次谐波（dB，辐射谱） | 仅记录展示，不参与判别 |
 | SHR | mag(F0/2) / mag(F0) | 保留提取，分类器不使用 |
 
 阈值由 3 个标注真实录音校准（均 /a/）：真声 harmonicCount≈7、混声≈3、假声≈1.8。
@@ -36,12 +35,9 @@
 
 ```ts
 export interface HarmonicAmplitudes {
-  h1: number | null   // dB
-  h2: number | null
-  h3: number | null
-  h4: number | null
-  harmonicCount: number      // Hn > H1 - 20dB 的谐波数（n≥2），计数到 Nyquist 上限
-  shr: number | null         // mag(F0/2) / mag(F0)，仅当 F0/2 ≥ 50Hz
+  valid: boolean          // 检测到有效基频峰（H1）
+  harmonicCount: number   // Hn > H1 - 20dB 的谐波数（n≥2），计数到 Nyquist 上限
+  shr: number | null      // mag(F0/2) / mag(F0)，仅当 F0/2 ≥ 50Hz
 }
 
 export function extractHarmonics(
@@ -51,7 +47,7 @@ export function extractHarmonics(
 ): HarmonicAmplitudes
 ```
 
-- `f0 === null` → 全部 null / harmonicCount=0
+- `f0 === null` → `valid=false` / harmonicCount=0 / shr=null
 - 谐波峰搜索：中心 = n×F0，±60Hz 窗口取局部最大，抛物线插值提幅值
 - SHR 次谐波：±15Hz 窄窗搜索（避免低 F0 时搜索窗框入基频主瓣）
 - 频点 → bin：`bin = freq * N / sampleRate`，N=2048
@@ -70,7 +66,6 @@ export interface RegisterFrameInput {
 
 export interface RegisterResult {
   register: VoiceRegister
-  h1h2: number | null
   confidence: number  // 0..1
 }
 
@@ -82,8 +77,8 @@ export class RegisterDetector {
 ```
 
 **分类逻辑**：
-1. `voiced=false` 或 `f0===null` → `unvoiced`
-2. `extractHarmonics` → `harmonicCount`，记入 **5 帧中值平滑**（`h1h2` 同步平滑，仅作展示）
+1. `voiced=false`、`f0===null` 或 `valid=false` → `unvoiced`
+2. `extractHarmonics` → `harmonicCount`，记入 **5 帧中值平滑**
 3. 主判据（harmonicCount 阈值）：
    - `smoothedCount ≥ chestCount(5)` → `chest`
    - `smoothedCount ≤ falsettoCount(2)` → `falsetto`
@@ -93,26 +88,24 @@ export class RegisterDetector {
 ## 管线集成
 
 `src/dsp/analysis-pipeline.ts`：
-- `PipelineOptions` 含 `registerDetection?: boolean`（默认 true）
-- 构造器持有 `_registerDetector: RegisterDetector | null`
+- 声区检测**始终开启**（不设配置开关）
+- 构造器持有 `_registerDetector: RegisterDetector`
 - 在 `formantSmoother.push()` **之后**、`onFrame` 回调之前计算：
   ```ts
-  if (this._registerDetector) {
-    const r = this._registerDetector.push({
-      f0: output.f0, voiced, magnitudes, sampleRate: TARGET_RATE,
-    })
-    output.register = r.register
-    output.registerConfidence = r.confidence
-  }
+  const r = this._registerDetector.push({
+    f0: output.f0, voiced, magnitudes, sampleRate: TARGET_RATE,
+  })
+  output.register = r.register
+  output.registerConfidence = r.confidence
   ```
 - 用**平滑后** f0 保证稳定；`magnitudes` 随 `{...frame}` 传播
-- `static analyze()` 第 5 个参数 `registerDetection = true`
+- `static analyze()` 参数不含声区开关
 
 `src/dsp/formant-smoother.ts`：`SmootherFrame` 含 `register?: VoiceRegister | null`、`registerConfidence?: number | null`
 
 `src/dsp/index.ts`：导出 `extractHarmonics`、`RegisterDetector`、类型
 
-## 类型 & 配置
+## 类型
 
 `src/types/index.ts`：
 ```ts
@@ -130,22 +123,15 @@ export interface AnalysisFrame {
   register?: VoiceRegister | null
   registerConfidence?: number | null
 }
-
-export interface AppConfig {
-  formantMethod: FormantMethod['value']
-  formantSmoothing: boolean
-  registerDetection: boolean          // 默认 true
-}
-// DEFAULT_CONFIG.registerDetection = true
 ```
 
 `VoiceRegister` 定义在 types（共享契约层），dsp 单向 import，无循环依赖。
 
-`src/hooks/useAnalysis.ts`：构造 pipeline 与 `analyze()` 时透传 `config.registerDetection`。
+`src/hooks/useAnalysis.ts`：构造 pipeline 与 `analyze()` 时透传 `formantMethod`、`formantSmoothing`（声区检测始终开启，无需透传）。
 
 ## UI
 
-- **ConfigDrawer**：照抄 `formantSmoothing` checkbox 模式，加"声区检测"开关（默认开启），提示"生效于下次录音或导入"
+- **ConfigDrawer**：不设"声区检测"开关，始终开启
 - **FeedbackCard**：加一行声区状态：
   | register | 显示 | 颜色 |
   |---|---|---|
@@ -172,11 +158,11 @@ mic/WAV → AnalysisPipeline.pushChunk
 
 | 文件 | 覆盖 |
 |---|---|
-| `src/__tests__/dsp/harmonic-amplitudes.test.js` | 纯正弦→H1-H2 大、harmonicCount 低、shr 低；锯齿波→H1-H2 小、harmonicCount 高；f0 null→全空；SHR 计算条件；低 F0 次谐波窄窗回归 |
-| `src/__tests__/dsp/register-detector.test.js` | 正弦→falsetto；锯齿波→chest；中间态→mixed；无声→unvoiced；中值平滑稳定性；重置；3 个真实签名（富谐波高 h1h2→chest / 3 谐波低 h1h2→mixed / 稀疏→falsetto） |
+| `src/__tests__/dsp/harmonic-amplitudes.test.js` | 纯正弦→valid、harmonicCount 低、shr 低；锯齿波→harmonicCount 高；f0 null/空谱→valid=false；SHR 计算条件；低 F0 次谐波窄窗回归 |
+| `src/__tests__/dsp/register-detector.test.js` | 正弦→falsetto；锯齿波→chest；中间态→mixed；无声→unvoiced；中值平滑稳定性；重置；3 个真实签名（富谐波→chest / 3 谐波→mixed / 稀疏→falsetto）；confidence |
 | `src/__tests__/dsp/register-assets.test.js` | 标注真实录音回归：真声→chest、混声→mixed、假声→falsetto（≥85% voiced 帧，容混声演唱中段瞬时变薄抖动） |
-| `src/__tests__/dsp/analysis-pipeline.test.js` | register 字段存在；开关关闭时 register 为 null |
-| `src/__tests__/appStore.test.ts` | config 默认含 registerDetection |
+| `src/__tests__/dsp/analysis-pipeline.test.js` | register 字段与 registerConfidence 存在；纯正弦→falsetto |
+| `src/__tests__/appStore.test.ts` | config 默认值（声区检测无配置项） |
 
 **合成测试信号**：锯齿波（谐波丰富=真声）vs 纯正弦（仅基频=假声），物理上成立。
 
@@ -196,7 +182,7 @@ mic/WAV → AnalysisPipeline.pushChunk
 
 **核心**：`src/dsp/harmonic-amplitudes.ts`、`src/dsp/register-detector.ts`
 
-**集成**：`src/dsp/analysis-pipeline.ts`、`src/dsp/formant-smoother.ts`、`src/dsp/index.ts`、`src/types/index.ts`、`src/hooks/useAnalysis.ts`、`src/components/ConfigDrawer.tsx`、`src/components/FeedbackCard.tsx`(+css)
+**集成**：`src/dsp/analysis-pipeline.ts`、`src/dsp/formant-smoother.ts`、`src/dsp/index.ts`、`src/types/index.ts`、`src/hooks/useAnalysis.ts`、`src/components/FeedbackCard.tsx`(+css)
 
 **测试**：`src/__tests__/dsp/harmonic-amplitudes.test.js`、`src/__tests__/dsp/register-detector.test.js`、`src/__tests__/dsp/register-assets.test.js`、`src/__tests__/dsp/analysis-pipeline.test.js`、`src/__tests__/appStore.test.ts`
 

@@ -65,22 +65,6 @@ describe('AnalysisPipeline', () => {
     assert.equal(voiced[0].register, 'falsetto')
   })
 
-  it('register field is null when registerDetection disabled', () => {
-    const sampleRate = 16000
-    const numSamples = Math.round(sampleRate * 0.2)
-    const samples = new Float32Array(numSamples)
-    for (let i = 0; i < numSamples; i++) {
-      samples[i] = Math.sin(2 * Math.PI * 200 * i / sampleRate)
-    }
-
-    const frames = AnalysisPipeline.analyze(samples, sampleRate, 'hybrid', true, false)
-    assert.ok(frames.length > 0)
-    for (const f of frames) {
-      assert.equal(f.register, null)
-      assert.equal(f.registerConfidence, null)
-    }
-  })
-
   it('times increment by ~0.01s per frame', () => {
     const sampleRate = 16000
     const duration = 0.3

@@ -43,7 +43,7 @@ function falsettoFrame() {
   return { f0: 200, voiced: true, magnitudes: magnitudesOf(makeSignal([200], [1])), sampleRate: SR }
 }
 
-// Hand-built spectrum for a controllable h1h2. bin = freq * 2048 / 16000.
+// Hand-built spectrum for a controllable harmonic structure. bin = freq * 2048 / 16000.
 // f0=250Hz → bin 32, h2=500Hz → bin 64, h3=750Hz → bin 96, f0/2=125Hz → bin 16.
 function spectrumWith(levels) {
   const mags = new Float32Array(1025).fill(-80)
@@ -58,7 +58,6 @@ describe('RegisterDetector', () => {
     const det = new RegisterDetector()
     const r = det.push(falsettoFrame())
     assert.equal(r.register, 'falsetto')
-    assert.ok(r.h1h2 != null && r.h1h2 > 10, `expected large h1h2, got ${r.h1h2}`)
   })
 
   it('classifies bandlimited sawtooth as chest', () => {
@@ -68,25 +67,25 @@ describe('RegisterDetector', () => {
   })
 
   // Regression for polarity reversal found on real recordings: rich harmonics
-  // with HIGH h1h2 is 真声 (chest), NOT falsetto.
-  it('classifies rich harmonics with high h1h2 as chest (真声 signature)', () => {
-    // f0=125, 7 harmonics within 20dB, h1h2=8dB (matches a_true_vocal.wav)
+  // is 真声 (chest), NOT falsetto.
+  it('classifies rich harmonics as chest (真声 signature)', () => {
+    // f0=125, 7 harmonics within 20dB (matches a_true_vocal.wav)
     const mags = spectrumWith({ 16: 0, 32: -8, 48: -16, 64: -19, 80: -19, 96: -19, 112: -19 })
     const det = new RegisterDetector()
     const r = det.push({ f0: 125, voiced: true, magnitudes: mags, sampleRate: SR })
     assert.equal(r.register, 'chest')
   })
 
-  it('classifies three harmonics with low h1h2 as mixed (混声 signature)', () => {
-    // f0=400, H2≈H1 (h1h2=0.6dB), H1-H4 within 20dB → harmonicCount=3 (matches a_mix_vocal.wav)
+  it('classifies three harmonics as mixed (混声 signature)', () => {
+    // f0=400, H1-H4 within 20dB → harmonicCount=3 (matches a_mix_vocal.wav)
     const mags = spectrumWith({ 51: 0, 102: -0.6, 154: -6, 205: -8 })
     const det = new RegisterDetector()
     const r = det.push({ f0: 400, voiced: true, magnitudes: mags, sampleRate: SR })
     assert.equal(r.register, 'mixed')
   })
 
-  it('classifies sparse harmonics with low h1h2 as falsetto (假声 signature)', () => {
-    // f0=500, only H1+H2 (h1h2=0.1dB), sparse harmonics (matches a_false_vocal.wav)
+  it('classifies sparse harmonics as falsetto (假声 signature)', () => {
+    // f0=500, only H1+H2, sparse harmonics (matches a_false_vocal.wav)
     const mags = spectrumWith({ 64: 0, 128: -0.1 })
     const det = new RegisterDetector()
     const r = det.push({ f0: 500, voiced: true, magnitudes: mags, sampleRate: SR })
@@ -97,7 +96,6 @@ describe('RegisterDetector', () => {
     const det = new RegisterDetector()
     const r = det.push({ f0: null, voiced: false, magnitudes: new Float32Array(1025), sampleRate: SR })
     assert.equal(r.register, 'unvoiced')
-    assert.equal(r.h1h2, null)
     assert.equal(r.confidence, 0)
   })
 
@@ -115,7 +113,7 @@ describe('RegisterDetector', () => {
     assert.equal(r.register, 'mixed')
   })
 
-  it('smooths h1h2 across frames so a single falsetto spike does not flip chest', () => {
+  it('smooths across frames so a single falsetto spike does not flip chest', () => {
     const det = new RegisterDetector({ window: 5 })
     for (let i = 0; i < 5; i++) det.push(chestFrame())
     const spike = det.push(falsettoFrame())
@@ -139,7 +137,7 @@ describe('RegisterDetector', () => {
   })
 
   it('confidence is high at a clear chest extreme', () => {
-    // h1h2 = 3dB, 7 strong harmonics → unambiguous chest
+    // 7 strong harmonics → unambiguous chest
     const mags = spectrumWith({ 32: 0, 64: -3, 96: -3, 128: -3, 160: -3, 192: -3, 224: -3, 256: -3 })
     const det = new RegisterDetector()
     const r = det.push({ f0: 250, voiced: true, magnitudes: mags, sampleRate: SR })

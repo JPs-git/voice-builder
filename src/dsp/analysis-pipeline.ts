@@ -22,7 +22,6 @@ export interface PipelineOptions {
   formantMethod?: FormantMethodValue
   frameOffset?: number
   formantSmoothing?: boolean
-  registerDetection?: boolean
 }
 
 export class AnalysisPipeline {
@@ -35,7 +34,7 @@ export class AnalysisPipeline {
   private _formantMethod: FormantMethodValue
   private _prevGoodF1: number | null = null
   private _smoother: FormantSmoother | null
-  private _registerDetector: RegisterDetector | null
+  private _registerDetector: RegisterDetector
 
   constructor({
     onFrame,
@@ -43,13 +42,12 @@ export class AnalysisPipeline {
     formantMethod = 'hybrid',
     frameOffset = 0,
     formantSmoothing = true,
-    registerDetection = true,
   }: PipelineOptions = {}) {
     this._frameOffset = frameOffset
     this._vad = new VoiceActivityDetector({ threshold: vadThreshold })
     this._formantMethod = formantMethod
     this._smoother = formantSmoothing ? new FormantSmoother() : null
-    this._registerDetector = registerDetection ? new RegisterDetector() : null
+    this._registerDetector = new RegisterDetector()
     this.onFrame = onFrame ?? null
   }
 
@@ -132,19 +130,14 @@ export class AnalysisPipeline {
         if (this._smoother) {
           output = this._smoother.push(output)
         }
-        if (this._registerDetector) {
-          const result = this._registerDetector.push({
-            f0: output.f0,
-            voiced: output.voiced ?? false,
-            magnitudes,
-            sampleRate: TARGET_RATE,
-          })
-          output.register = result.register
-          output.registerConfidence = result.confidence
-        } else {
-          output.register = null
-          output.registerConfidence = null
-        }
+        const result = this._registerDetector.push({
+          f0: output.f0,
+          voiced: output.voiced ?? false,
+          magnitudes,
+          sampleRate: TARGET_RATE,
+        })
+        output.register = result.register
+        output.registerConfidence = result.confidence
         if (this.onFrame) this.onFrame(output)
       }
       if (inputSampleRate !== TARGET_RATE) {
@@ -167,7 +160,7 @@ export class AnalysisPipeline {
     if (this._resampler) this._resampler.reset()
     if (this._frameProcessor) this._frameProcessor.reset()
     if (this._smoother) this._smoother.reset()
-    if (this._registerDetector) this._registerDetector.reset()
+    this._registerDetector.reset()
     this._prevGoodF1 = null
     this._frameCount = 0
   }
@@ -177,7 +170,6 @@ export class AnalysisPipeline {
     sampleRate: number,
     formantMethod: FormantMethodValue,
     formantSmoothing: boolean = true,
-    registerDetection: boolean = true,
   ): SmootherFrame[] {
     if (samples.length === 0) return []
     const frames: SmootherFrame[] = []
@@ -185,7 +177,6 @@ export class AnalysisPipeline {
       onFrame: (frame) => frames.push(frame),
       formantMethod,
       formantSmoothing,
-      registerDetection,
     })
     pipeline.pushChunk(samples, sampleRate)
     pipeline.flush()

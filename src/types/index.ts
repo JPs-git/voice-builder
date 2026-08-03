@@ -57,13 +57,11 @@ export const VOWEL_PRESETS: Record<string, VowelPreset> = {
 export interface AppConfig {
   formantMethod: FormantMethod['value']
   formantSmoothing: boolean
-  registerDetection: boolean
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
   formantMethod: 'hybrid',
   formantSmoothing: true,
-  registerDetection: true,
 }
 
 

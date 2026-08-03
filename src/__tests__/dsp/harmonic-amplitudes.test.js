@@ -45,53 +45,38 @@ function spectrumWith(levels) {
 }
 
 describe('extractHarmonics', () => {
-  it('returns nulls for f0 null', () => {
+  it('is invalid for f0 null', () => {
     const mags = magnitudesOf(makeSignal([200], [1]))
     const r = extractHarmonics(mags, null, SR)
-    assert.equal(r.h1, null)
-    assert.equal(r.h2, null)
-    assert.equal(r.h3, null)
-    assert.equal(r.h4, null)
+    assert.equal(r.valid, false)
     assert.equal(r.harmonicCount, 0)
     assert.equal(r.shr, null)
   })
 
-  it('returns nulls for empty magnitudes', () => {
+  it('is invalid for empty magnitudes', () => {
     const r = extractHarmonics(new Float32Array(0), 200, SR)
-    assert.equal(r.h1, null)
+    assert.equal(r.valid, false)
     assert.equal(r.harmonicCount, 0)
   })
 
-  it('extracts strong H1 for pure sine', () => {
+  it('is valid when a real H1 peak is detected for pure sine', () => {
     const mags = magnitudesOf(makeSignal([200], [1]))
     const r = extractHarmonics(mags, 200, SR)
-    assert.ok(r.h1 != null, 'h1 should be present')
-    assert.ok(r.h1 > -20, 'h1 should be a real signal peak, not noise floor')
+    assert.equal(r.valid, true, 'pure sine should have a detectable H1')
   })
 
-  it('pure sine has sparse harmonics: large h1h2, low harmonicCount', () => {
+  it('pure sine has sparse harmonics: low harmonicCount', () => {
     const mags = magnitudesOf(makeSignal([200], [1]))
     const r = extractHarmonics(mags, 200, SR)
-    assert.ok(r.h2 != null)
-    assert.ok(r.h1 - r.h2 > 20, `expected large h1h2, got ${r.h1 - r.h2}`)
+    assert.equal(r.valid, true)
     assert.ok(r.harmonicCount <= 2, `expected sparse harmonics, got ${r.harmonicCount}`)
   })
 
-  it('bandlimited sawtooth has rich harmonics: small h1h2, high harmonicCount', () => {
+  it('bandlimited sawtooth has rich harmonics: high harmonicCount', () => {
     const mags = magnitudesOf(bandlimitedSawtooth(200))
     const r = extractHarmonics(mags, 200, SR)
-    assert.ok(r.h1 != null && r.h2 != null)
-    const h1h2 = r.h1 - r.h2
-    assert.ok(h1h2 < 12, `expected small h1h2 (1/n decay ~6dB), got ${h1h2.toFixed(1)}`)
-    assert.ok(h1h2 > 2, `expected h1h2 near 6dB, got ${h1h2.toFixed(1)}`)
+    assert.equal(r.valid, true)
     assert.ok(r.harmonicCount >= 5, `expected rich harmonics, got ${r.harmonicCount}`)
-  })
-
-  it('sawtooth H1-H4 are present and monotonically decreasing', () => {
-    const mags = magnitudesOf(bandlimitedSawtooth(200))
-    const r = extractHarmonics(mags, 200, SR)
-    assert.ok(r.h1 != null && r.h2 != null && r.h3 != null && r.h4 != null)
-    assert.ok(r.h1 > r.h2 && r.h2 > r.h3 && r.h3 > r.h4)
   })
 
   it('computes SHR only when f0/2 is above 50Hz floor', () => {
