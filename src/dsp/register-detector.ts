@@ -10,8 +10,8 @@ export interface RegisterFrameInput {
 }
 
 export interface RegisterOptions {
-  mixedLow?: number
-  mixedHigh?: number
+  chestCount?: number
+  falsettoCount?: number
   window?: number
 }
 
@@ -21,30 +21,21 @@ export interface RegisterResult {
   confidence: number
 }
 
-const DEFAULT_MIXED_LOW = 3
-const DEFAULT_MIXED_HIGH = 10
+const DEFAULT_CHEST_COUNT = 5
+const DEFAULT_FALSETTO_COUNT = 2
 const DEFAULT_WINDOW = 5
 
-const MIXED_BOUNDARY = 0.35
-const FALSETTO_BOUNDARY = 0.65
-
-const CHEST_HARMONIC_COUNT = 6
-const FALSETTO_HARMONIC_COUNT = 2
-const CHEST_HARMONIC_BIAS = 0.15
-const FALSETTO_HARMONIC_BIAS = 0.1
-const CHEST_SHR_BIAS = 0.1
-const SHR_CHEST_THRESHOLD = 0.5
-
+// Calibrated on labeled /a/ recordings: 真声 ~7 harmonics, 混声 ~3, 假声 ~1.8.
 export class RegisterDetector {
-  private _mixedLow: number
-  private _mixedHigh: number
+  private _chestCount: number
+  private _falsettoCount: number
   private _window: number
   private _h1h2Buffer: number[]
   private _countBuffer: number[]
 
   constructor(opts: RegisterOptions = {}) {
-    this._mixedLow = opts.mixedLow ?? DEFAULT_MIXED_LOW
-    this._mixedHigh = opts.mixedHigh ?? DEFAULT_MIXED_HIGH
+    this._chestCount = opts.chestCount ?? DEFAULT_CHEST_COUNT
+    this._falsettoCount = opts.falsettoCount ?? DEFAULT_FALSETTO_COUNT
     this._window = opts.window ?? DEFAULT_WINDOW
     this._h1h2Buffer = []
     this._countBuffer = []
@@ -71,27 +62,19 @@ export class RegisterDetector {
     const h1h2 = amps.h1 - amps.h2
     this._h1h2Buffer.push(h1h2)
     if (this._h1h2Buffer.length > this._window) this._h1h2Buffer.shift()
-    const smoothed = median(this._h1h2Buffer)
+    const smoothedH1h2 = median(this._h1h2Buffer)
 
     this._countBuffer.push(amps.harmonicCount)
     if (this._countBuffer.length > this._window) this._countBuffer.shift()
     const smoothedCount = median(this._countBuffer)
 
-    let score = (smoothed - this._mixedLow) / (this._mixedHigh - this._mixedLow)
-    score = clamp01(score)
-
-    if (smoothedCount >= CHEST_HARMONIC_COUNT) score -= CHEST_HARMONIC_BIAS
-    if (smoothedCount <= FALSETTO_HARMONIC_COUNT) score += FALSETTO_HARMONIC_BIAS
-    if (amps.shr != null && amps.shr > SHR_CHEST_THRESHOLD) score -= CHEST_SHR_BIAS
-    score = clamp01(score)
-
     let register: VoiceRegister
-    if (score < MIXED_BOUNDARY) register = 'chest'
-    else if (score <= FALSETTO_BOUNDARY) register = 'mixed'
-    else register = 'falsetto'
+    if (smoothedCount >= this._chestCount) register = 'chest'
+    else if (smoothedCount <= this._falsettoCount) register = 'falsetto'
+    else register = 'mixed'
 
-    const confidence = registerConfidence(score)
-    return { register, h1h2: smoothed, confidence }
+    const confidence = registerConfidence(smoothedCount, this._chestCount, this._falsettoCount)
+    return { register, h1h2: smoothedH1h2, confidence }
   }
 
   reset(): void {
@@ -105,14 +88,14 @@ function median(values: number[]): number {
   return sorted[Math.floor(sorted.length / 2)]
 }
 
-function clamp01(v: number): number {
-  return Math.min(1, Math.max(0, v))
-}
-
-function registerConfidence(score: number): number {
-  let dist: number
-  if (score < MIXED_BOUNDARY) dist = MIXED_BOUNDARY - score
-  else if (score <= FALSETTO_BOUNDARY) dist = Math.min(score - MIXED_BOUNDARY, FALSETTO_BOUNDARY - score)
-  else dist = score - FALSETTO_BOUNDARY
-  return Math.min(1, dist / (FALSETTO_BOUNDARY - MIXED_BOUNDARY))
+function registerConfidence(count: number, chestCount: number, falsettoCount: number): number {
+  const span = chestCount - falsettoCount
+  if (count >= chestCount) {
+    return Math.min(1, 0.5 + (count - chestCount) / span)
+  }
+  if (count <= falsettoCount) {
+    return Math.min(1, 0.5 + (falsettoCount - count) / span)
+  }
+  const mid = (chestCount + falsettoCount) / 2
+  return Math.max(0, 0.5 - Math.abs(count - mid) / span)
 }

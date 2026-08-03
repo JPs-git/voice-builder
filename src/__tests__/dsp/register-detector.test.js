@@ -67,6 +67,32 @@ describe('RegisterDetector', () => {
     assert.equal(r.register, 'chest')
   })
 
+  // Regression for polarity reversal found on real recordings: rich harmonics
+  // with HIGH h1h2 is 真声 (chest), NOT falsetto.
+  it('classifies rich harmonics with high h1h2 as chest (真声 signature)', () => {
+    // f0=125, 7 harmonics within 20dB, h1h2=8dB (matches a_true_vocal.wav)
+    const mags = spectrumWith({ 16: 0, 32: -8, 48: -16, 64: -19, 80: -19, 96: -19, 112: -19 })
+    const det = new RegisterDetector()
+    const r = det.push({ f0: 125, voiced: true, magnitudes: mags, sampleRate: SR })
+    assert.equal(r.register, 'chest')
+  })
+
+  it('classifies three harmonics with low h1h2 as mixed (混声 signature)', () => {
+    // f0=400, H2≈H1 (h1h2=0.6dB), H1-H4 within 20dB → harmonicCount=3 (matches a_mix_vocal.wav)
+    const mags = spectrumWith({ 51: 0, 102: -0.6, 154: -6, 205: -8 })
+    const det = new RegisterDetector()
+    const r = det.push({ f0: 400, voiced: true, magnitudes: mags, sampleRate: SR })
+    assert.equal(r.register, 'mixed')
+  })
+
+  it('classifies sparse harmonics with low h1h2 as falsetto (假声 signature)', () => {
+    // f0=500, only H1+H2 (h1h2=0.1dB), sparse harmonics (matches a_false_vocal.wav)
+    const mags = spectrumWith({ 64: 0, 128: -0.1 })
+    const det = new RegisterDetector()
+    const r = det.push({ f0: 500, voiced: true, magnitudes: mags, sampleRate: SR })
+    assert.equal(r.register, 'falsetto')
+  })
+
   it('classifies unvoiced frame as unvoiced', () => {
     const det = new RegisterDetector()
     const r = det.push({ f0: null, voiced: false, magnitudes: new Float32Array(1025), sampleRate: SR })
@@ -81,9 +107,9 @@ describe('RegisterDetector', () => {
     assert.equal(r.register, 'unvoiced')
   })
 
-  it('classifies intermediate h1h2 as mixed', () => {
-    // h1h2 = 6dB (mixed region), harmonicCount = 2, no subharmonic energy
-    const mags = spectrumWith({ 32: 0, 64: -6, 96: -8 })
+  it('classifies moderate harmonic richness as mixed', () => {
+    // H1-H4 within 20dB → harmonicCount=3 (mixed band)
+    const mags = spectrumWith({ 32: 0, 64: -6, 96: -8, 128: -8 })
     const det = new RegisterDetector()
     const r = det.push({ f0: 250, voiced: true, magnitudes: mags, sampleRate: SR })
     assert.equal(r.register, 'mixed')

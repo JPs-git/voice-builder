@@ -3,6 +3,7 @@ const MAX_HARMONICS = 10
 const WINDOW_HZ = 60
 const HARMONIC_DB_FLOOR = 20
 const SHR_FLOOR_HZ = 50
+const SHR_WINDOW_HZ = 15
 
 export interface HarmonicAmplitudes {
   h1: number | null
@@ -17,11 +18,12 @@ function findPeakAmplitude(
   magnitudes: Float32Array,
   freq: number,
   sampleRate: number,
+  windowHz: number = WINDOW_HZ,
 ): number | null {
   const binWidth = sampleRate / FFT_SIZE
   if (freq <= 0 || freq >= sampleRate / 2) return null
   const center = freq / binWidth
-  const half = Math.ceil(WINDOW_HZ / binWidth)
+  const half = Math.ceil(windowHz / binWidth)
   const i0 = Math.max(1, Math.floor(center) - half)
   const i1 = Math.min(magnitudes.length - 2, Math.ceil(center) + half)
   let best = i0
@@ -69,7 +71,7 @@ export function extractHarmonics(
 
   let shr: number | null = null
   if (f0 / 2 >= SHR_FLOOR_HZ) {
-    const sub = findPeakAmplitude(magnitudes, f0 / 2, sampleRate)
+    const sub = findPeakAmplitude(magnitudes, f0 / 2, sampleRate, SHR_WINDOW_HZ)
     if (sub != null && sub > -80) {
       shr = Math.pow(10, (sub - h1) / 20)
     }

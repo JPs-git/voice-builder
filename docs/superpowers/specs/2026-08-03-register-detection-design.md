@@ -6,26 +6,27 @@
 
 在每帧分析中判断当前发声声区：真声（胸声/modal）、混声（mixed）、假声（falsetto），并在 UI 实时展示。
 
-**分类依据（生理声学）**：
+**分类依据（实测校准）**：
 
-- 真声：声带厚实、闭合相长 → 高次谐波能量强 → H2 接近 H1（H1-H2 小），谐波丰富
-- 假声：声带薄、闭合相短 → 基频能量占主导 → H1 远强于 H2（H1-H2 大），谐波稀疏
-- 混声：介于两者之间（H1-H2 居中）
+- 真声：声带厚实、闭合相长 → 谐波丰富，高次谐波延伸至 ~1kHz 以上
+- 假声：声带薄、闭合相短 → 谐波稀疏，仅基频 + 二次谐波占主导
+- 混声：介于两者之间
+
+> **实测修正（2026-08-03 真实录音校准）**：文献（Lee et al.）的 H1-H2 极性基于**声源谱**（假声>混声>真声），但本项目从麦克风**辐射谱**测量，极性相反（真声 H1-H2 大、假声 H1-H2 小），且 H1-H2 绝对值随元音/录音响度漂移，不稳定。**harmonicCount（谐波丰富度）是实测中唯一强分离、对录音电平不敏感的特征**，故改为主判据。SHR 在真实样本上无区分力（见下）。
 
 **文献支撑**：
-- Lee et al. 2023《Differences Among Mixed, Chest, and Falsetto Registers》— H1-H2 三类单调递增：假声 > 混声 > 真声
-- ICICSP 2025《A Falsetto Detection Algorithm》— SHR（次谐波比）为最显著区分特征之一，假声时低
+- Lee et al. 2023《Differences Among Mixed, Chest, and Falsetto Registers》— H1-H2 与声区的理论关系（源谱层面）
 - Keating 2014《Acoustic measures of falsetto voice》— 谐波结构差异
 
 ## 特征集
 
 全部从已有 FFT 幅度谱（1025 bins，dB，`analysis-pipeline.ts:115` 每帧已计算）提取，**零额外 FFT**：
 
-| 特征 | 定义 | 真声 | 假声 |
-|---|---|---|---|
-| H1-H2 | 基频幅值 - 二次谐波幅值（dB） | 小（<3dB） | 大（>10dB） |
-| harmonicCount | Hn > H1-20dB 的谐波数（n≥2） | 高（≥6） | 低（≤2） |
-| SHR | mag(F0/2) / mag(F0) | 可有次谐波 | 低（<0.2） |
+| 特征 | 定义 | 真声 | 混声 | 假声 | 实测结论 |
+|---|---|---|---|---|---|
+| harmonicCount | Hn > H1-20dB 的谐波数（n≥2） | ~7 | ~3 | ~1.8 | **主判据，强分离** |
+| H1-H2 | 基频 - 二次谐波（dB，辐射谱） | ~8.7 | ~0.6 | ~0.1 | 与文献极性相反，仅作展示 |
+| SHR | mag(F0/2) / mag(F0) | ~0.03 | ~0.02 | ~0.02 | **无区分力**（早前 shr≈1.0 为搜索窗 bug 假象） |
 
 ## 新模块
 
@@ -50,6 +51,7 @@ export function extractHarmonics(
 
 - `f0 === null` → 全部 null / harmonicCount=0
 - 谐波峰搜索：中心 = n×F0，±60Hz 窗口取局部最大，抛物线插值提幅值
+- SHR 次谐波搜索：**±15Hz 窄窗**（bug 修复：±60Hz 会在低 F0 时框住基频主瓣，导致 shr≈1.0 假象）
 - 频点 → bin：`bin = freq * N / sampleRate`，N=2048
 
 ### 2. `src/dsp/register-detector.ts`（有状态 class）
@@ -71,7 +73,7 @@ export interface RegisterResult {
 }
 
 export class RegisterDetector {
-  constructor(opts?: { mixedLow?: number; mixedHigh?: number; window?: number })
+  constructor(opts?: { chestCount?: number; falsettoCount?: number; window?: number })
   push(input: RegisterFrameInput): RegisterResult
   reset(): void
 }
@@ -79,17 +81,14 @@ export class RegisterDetector {
 
 **分类逻辑**：
 1. `voiced=false` 或 `f0===null` → `unvoiced`
-2. `extractHarmonics` → `h1h2 = h1 - h2`
-3. h1h2 **5 帧中值平滑**（同 FormantSmoother 模式，抑制波动）
-4. 主评分：`score = clamp((h1h2 - mixedLow) / (mixedHigh - mixedLow))`（3→0, 10→1）
-5. 辅助修正：
-   - `harmonicCount ≥ 6` → score −0.15（偏向真声）
-   - `harmonicCount ≤ 2` → score +0.1（偏向假声）
-   - `shr 存在且 < 0.2` → score +0.1（偏向假声）
-6. 分类：`score < 0.35 → chest`，`0.35~0.65 → mixed`，`> 0.65 → falsetto`
-7. `confidence` = 距最近分类边界的距离（clamp 0..1）
+2. `extractHarmonics` → `harmonicCount`（记入 5 帧中值平滑，`h1h2` 同时平滑供展示）
+3. **主判据（harmonicCount 阈值）**：
+   - `smoothedCount ≥ 5` → `chest`
+   - `smoothedCount ≤ 2` → `falsetto`
+   - 其余 → `mixed`
+4. `confidence` = 到最近阈值的归一化距离（清晰极端→高）
 
-**初始阈值**：`mixedLow=3dB`、`mixedHigh=10dB`（Lee et al. 2023 / Keating 2014）。标注为初始值，后续用真实录音调优。
+**初始阈值**：`chestCount=5`、`falsettoCount=2`（由 3 个标注真实录音校准：真声 ~7、混声 ~3、假声 ~1.8）。
 
 ## 管线集成
 
@@ -173,12 +172,28 @@ mic/WAV → AnalysisPipeline.pushChunk
 
 | 文件 | 覆盖 |
 |---|---|
-| `src/__tests__/dsp/harmonic-amplitudes.test.js` | 纯正弦→H1-H2 大、harmonicCount 低、shr 低；锯齿波→H1-H2 小、harmonicCount 高；f0 null→全空；SHR 计算条件 |
-| `src/__tests__/dsp/register-detector.test.js` | 正弦→falsetto；锯齿波→chest；中间态→mixed；无声→unvoiced；中值平滑稳定性；重置 |
+| `src/__tests__/dsp/harmonic-amplitudes.test.js` | 纯正弦→H1-H2 大、harmonicCount 低、shr 低；锯齿波→H1-H2 小、harmonicCount 高；f0 null→全空；SHR 计算条件；**低 F0 次谐波回归（±15Hz 窗不误吞基频）** |
+| `src/__tests__/dsp/register-detector.test.js` | 正弦→falsetto；锯齿波→chest；中间态→mixed；无声→unvoiced；中值平滑稳定性；重置；**3 个真实签名（富谐波高 h1h2→chest / 3 谐波低 h1h2→mixed / 稀疏→falsetto）** |
+| `src/__tests__/dsp/register-assets.test.js` | **标注真实录音回归**：真声→chest、混声→mixed、假声→falsetto（≥85% voiced 帧，容混声演唱中段瞬时变薄抖动） |
 | 更新 `analysis-pipeline.test.js` | register 字段存在；开关关闭时 register 为 null |
 | 更新 `appStore.test.ts` | config 默认含 registerDetection |
 
 **合成测试信号**：锯齿波（谐波丰富=真声）vs 纯正弦（仅基频=假声），物理上成立。
+
+## 真实录音验证（2026-08-03）
+
+标注样本（`assets/a_true_vocal.wav` 真声 / `a_mix_vocal.wav` 混声 / `a_false_vocal.wav` 假声，均 /a/）实测：
+
+| 样本 | f0 | harmonicCount | H1-H2 | shr | 分类结果 |
+|---|---|---|---|---|---|
+| 真声 | ~125Hz | ~7.1 | ~8.7dB | ~0.03 | chest ✓ 100% |
+| 混声 | ~392Hz | ~2.9 | ~0.6dB | ~0.02 | mixed ✓ ~89%（演唱中段瞬时变薄→短暂假声，conf 0.50） |
+| 假声 | ~498Hz | ~1.8 | ~0.1dB | ~0.02 | falsetto ✓ 100% |
+
+**已知局限**（不在本次范围）：
+- 阈值仅在 /a/ 上校准；其他元音/唱法未验证（feature 受共振峰影响，跨元音可能失效——后续路线是 LPC 反滤波还原声源谱）
+- harmonicCount 含 F0 混叠（低音 modal 靠 F1 抬谐波数），modal 高音可能偏低
+- SHR 特征保留提取，但分类器不再使用（实测无区分力）
 
 ## 验证
 
@@ -194,6 +209,8 @@ mic/WAV → AnalysisPipeline.pushChunk
 
 ## 调优 TODO
 
-- [ ] 用真实录音采集真声/混声/假声样本，校准 `mixedLow`/`mixedHigh` 阈值
-- [ ] 评估 SHR 检测下限（F0/2 ≥ 50Hz 限制对低音影响）
+- [x] 真实录音校准阈值（`chestCount=5` / `falsettoCount=2`，已用 3 个标注样本）
+- [ ] **跨元音验证/反滤波**：LPC 已算系数未暴露，改造后可还原声源谱消除共振峰污染
+- [ ] 混声演唱中段瞬时变薄的假声抖动（harmonicCount 2↔3）——可评估更大平滑窗或双判据
+- [ ] 采集其他元音×声区标注样本，验证并校准
 - [ ] 可选：增加 HNR 特征（需额外自相关/倒谱计算）

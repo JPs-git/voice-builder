@@ -35,6 +35,15 @@ function magnitudesOf(signal) {
   return fftMagnitudes(signal, 2048)
 }
 
+// Hand-built spectrum, bin = freq * 2048 / 16000.
+function spectrumWith(levels) {
+  const mags = new Float32Array(1025).fill(-80)
+  for (const [bin, db] of Object.entries(levels)) {
+    mags[Number(bin)] = db
+  }
+  return mags
+}
+
 describe('extractHarmonics', () => {
   it('returns nulls for f0 null', () => {
     const mags = magnitudesOf(makeSignal([200], [1]))
@@ -93,5 +102,14 @@ describe('extractHarmonics', () => {
 
     const low = extractHarmonics(mags, 80, SR)
     assert.equal(low.shr, null, 'f0/2=40Hz below floor should be null')
+  })
+
+  it('does not mistake the fundamental for the subharmonic at low f0', () => {
+    // f0=124Hz → H1 at bin ~16; f0/2=62Hz → bin ~8 with noise floor -60dB.
+    // A wide search window around f0/2 would catch H1 (bin 16) and inflate shr≈1.0.
+    const mags = spectrumWith({ 8: -60, 16: 0, 32: -30 })
+    const r = extractHarmonics(mags, 124, SR)
+    assert.ok(r.shr != null, 'f0/2=62Hz above floor should compute shr')
+    assert.ok(r.shr < 0.1, `subharmonic energy must be tiny, got ${r.shr}`)
   })
 })
