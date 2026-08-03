@@ -45,6 +45,42 @@ describe('AnalysisPipeline', () => {
     assert.ok(Math.abs(avgF0 - 200) < 20, `expected ~200Hz, got ${avgF0.toFixed(1)}Hz`)
   })
 
+  it('includes register classification for voiced frames', () => {
+    const sampleRate = 16000
+    const duration = 0.2
+    const numSamples = Math.round(sampleRate * duration)
+    const samples = new Float32Array(numSamples)
+    for (let i = 0; i < numSamples; i++) {
+      samples[i] = Math.sin(2 * Math.PI * 200 * i / sampleRate)
+    }
+
+    const frames = AnalysisPipeline.analyze(samples, sampleRate)
+    const voiced = frames.filter(f => f.voiced)
+    assert.ok(voiced.length > 0, 'should have voiced frames')
+    for (const f of voiced) {
+      assert.ok(['chest', 'mixed', 'falsetto'].includes(f.register), `unexpected register ${f.register}`)
+      assert.ok(typeof f.registerConfidence === 'number')
+    }
+    // pure sine (no harmonics) → falsetto
+    assert.equal(voiced[0].register, 'falsetto')
+  })
+
+  it('register field is null when registerDetection disabled', () => {
+    const sampleRate = 16000
+    const numSamples = Math.round(sampleRate * 0.2)
+    const samples = new Float32Array(numSamples)
+    for (let i = 0; i < numSamples; i++) {
+      samples[i] = Math.sin(2 * Math.PI * 200 * i / sampleRate)
+    }
+
+    const frames = AnalysisPipeline.analyze(samples, sampleRate, 'hybrid', true, false)
+    assert.ok(frames.length > 0)
+    for (const f of frames) {
+      assert.equal(f.register, null)
+      assert.equal(f.registerConfidence, null)
+    }
+  })
+
   it('times increment by ~0.01s per frame', () => {
     const sampleRate = 16000
     const duration = 0.3

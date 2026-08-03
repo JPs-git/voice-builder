@@ -45,6 +45,18 @@
 .valueMute {
   color: var(--text-mute);
 }
+.registerChest {
+  color: var(--hit);
+}
+.registerMixed {
+  color: var(--warn);
+}
+.registerFalsetto {
+  color: var(--primary);
+}
+.registerNone {
+  color: var(--text-mute);
+}
 .list {
   list-style: none;
   margin: 12px 0 0;

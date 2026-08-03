@@ -94,6 +94,7 @@ export function useAnalysis() {
         },
         formantMethod: config.formantMethod,
         formantSmoothing: config.formantSmoothing,
+        registerDetection: config.registerDetection,
         frameOffset: frameOffsetRef.current,
       })
 
@@ -159,7 +160,7 @@ export function useAnalysis() {
 
       // Analyze first, then commit data
       const frames = AnalysisPipeline.analyze(
-        samples, 16000, config.formantMethod, config.formantSmoothing,
+        samples, 16000, config.formantMethod, config.formantSmoothing, config.registerDetection,
       )
 
       // Commit: only after analysis succeeds

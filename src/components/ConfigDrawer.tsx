@@ -42,6 +42,18 @@ export function ConfigDrawer({ open, onClose }: ConfigDrawerProps) {
         </label>
         <p className={styles.configHint}>实时 5 帧中值滤波，消除孤立异常跳变</p>
       </section>
+      <section>
+        <h4>声区检测</h4>
+        <label className={styles.radioItem}>
+          <input
+            type="checkbox"
+            checked={config.registerDetection}
+            onChange={e => setConfig({ registerDetection: e.target.checked })}
+          />
+          <span>真声 / 混声 / 假声识别 <small>（H1-H2 谐波结构）</small></span>
+        </label>
+        <p className={styles.configHint}>实时判断发声声区，用于练习反馈</p>
+      </section>
     </Drawer>
   )
 }

@@ -30,7 +30,19 @@ describe('FeedbackCard', () => {
   it('shows idle summary row with — when no data', () => {
     render(<FeedbackCard />)
     expect(screen.getByText('目标区间')).toBeTruthy()
-    expect(screen.getByText('—')).toBeTruthy()
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('shows register placeholder when no register data', () => {
+    render(<FeedbackCard />)
+    expect(screen.getByText('声区')).toBeTruthy()
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('shows register label for chest frame', () => {
+    useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 900, f2: 1250, register: 'chest' }])
+    render(<FeedbackCard />)
+    expect(screen.getByText('真声')).toBeTruthy()
   })
 
   it('shows real-time F0/F1/F2 values in Hz', () => {

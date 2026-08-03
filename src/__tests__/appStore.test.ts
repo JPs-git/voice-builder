@@ -26,6 +26,7 @@ describe('appStore', () => {
       const { config } = useAppStore.getState()
       expect(config.formantMethod).toBe('hybrid')
       expect(config.formantSmoothing).toBe(true)
+      expect(config.registerDetection).toBe(true)
     })
 
     it('merges partial config', () => {
