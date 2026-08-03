@@ -12,6 +12,8 @@ export interface SmootherFrame {
   f4?: number | null
   voiced?: boolean
   magnitudes?: Float32Array
+  register?: import('../types').VoiceRegister | null
+  registerConfidence?: number | null
 }
 
 export class FormantSmoother {

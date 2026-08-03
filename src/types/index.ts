@@ -1,3 +1,5 @@
+export type VoiceRegister = 'chest' | 'mixed' | 'falsetto' | 'unvoiced'
+
 export interface AnalysisFrame {
   time: number
   f0: number | null
@@ -6,6 +8,9 @@ export interface AnalysisFrame {
   f3?: number | null
   f4?: number | null
   voiced?: boolean
+  magnitudes?: Float32Array
+  register?: VoiceRegister | null
+  registerConfidence?: number | null
 }
 
 export interface TargetBand {
