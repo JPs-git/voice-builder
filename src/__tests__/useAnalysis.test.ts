@@ -4,6 +4,27 @@ import { useAnalysis } from '../hooks/useAnalysis'
 import { useAppStore } from '../store/appStore'
 import { useToastStore } from '../store/toastStore'
 import { recordingBuffer } from '../audio/recordingBuffer'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+if (typeof Blob.prototype.arrayBuffer !== 'function') {
+  Blob.prototype.arrayBuffer = function () {
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as ArrayBuffer)
+      reader.onerror = () => reject(reader.error)
+      reader.readAsArrayBuffer(this)
+    })
+  }
+}
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ASSETS = path.resolve(__dirname, '../../assets')
+
+function loadAsset(name: string): Buffer {
+  return readFileSync(path.join(ASSETS, name))
+}
 
 const mocks = vi.hoisted(() => ({
   isWavFile: vi.fn(),
@@ -122,6 +143,88 @@ describe('handleFileChange', () => {
     const { result } = renderHook(() => useAnalysis())
     await act(async () => {
       await result.current.handleFileChange({ target: { files: [nonWavFile()] } } as never)
+    })
+
+    expect(toastMessages()).toContain('浏览器不支持该音频格式或文件已损坏，请尝试 wav/mp3/m4a。')
+  })
+})
+
+describe('real mp3/m4a file routing', () => {
+  const SAMPLES = new Float32Array([0.1, 0.2, 0.3])
+
+  beforeEach(() => {
+    useAppStore.getState().reset()
+    useToastStore.setState({ toasts: [] })
+    recordingBuffer.clear()
+    vi.resetAllMocks()
+  })
+
+  it('mp3 file goes through probeAudioDuration then decodeAudioFile', async () => {
+    mocks.probeAudioDuration.mockResolvedValue(3)
+    mocks.decodeAudioFile.mockResolvedValue({ samples: SAMPLES, sampleRate: 16000, numChannels: 1 })
+    mocks.analyze.mockReturnValue([{ time: 0, f0: 220 }])
+
+    const mp3Buf = new Uint8Array(loadAsset('a.mp3'))
+    const file = new File([mp3Buf], 'a.mp3', { type: 'audio/mpeg' })
+
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => {
+      await result.current.handleFileChange({ target: { files: [file] } } as never)
+    })
+
+    expect(mocks.parseWav).not.toHaveBeenCalled()
+    expect(mocks.probeAudioDuration).toHaveBeenCalled()
+    expect(mocks.decodeAudioFile).toHaveBeenCalled()
+    expect(mocks.analyze).toHaveBeenCalled()
+    expect(useAppStore.getState().frames).toHaveLength(1)
+  })
+
+  it('m4a file goes through probeAudioDuration then decodeAudioFile', async () => {
+    mocks.probeAudioDuration.mockResolvedValue(3)
+    mocks.decodeAudioFile.mockResolvedValue({ samples: SAMPLES, sampleRate: 16000, numChannels: 1 })
+    mocks.analyze.mockReturnValue([{ time: 0, f0: 220 }])
+
+    const m4aBuf = new Uint8Array(loadAsset('a.m4a'))
+    const file = new File([m4aBuf], 'a.m4a', { type: 'audio/mp4' })
+
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => {
+      await result.current.handleFileChange({ target: { files: [file] } } as never)
+    })
+
+    expect(mocks.parseWav).not.toHaveBeenCalled()
+    expect(mocks.probeAudioDuration).toHaveBeenCalled()
+    expect(mocks.decodeAudioFile).toHaveBeenCalled()
+    expect(mocks.analyze).toHaveBeenCalled()
+    expect(useAppStore.getState().frames).toHaveLength(1)
+  })
+
+  it('mp3 >10s is rejected before decoding', async () => {
+    mocks.probeAudioDuration.mockResolvedValue(15)
+
+    const mp3Buf = new Uint8Array(loadAsset('a.mp3'))
+    const file = new File([mp3Buf], 'a.mp3', { type: 'audio/mpeg' })
+
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => {
+      await result.current.handleFileChange({ target: { files: [file] } } as never)
+    })
+
+    expect(mocks.decodeAudioFile).not.toHaveBeenCalled()
+    expect(mocks.analyze).not.toHaveBeenCalled()
+    expect(toastMessages()).toContain('音频不能超过 10 秒，请裁剪后重试。')
+  })
+
+  it('mp3 decode failure shows browser-unsupported toast', async () => {
+    mocks.probeAudioDuration.mockResolvedValue(3)
+    mocks.decodeAudioFile.mockRejectedValue(new DOMException('Failed to decode audio data', 'EncodingError'))
+
+    const mp3Buf = new Uint8Array(loadAsset('a.mp3'))
+    const file = new File([mp3Buf], 'a.mp3', { type: 'audio/mpeg' })
+
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => {
+      await result.current.handleFileChange({ target: { files: [file] } } as never)
     })
 
     expect(toastMessages()).toContain('浏览器不支持该音频格式或文件已损坏，请尝试 wav/mp3/m4a。')

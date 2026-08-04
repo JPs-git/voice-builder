@@ -1,5 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { AudioTooLongError, decodeAudioFile, probeAudioDuration } from '../audio/audioDecoder'
+import { isWavFile } from '../dsp/wav-parser'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ASSETS = path.resolve(__dirname, '../../assets')
+
+function loadAsset(name: string): Buffer {
+  return readFileSync(path.join(ASSETS, name))
+}
 
 function stubUrl() {
   const createObjectURL = vi.fn(() => 'blob:fake')
@@ -88,5 +99,25 @@ describe('decodeAudioFile', () => {
 describe('AudioTooLongError', () => {
   it('is an Error subclass', () => {
     expect(new AudioTooLongError()).toBeInstanceOf(Error)
+  })
+})
+
+describe('format detection on real files', () => {
+  it('a.mp3 is not detected as WAV', () => {
+    const mp3 = new Uint8Array(loadAsset('a.mp3'))
+    const head = mp3.buffer.slice(mp3.byteOffset, mp3.byteOffset + 12)
+    expect(isWavFile(head)).toBe(false)
+  })
+
+  it('a.m4a is not detected as WAV', () => {
+    const m4a = new Uint8Array(loadAsset('a.m4a'))
+    const head = m4a.buffer.slice(m4a.byteOffset, m4a.byteOffset + 12)
+    expect(isWavFile(head)).toBe(false)
+  })
+
+  it('a.wav IS detected as WAV', () => {
+    const wav = new Uint8Array(loadAsset('a.wav'))
+    const head = wav.buffer.slice(wav.byteOffset, wav.byteOffset + 12)
+    expect(isWavFile(head)).toBe(true)
   })
 })
