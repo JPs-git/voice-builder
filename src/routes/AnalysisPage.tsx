@@ -104,7 +104,7 @@ export function AnalysisPage() {
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
 
-      <input ref={fileInputRef} type="file" accept=".wav" hidden onChange={handleFileChange} />
+      <input ref={fileInputRef} type="file" accept="audio/*" hidden onChange={handleFileChange} />
     </div>
   )
 }
