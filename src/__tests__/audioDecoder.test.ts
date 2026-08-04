@@ -1,9 +1,21 @@
+/// <reference types="node" />
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { AudioTooLongError, decodeAudioFile, probeAudioDuration } from '../audio/audioDecoder'
+import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuration, wavDurationFromHeader } from '../audio/audioDecoder'
 import { isWavFile } from '../dsp/wav-parser'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+if (typeof Blob.prototype.arrayBuffer !== 'function') {
+  Blob.prototype.arrayBuffer = function () {
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as ArrayBuffer)
+      reader.onerror = () => reject(reader.error)
+      reader.readAsArrayBuffer(this)
+    })
+  }
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ASSETS = path.resolve(__dirname, '../../assets')
@@ -27,6 +39,8 @@ function fakeEl(duration: number) {
     onloadedmetadata: null as (() => void) | null,
     onerror: null as (() => void) | null,
     duration,
+    removeAttribute: vi.fn(),
+    load: vi.fn(),
   }
 }
 
@@ -64,6 +78,71 @@ describe('probeAudioDuration', () => {
     const promise = probeAudioDuration(new Blob(['x']), el as unknown as HTMLAudioElement)
     el.onloadedmetadata!()
     await expect(promise).rejects.toThrow(/Failed to read audio duration/)
+  })
+
+  it('rejects with a timeout when metadata never loads, and cleans up', async () => {
+    const promise = probeAudioDuration(new Blob(['x']), el as unknown as HTMLAudioElement, 10)
+    await expect(promise).rejects.toThrow(/Failed to load audio metadata/)
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:fake')
+    expect(el.removeAttribute).toHaveBeenCalledWith('src')
+    expect(el.load).toHaveBeenCalled()
+  })
+})
+
+function wavHeader(byteRate: number, dataSize: number): ArrayBuffer {
+  const buf = new ArrayBuffer(44)
+  const view = new DataView(buf)
+  const ascii = (s: string, offset: number) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i))
+  }
+  ascii('RIFF', 0)
+  view.setUint32(4, 36 + dataSize, true)
+  ascii('WAVE', 8)
+  ascii('fmt ', 12)
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true) // PCM
+  view.setUint16(22, 1, true) // mono
+  view.setUint32(24, 16000, true)
+  view.setUint32(28, byteRate, true)
+  view.setUint16(32, 2, true)
+  view.setUint16(34, 16, true)
+  ascii('data', 36)
+  view.setUint32(40, dataSize, true)
+  return buf
+}
+
+describe('wavDurationFromHeader', () => {
+  it('computes duration from the header', () => {
+    expect(wavDurationFromHeader(new DataView(wavHeader(32000, 320000)))).toBe(10)
+  })
+
+  it('returns 0 for an empty data chunk', () => {
+    expect(wavDurationFromHeader(new DataView(wavHeader(32000, 0)))).toBe(0)
+  })
+
+  it('returns null for non-RIFF bytes', () => {
+    expect(wavDurationFromHeader(new DataView(new ArrayBuffer(12)))).toBeNull()
+  })
+
+  it('returns null when the data chunk lies beyond the slice', () => {
+    const full = wavHeader(32000, 320000)
+    const cut = new ArrayBuffer(36) // only the fmt chunk fits
+    new Uint8Array(cut).set(new Uint8Array(full, 0, 36))
+    expect(wavDurationFromHeader(new DataView(cut))).toBeNull()
+  })
+
+  it('returns null when the byteRate is zero', () => {
+    expect(wavDurationFromHeader(new DataView(wavHeader(0, 320000)))).toBeNull()
+  })
+})
+
+describe('probeWavDuration', () => {
+  it('reads only a header slice to compute duration', async () => {
+    await expect(probeWavDuration(new Blob([wavHeader(32000, 320000)]))).resolves.toBe(10)
+  })
+
+  it('returns null for an unresolvable header', async () => {
+    await expect(probeWavDuration(new Blob([new Uint8Array([1, 2, 3])]))).resolves.toBeNull()
   })
 })
 

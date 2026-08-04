@@ -27,10 +27,22 @@ export class AudioTooLongError extends Error {}
 
 // 元数据预检:仅加载 container 头部,不完整解码,不占主线程
 // file: 原始 File/Blob;el 可注入便于测试,默认 new Audio()
+// timeoutMs: 超时兜底,防止元数据加载永不触发事件导致导入流程卡死
 export function probeAudioDuration(
   file: Blob,
   el: HTMLAudioElement = new Audio(),
+  timeoutMs = 15000,
 ): Promise<number>
+
+// WAV 头探针:仅读前 maxBytes 字节计算时长,>10s 在全量读入前中断
+// 头部不可解析时返回 null,调用方回退到全量解析(由 commitImport 兜底)
+export async function probeWavDuration(
+  file: Blob,
+  maxBytes = 256,
+): Promise<number | null>
+
+// 纯函数:从 WAV 头 DataView 计算时长(data chunk size / byteRate),不可解析返回 null
+export function wavDurationFromHeader(view: DataView): number | null
 
 // 完整解码:decodeAudioData → getChannelData(0)
 // context 可注入便于测试,默认 getAudioEngine().audioContext
@@ -52,6 +64,7 @@ URL.revokeObjectURL(url)
 ```
 
 - 只触发浏览器解析容器元数据,不触发完整解码 → **大文件在此中断,不浪费内存、不占线程**
+- 超时兜底:`timeoutMs` 内未触发 `loadedmetadata`/`onerror` 则 revoke URL、中止元素加载并 reject,保证 `finally` 必然执行、`isImporting` 不会卡死
 - 依赖 `getAudioEngine()`(来自 `src/ts`)的 `audioContext` 做完整解码;该 context 已在 `AudioEngine` 中按 16000 惰性创建
 
 **`decodeAudioFile` 实现**
@@ -75,11 +88,12 @@ if (!file) return
 head = await file.slice(0, 12).arrayBuffer()
 
 if (isWavFile(head)):
+    duration = await probeWavDuration(file)                 // 只读前 256B 头,提前查时长
+    if (duration !== null && duration > 10) throw AudioTooLongError   // 大 WAV 在全量读入前中断
     buf = await file.arrayBuffer()
     stopRecording(false)
-    parsed = parseWav(buf)                                  // WAV 快速路径,不变
+    parsed = parseWav(buf)                                  // WAV 快速路径
     if (parsed.numChannels > 1) toast(info, "双声道提示")
-    if (parsed.samples.length / parsed.sampleRate > 10) throw AudioTooLongError   // 重采样前先查时长
     samples = resample if rate !== 16000
 else:
     stopRecording(false)
@@ -89,7 +103,6 @@ else:
     decoded = await decodeAudioFile(buf)
     if (decoded.numChannels > 1) toast(info, "双声道提示")
     if (decoded.sampleRate !== 16000) resample
-    if (samples.length > 160000) throw AudioTooLongError    // 安全网兜底
 
 // 以下两路径共用:
 maxSamples = 16000 * 10
@@ -125,11 +138,14 @@ frameOffsetRef.current = 0
 ### 测试
 
 - `src/__tests__/audioDecoder.test.ts`(jsdom project)
-  - `probeAudioDuration`:注入 fake `HTMLAudioElement`(手动触发 `loadedmetadata`),验证返回时长、`URL.revokeObjectURL` 调用、onerror 分支
+  - `probeAudioDuration`:注入 fake `HTMLAudioElement`(手动触发 `loadedmetadata`),验证返回时长、`URL.revokeObjectURL` 调用、onerror 分支、超时兜底(超时 reject 并 revoke / 中止加载)
+  - `wavDurationFromHeader` / `probeWavDuration`:合成 WAV 头,验证时长计算、空 data chunk、data 超出切片返回 null、非 RIFF / 零 byteRate 返回 null
   - `decodeAudioFile`:注入 fake `AudioContext`(`decodeAudioData: vi.fn()`),验证样本/采样率/声道数提取、解码失败分支
 - `src/__tests__/useAnalysis.test.ts`(jsdom project)
   - mock `audioDecoder` 与 `parseWav`,验证:
-    - WAV 走 `parseWav` 路径
+    - WAV 走 `probeWavDuration` → `parseWav` 路径
+    - WAV `probeWavDuration` 返回 > 10s → 提前抛 `AudioTooLongError`,不读全量、不 parse、不解码
+    - WAV 头不可解析(`null`)→ 回退全量解析
     - 非 WAV 走 `probeAudioDuration` → `decodeAudioFile` 路径
     - `probeAudioDuration` 返回 > 10s → 抛 `AudioTooLongError` 且不调用 decode
     - `numChannels > 1` → toast store 出现双声道 info 条目

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useAnalysis } from '../hooks/useAnalysis'
@@ -31,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   parseWav: vi.fn(),
   analyze: vi.fn(),
   probeAudioDuration: vi.fn(),
+  probeWavDuration: vi.fn(),
   decodeAudioFile: vi.fn(),
 }))
 
@@ -44,6 +46,7 @@ vi.mock('../dsp', () => ({
 vi.mock('../audio/audioDecoder', () => ({
   AudioTooLongError: class AudioTooLongError extends Error {},
   probeAudioDuration: mocks.probeAudioDuration,
+  probeWavDuration: mocks.probeWavDuration,
   decodeAudioFile: mocks.decodeAudioFile,
 }))
 
@@ -75,6 +78,7 @@ beforeEach(() => {
 describe('handleFileChange', () => {
   it('routes WAV files through parseWav', async () => {
     mocks.isWavFile.mockReturnValue(true)
+    mocks.probeWavDuration.mockResolvedValue(3)
     mocks.parseWav.mockReturnValue({ samples: new Float32Array([0.1, 0.2]), sampleRate: 16000, numChannels: 1 })
     mocks.analyze.mockReturnValue([{ time: 0, f0: 220 }])
 
@@ -83,6 +87,7 @@ describe('handleFileChange', () => {
       await result.current.handleFileChange({ target: { files: [wavFile()] } } as never)
     })
 
+    expect(mocks.probeWavDuration).toHaveBeenCalled()
     expect(mocks.parseWav).toHaveBeenCalled()
     expect(mocks.probeAudioDuration).not.toHaveBeenCalled()
     expect(mocks.analyze).toHaveBeenCalled()
@@ -92,6 +97,7 @@ describe('handleFileChange', () => {
 
   it('shows a stereo notice when numChannels > 1', async () => {
     mocks.isWavFile.mockReturnValue(true)
+    mocks.probeWavDuration.mockResolvedValue(3)
     mocks.parseWav.mockReturnValue({ samples: new Float32Array([0.1]), sampleRate: 16000, numChannels: 2 })
     mocks.analyze.mockReturnValue([])
 
@@ -101,6 +107,38 @@ describe('handleFileChange', () => {
     })
 
     expect(toastMessages()).toContain('该音频为双声道，仅使用第 0 声道进行分析')
+  })
+
+  it('rejects >10s WAV before reading the full file or parsing', async () => {
+    mocks.isWavFile.mockReturnValue(true)
+    mocks.probeWavDuration.mockResolvedValue(15)
+
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => {
+      await result.current.handleFileChange({ target: { files: [wavFile()] } } as never)
+    })
+
+    expect(mocks.probeWavDuration).toHaveBeenCalled()
+    expect(mocks.parseWav).not.toHaveBeenCalled()
+    expect(mocks.decodeAudioFile).not.toHaveBeenCalled()
+    expect(useAppStore.getState().frames).toHaveLength(0)
+    expect(toastMessages()).toContain('音频不能超过 10 秒，请裁剪后重试。')
+  })
+
+  it('falls back to full parse when the WAV header probe is unresolvable', async () => {
+    mocks.isWavFile.mockReturnValue(true)
+    mocks.probeWavDuration.mockResolvedValue(null)
+    mocks.parseWav.mockReturnValue({ samples: new Float32Array([0.1, 0.2]), sampleRate: 16000, numChannels: 1 })
+    mocks.analyze.mockReturnValue([{ time: 0, f0: 220 }])
+
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => {
+      await result.current.handleFileChange({ target: { files: [wavFile()] } } as never)
+    })
+
+    expect(mocks.parseWav).toHaveBeenCalled()
+    expect(useAppStore.getState().frames).toHaveLength(1)
+    expect(useToastStore.getState().toasts).toHaveLength(0)
   })
 
   it('routes non-WAV files through probeAudioDuration then decodeAudioFile', async () => {

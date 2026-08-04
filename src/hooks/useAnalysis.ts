@@ -4,7 +4,7 @@ import { useToastStore } from '../store/toastStore'
 import { getAudioEngine } from '../ts'
 import { recordingBuffer } from '../audio/recordingBuffer'
 import { AnalysisPipeline, parseWav, isWavFile, Resampler } from '../dsp'
-import { AudioTooLongError, decodeAudioFile, probeAudioDuration } from '../audio/audioDecoder'
+import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuration } from '../audio/audioDecoder'
 import type { AnalysisFrame } from '../types'
 
 const STEREO_NOTICE = '该音频为双声道，仅使用第 0 声道进行分析'
@@ -170,14 +170,17 @@ export function useAnalysis() {
       const head = await file.slice(0, 12).arrayBuffer()
 
       if (isWavFile(head)) {
-        // WAV fast path: unchanged behavior
+        // WAV fast path: abort >10s early via a header-only probe, BEFORE the
+        // full file is read into memory. `null` (header unresolvable) falls
+        // through to the full parse, where commitImport backstops the limit.
+        const duration = await probeWavDuration(file)
+        if (duration !== null && duration > 10) {
+          throw new AudioTooLongError()
+        }
         const buf = await file.arrayBuffer()
         const parsed = parseWav(buf)
         if (parsed.numChannels > 1) {
           useToastStore.getState().showToast('info', STEREO_NOTICE)
-        }
-        if (parsed.samples.length / parsed.sampleRate > 10) {
-          throw new AudioTooLongError()
         }
         let samples = parsed.samples
         if (parsed.sampleRate !== 16000) {

@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import styles from './Drawer.module.css'
 
 interface DrawerProps {
   open: boolean
   title: string
   onClose: () => void
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function Drawer({ open, title, onClose, children }: DrawerProps) {

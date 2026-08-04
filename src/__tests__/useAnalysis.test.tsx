@@ -1,9 +1,21 @@
+import type { ChangeEvent } from 'react'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useAnalysis } from '../hooks/useAnalysis'
 import { useToastStore } from '../store/toastStore'
 import { useAppStore } from '../store/appStore'
 import { recordingBuffer } from '../audio/recordingBuffer'
+
+if (typeof Blob.prototype.arrayBuffer !== 'function') {
+  Blob.prototype.arrayBuffer = function () {
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as ArrayBuffer)
+      reader.onerror = () => reject(reader.error)
+      reader.readAsArrayBuffer(this)
+    })
+  }
+}
 
 if (typeof File.prototype.arrayBuffer !== 'function') {
   File.prototype.arrayBuffer = function () {
@@ -35,7 +47,7 @@ describe('useAnalysis import error feedback', () => {
     await act(async () => {
       await result.current.handleFileChange({
         target: { files: [new File([nonWav], 'test.zip')] },
-      } as unknown as React.ChangeEvent<HTMLInputElement>)
+      } as unknown as ChangeEvent<HTMLInputElement>)
     })
 
     const toasts = useToastStore.getState().toasts
@@ -53,7 +65,7 @@ describe('useAnalysis import error feedback', () => {
     await act(async () => {
       await result.current.handleFileChange({
         target: { files: [new File([corrupt], 'bad.wav')] },
-      } as unknown as React.ChangeEvent<HTMLInputElement>)
+      } as unknown as ChangeEvent<HTMLInputElement>)
     })
 
     const toasts = useToastStore.getState().toasts
@@ -68,7 +80,7 @@ describe('useAnalysis import error feedback', () => {
     await act(async () => {
       await result.current.handleFileChange({
         target: { files: [new File([nonWav], 'test.txt')] },
-      } as unknown as React.ChangeEvent<HTMLInputElement>)
+      } as unknown as ChangeEvent<HTMLInputElement>)
     })
 
     expect(useAppStore.getState().frames).toEqual([])
