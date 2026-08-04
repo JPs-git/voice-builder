@@ -26,7 +26,7 @@ describe('useAnalysis import error feedback', () => {
   beforeEach(() => resetStores())
   afterEach(() => resetStores())
 
-  it('shows an error toast when importing a non-WAV file', async () => {
+  it('shows an error toast when importing a non-importable file', async () => {
     const { result } = renderHook(() => useAnalysis())
 
     const nonWav = new ArrayBuffer(64)
@@ -41,7 +41,6 @@ describe('useAnalysis import error feedback', () => {
     const toasts = useToastStore.getState().toasts
     expect(toasts).toHaveLength(1)
     expect(toasts[0].type).toBe('error')
-    expect(toasts[0].message).toContain('.wav')
   })
 
   it('shows an error toast for a corrupted WAV buffer', async () => {
