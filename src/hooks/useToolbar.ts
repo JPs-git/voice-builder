@@ -101,7 +101,7 @@ export function useToolbar(
       id: 'import',
       variant: 'ghost',
       icon: '📁',
-      label: '导入 WAV',
+      label: '导入音频',
     },
     {
       id: 'playback',

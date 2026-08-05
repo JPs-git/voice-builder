@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import styles from './Modal.module.css'
 
 interface ModalProps {
   open: boolean
   title: string
   onClose: () => void
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function Modal({ open, title, onClose, children }: ModalProps) {
