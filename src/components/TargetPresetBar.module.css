@@ -12,9 +12,9 @@
 }
 .row {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 }
 .label {
   font-size: 12px;
@@ -54,6 +54,20 @@
 .vowelBtn:focus-visible {
   outline: 2px solid var(--info);
   outline-offset: 1px;
+}
+.resetIcon {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--text-soft);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: color .15s ease;
+  line-height: 1;
+}
+.resetIcon:hover {
+  color: #EF4444;
 }
 .inputs {
   display: flex;
