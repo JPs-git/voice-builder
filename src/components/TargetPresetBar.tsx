@@ -22,7 +22,10 @@ function makeLocalValues(bands: TargetBands) {
 export function TargetPresetBar() {
   const bands = useAppStore(s => s.bands)
   const setBands = useAppStore(s => s.setBands)
-  const [activePreset, setActivePreset] = useState<string | null>('vowel-a')
+  const activePreset = useAppStore(s => s.activePreset)
+  const switchPreset = useAppStore(s => s.switchPreset)
+  const savePresetOverride = useAppStore(s => s.savePresetOverride)
+  const resetPresets = useAppStore(s => s.resetPresets)
 
   const [localValues, setLocalValues] = useState<Record<string, string>>(() =>
     makeLocalValues(bands),
@@ -34,9 +37,25 @@ export function TargetPresetBar() {
 
   const handleInputChange = useCallback(
     (key: 'f0' | 'f1' | 'f2', index: 0 | 1, value: string) => {
-      setLocalValues(prev => ({ ...prev, [bandKeyToId(key, index)]: value }))
+      const id = bandKeyToId(key, index)
+      setLocalValues(prev => ({ ...prev, [id]: value }))
+      const num = parseFloat(value)
+      if (!Number.isFinite(num)) return
+      const current = bands[key].range
+      const next: [number, number] =
+        index === 0 ? [num, current[1]] : [current[0], num]
+      if (next[0] < next[1]) {
+        const updatedBands = { ...bands, [key]: { ...bands[key], range: next } }
+        setBands({ [key]: next })
+        savePresetOverride(
+          activePreset,
+          updatedBands.f0.range,
+          updatedBands.f1.range,
+          updatedBands.f2.range,
+        )
+      }
     },
-    [],
+    [bands, setBands, activePreset, savePresetOverride],
   )
 
   const commitValue = useCallback(
@@ -51,12 +70,19 @@ export function TargetPresetBar() {
       const next: [number, number] =
         index === 0 ? [num, current[1]] : [current[0], num]
       if (next[0] < next[1]) {
+        const updatedBands = { ...bands, [key]: { ...bands[key], range: next } }
         setBands({ [key]: next })
+        savePresetOverride(
+          activePreset,
+          updatedBands.f0.range,
+          updatedBands.f1.range,
+          updatedBands.f2.range,
+        )
       } else {
         setLocalValues(prev => ({ ...prev, [id]: String(bands[key].range[index]) }))
       }
     },
-    [localValues, bands, setBands],
+    [localValues, bands, setBands, activePreset, savePresetOverride],
   )
 
   const handleInputBlur = useCallback(
@@ -77,11 +103,15 @@ export function TargetPresetBar() {
   )
 
   const handlePresetClick = useCallback((name: string) => {
-    const preset = VOWEL_PRESETS[name]
-    if (!preset) return
-    setActivePreset(name)
-    setBands({ f0: preset.f0, f1: preset.f1, f2: preset.f2 })
-  }, [setBands])
+    if (!VOWEL_PRESETS[name]) return
+    switchPreset(name)
+  }, [switchPreset])
+
+  const handleReset = useCallback(() => {
+    if (window.confirm('确定要重置所有预设到初始值吗？')) {
+      resetPresets()
+    }
+  }, [resetPresets])
 
   const vowelKeys = Object.keys(VOWEL_PRESETS) as (keyof typeof VOWEL_PRESETS)[]
 
@@ -89,6 +119,14 @@ export function TargetPresetBar() {
     <section className={styles.bar} aria-label="共振峰目标区间">
       <div className={styles.row}>
         <label className={styles.label}>目标区间</label>
+        <button
+          type="button"
+          className={styles.resetIcon}
+          onClick={handleReset}
+          aria-label="重置所有预设"
+        >
+          ⟲
+        </button>
       </div>
       <div className={styles.vowels} role="group" aria-label="元音预设">
         {vowelKeys.map(name => (

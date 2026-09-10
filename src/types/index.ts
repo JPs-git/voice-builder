@@ -45,6 +45,13 @@ export interface VowelPreset {
   f2: [number, number]
 }
 
+export interface PresetOverride {
+  key: string
+  f0: [number, number]
+  f1: [number, number]
+  f2: [number, number]
+}
+
 export const VOWEL_PRESETS: Record<string, VowelPreset> = {
   'vowel-a': { label: '元音 a', f0: [200, 280], f1: [800, 1000], f2: [1100, 1400] },
   'vowel-o': { label: '元音 o', f0: [200, 280], f1: [480, 620], f2: [700, 1000] },
