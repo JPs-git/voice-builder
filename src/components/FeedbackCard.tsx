@@ -3,9 +3,13 @@ import { useFeedback } from '../feedback'
 import { getFormantStatus } from '../feedback/status'
 import type { FormantStatus } from '../feedback/status'
 import type { VoiceRegister } from '../types'
+import { Tip } from './Tip'
 import styles from './FeedbackCard.module.css'
 
 const KEYS = ['f0', 'f1', 'f2'] as const
+
+const REGISTER_TIP =
+  '声区基于泛音丰富度判断，而非音高：统计基频第 2–10 个泛音中落在基频 20dB 内的数量，经 5 帧中值平滑后，≥5 判为真声，≤2 判为假声，中间为混声。阈值按 /a/ 元音标定，跨元音可能偏差，混声边缘的瞬时变薄可能短暂误判为假声。'
 
 const REGISTER_LABEL: Record<VoiceRegister, string> = {
   chest: '真声',
@@ -50,7 +54,10 @@ export function FeedbackCard() {
       <div className={styles.header}>实时反馈</div>
       <div className={styles.values}>
         <div className={styles.valueRow}>
-          <span className={styles.valueLabel}>声区</span>
+          <span className={styles.registerLabel}>
+            <span className={styles.valueLabel}>声区</span>
+            <Tip content={REGISTER_TIP} ariaLabel="声区说明" />
+          </span>
           <span className={`${styles.valueNum} ${REGISTER_CLASS[register]}`}>
             {REGISTER_LABEL[register]}
           </span>
