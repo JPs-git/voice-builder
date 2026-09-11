@@ -30,6 +30,11 @@
   color: var(--text-soft);
   min-width: 20px;
 }
+.registerLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
 .valueNum {
   font-size: 15px;
   font-weight: 700;
