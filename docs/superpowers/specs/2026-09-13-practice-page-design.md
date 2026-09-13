@@ -40,7 +40,7 @@
 
 ### `src/routes/AnalysisPage.tsx`（瘦身）
 
-删除 Toolbar、三个抽屉、`<Toast />`、隐藏 file input（全部上提至 AppShell）。保留 `TargetPresetBar / FeedbackCard / F0Chart / FormantChart / TipWidget`。不使用任何 router hook，现有测试裸渲染不变。
+删除 Toolbar、三个抽屉、`<Toast />`、隐藏 file input（全部上提至 AppShell）。保留 `TargetPresetBar / FeedbackCard / F0Chart / FormantChart / TipWidget`。通过 `useOutletContext` 接收 `cursorTime` / `hasData`；测试改为在 MemoryRouter + 布局 Route 中渲染。
 
 ## 2. 工具栏居中切换按钮
 
