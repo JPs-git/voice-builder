@@ -28,6 +28,11 @@ export function midiToName(midi: number): string {
   return `${name}${octave}`
 }
 
+export function isNaturalMidi(midi: number): boolean {
+  const residue = ((Math.round(midi) % 12) + 12) % 12
+  return residue === 0 || residue === 2 || residue === 4 || residue === 5 || residue === 7 || residue === 9 || residue === 11
+}
+
 export function centsOffset(freq: number, refMidi: number): number {
   return 1200 * Math.log2(freq / midiToFreq(refMidi))
 }

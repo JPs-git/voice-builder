@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { Piano } from '../components/Piano'
+import { midiToName } from '../utils/pitch'
 
 describe('Piano', () => {
   it('renders 25 keys (C3-C5 inclusive)', () => {
@@ -30,10 +31,21 @@ describe('Piano', () => {
     }
   })
 
-  it('labels the C octave keys C3/C4/C5', () => {
+  it('labels every white key with its note name', () => {
     render(<Piano onKeyPress={() => {}} />)
-    expect(screen.getByRole('button', { name: 'C3' })).toBeDefined()
-    expect(screen.getByRole('button', { name: 'C4' })).toBeDefined()
-    expect(screen.getByRole('button', { name: 'C5' })).toBeDefined()
+    const naturalMidi = [48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72]
+    for (const midi of naturalMidi) {
+      const btn = screen.getByRole('button', { name: midiToName(midi) })
+      expect(btn.textContent).toContain(midiToName(midi))
+    }
+  })
+
+  it('shows no visible label on black keys', () => {
+    render(<Piano onKeyPress={() => {}} />)
+    const blackMidi = [49, 51, 54, 56, 58, 61, 63, 66, 68, 70]
+    for (const midi of blackMidi) {
+      const btn = screen.getByRole('button', { name: midiToName(midi) })
+      expect(btn.textContent).toBe('')
+    }
   })
 })

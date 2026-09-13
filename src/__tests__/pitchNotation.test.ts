@@ -6,6 +6,7 @@ import {
   nearestMidi,
   midiToName,
   centsOffset,
+  isNaturalMidi,
   MIDI_C2,
   MIDI_C3,
   MIDI_C5,
@@ -48,6 +49,16 @@ describe('pitch notation utils', () => {
     expect(centsOffset(261.63, 60)).toBeCloseTo(0, 1)
     expect(centsOffset(264, 60)).toBeGreaterThan(0)
     expect(centsOffset(261.63, 69)).toBeLessThan(0)
+  })
+
+  it('identifies natural (non-accidental) midi notes', () => {
+    expect(isNaturalMidi(36)).toBe(true)  // C2
+    expect(isNaturalMidi(37)).toBe(false) // C#2
+    expect(isNaturalMidi(48)).toBe(true)  // C3
+    expect(isNaturalMidi(60)).toBe(true)  // C4
+    expect(isNaturalMidi(61)).toBe(false) // C#4
+    expect(isNaturalMidi(69)).toBe(true)  // A4
+    expect(isNaturalMidi(84)).toBe(true)  // C6
   })
 
   it('provides chart boundary constants', () => {

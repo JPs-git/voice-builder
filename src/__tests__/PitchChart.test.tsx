@@ -43,7 +43,8 @@ describe('PitchChart', () => {
     useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
     render(<PitchChart />)
     expect(lastOption().yAxis.axisLabel.formatter(60)).toBe('C4')
-    expect(lastOption().yAxis.axisLabel.formatter(61)).toBe('C#4')
+    expect(lastOption().yAxis.axisLabel.formatter(61)).toBe('')
+    expect(lastOption().yAxis.axisLabel.formatter(48)).toBe('C3')
   })
 
   it('renders f0 as continuous midi values', () => {

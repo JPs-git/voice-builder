@@ -37,7 +37,7 @@ export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
             aria-pressed={currentMidi === white}
             onClick={() => onKeyPress(white)}
           >
-            {white % 12 === 0 && <span className={styles.noteLabel}>{midiToName(white)}</span>}
+            <span className={styles.noteLabel}>{midiToName(white)}</span>
           </button>
           {hasBlackAfter(white) && (
             <button
