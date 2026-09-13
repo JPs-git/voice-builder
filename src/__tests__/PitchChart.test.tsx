@@ -39,21 +39,33 @@ describe('PitchChart', () => {
     expect(lastOption().yAxis.max).toBe(76)
   })
 
-  it('labels naturals and draws gridlines only at natural notes', () => {
+  it('labels only natural notes (no sharps)', () => {
     useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
     render(<PitchChart />)
     const yAxis = lastOption().yAxis
     expect(yAxis.axisLabel.formatter(60)).toBe('C4')
-    expect(yAxis.axisLabel.formatter(61)).toBe('C#4')
-    const naturals = [43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65,
-      67, 69, 71, 72, 74, 76]
-    for (let midi = 43; midi <= 76; midi++) {
-      const nat = naturals.includes(midi)
-      expect(yAxis.axisLabel.interval(0, String(midi))).toBe(nat)
-      expect(yAxis.splitLine.interval(0, String(midi))).toBe(nat)
-    }
+    expect(yAxis.axisLabel.formatter(61)).toBe('')
+    expect(yAxis.axisLabel.formatter(43)).toBe('G2')
+    expect(yAxis.axisLabel.formatter(44)).toBe('')
+    expect(yAxis.axisLabel.formatter(48)).toBe('C3')
+    expect(yAxis.axisLabel.formatter(76)).toBe('E5')
     expect(yAxis.minInterval).toBe(1)
     expect(yAxis.maxInterval).toBe(1)
+    expect(yAxis.splitLine.show).toBe(false)
+  })
+
+  it('draws a gridline at every natural note in G2-E5', () => {
+    useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
+    render(<PitchChart />)
+    const lines = pitchSeries().markLine.data
+    const naturals = [43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65,
+      67, 69, 71, 72, 74, 76]
+    expect(lines).toHaveLength(20)
+    const refs = lines
+      .filter((l: { yAxis: number }) => l.yAxis !== 60)
+      .map((l: { yAxis: number }) => l.yAxis)
+      .sort((a: number, b: number) => a - b)
+    expect(refs).toEqual(naturals.filter(n => n !== 60))
   })
 
   it('renders f0 as continuous midi values', () => {
@@ -75,7 +87,7 @@ describe('PitchChart', () => {
     const markArea = pitchSeries().markArea.data[0]
     expect(markArea[0].yAxis).toBe(36)
     expect(markArea[1].yAxis).toBe(83)
-    const markLine = pitchSeries().markLine.data[0]
+    const markLine = pitchSeries().markLine.data.find((d: { yAxis: number }) => d.yAxis === 60)
     expect(markLine.yAxis).toBe(60)
   })
 

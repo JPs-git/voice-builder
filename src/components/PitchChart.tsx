@@ -17,6 +17,14 @@ import {
 
 const WINDOW = 10
 
+const GRID_MIDI: number[] = (() => {
+  const out: number[] = []
+  for (let m = MIDI_G2; m <= MIDI_E5; m++) {
+    if (m !== MIDI_C4 && isNaturalMidi(m)) out.push(m)
+  }
+  return out
+})()
+
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '')
   const r = parseInt(h.substring(0, 2), 16)
@@ -117,13 +125,9 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
         axisLabel: {
           color: '#667085',
           fontSize: 11,
-          interval: (_index: number, value: string) => isNaturalMidi(Number(value)),
-          formatter: (v: number) => midiToName(v),
+          formatter: (v: number) => (isNaturalMidi(v) ? midiToName(v) : ''),
         },
-        splitLine: {
-          interval: (_index: number, value: string) => isNaturalMidi(Number(value)),
-          lineStyle: { color: '#F2F4F7' },
-        },
+        splitLine: { show: false },
       },
       color: ['#E23E57'],
       series: [
@@ -144,9 +148,18 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
           markLine: {
             silent: true,
             symbol: 'none',
-            lineStyle: { color: hexToRgba('#3B82F6', 0.45), type: 'dashed' as const, width: 1 },
-            label: { formatter: 'C4', color: '#667085', fontSize: 11, position: 'insideEndTop' },
-            data: [{ yAxis: MIDI_C4 }],
+            data: [
+              ...GRID_MIDI.map(m => ({
+                yAxis: m,
+                lineStyle: { color: '#E4E7EC', width: 1 },
+                label: { show: false },
+              })),
+              {
+                yAxis: MIDI_C4,
+                lineStyle: { color: hexToRgba('#3B82F6', 0.45), type: 'dashed' as const, width: 1 },
+                label: { formatter: 'C4', color: '#667085', fontSize: 11, position: 'insideEndTop' },
+              },
+            ],
           },
           data: seriesData,
         },
