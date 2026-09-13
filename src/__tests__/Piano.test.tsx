@@ -4,9 +4,9 @@ import { Piano } from '../components/Piano'
 import { midiToName } from '../utils/pitch'
 
 describe('Piano', () => {
-  it('renders 25 keys (C3-C5 inclusive)', () => {
+  it('renders 48 keys (C2-B5 inclusive)', () => {
     render(<Piano onKeyPress={() => {}} />)
-    expect(screen.getAllByRole('button')).toHaveLength(25)
+    expect(screen.getAllByRole('button')).toHaveLength(48)
   })
 
   it('fires onKeyPress with the midi note on click', () => {
@@ -33,7 +33,8 @@ describe('Piano', () => {
 
   it('labels every white key with its note name', () => {
     render(<Piano onKeyPress={() => {}} />)
-    const naturalMidi = [48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72]
+    const naturalMidi = [36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59,
+      60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83]
     for (const midi of naturalMidi) {
       const btn = screen.getByRole('button', { name: midiToName(midi) })
       expect(btn.textContent).toContain(midiToName(midi))
@@ -42,7 +43,7 @@ describe('Piano', () => {
 
   it('shows no visible label on black keys', () => {
     render(<Piano onKeyPress={() => {}} />)
-    const blackMidi = [49, 51, 54, 56, 58, 61, 63, 66, 68, 70]
+    const blackMidi = [37, 39, 42, 44, 46, 49, 51, 54, 56, 58, 61, 63, 66, 68, 70, 73, 75, 78, 80, 82]
     for (const midi of blackMidi) {
       const btn = screen.getByRole('button', { name: midiToName(midi) })
       expect(btn.textContent).toBe('')

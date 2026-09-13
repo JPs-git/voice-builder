@@ -6,7 +6,7 @@ import { Piano } from '../components/Piano'
 import { PitchChart } from '../components/PitchChart'
 import { EmptyState } from '../components/EmptyState'
 import { getPianoSynth } from '../audio/PianoSynth'
-import { nearestMidi, MIDI_C3, MIDI_C5 } from '../utils/pitch'
+import { nearestMidi, MIDI_C2, MIDI_B5 } from '../utils/pitch'
 import styles from './PracticePage.module.css'
 
 export function PracticePage() {
@@ -19,7 +19,7 @@ export function PracticePage() {
   let currentMidi: number | null = null
   if (f0 && f0 > 0) {
     const m = nearestMidi(f0)
-    if (m >= MIDI_C3 && m <= MIDI_C5) currentMidi = m
+    if (m >= MIDI_C2 && m <= MIDI_B5) currentMidi = m
   }
 
   const playNote = (midi: number) => getPianoSynth().play(midi)
@@ -29,7 +29,7 @@ export function PracticePage() {
       <main className={styles.content}>
         <section className={styles.card}>
           <div className={styles.chartHeader}>
-            <h2 className={styles.cardTitle}>钢琴 C3–C5 · 点击听参考音</h2>
+            <h2 className={styles.cardTitle}>钢琴 C2–B5 · 点击听参考音</h2>
           </div>
           <div className={styles.pianoArea}>
             <Piano currentMidi={currentMidi} onKeyPress={playNote} />

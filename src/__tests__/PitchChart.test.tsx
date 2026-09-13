@@ -60,12 +60,12 @@ describe('PitchChart', () => {
     expect(data[1][1]).toBeCloseTo(freqToMidi(225), 4)
   })
 
-  it('shades the C3-C5 piano zone and marks C4', () => {
+  it('shades the C2-B5 piano zone and marks C4', () => {
     useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
     render(<PitchChart />)
     const markArea = pitchSeries().markArea.data[0]
-    expect(markArea[0].yAxis).toBe(48)
-    expect(markArea[1].yAxis).toBe(72)
+    expect(markArea[0].yAxis).toBe(36)
+    expect(markArea[1].yAxis).toBe(83)
     const markLine = pitchSeries().markLine.data[0]
     expect(markLine.yAxis).toBe(60)
   })

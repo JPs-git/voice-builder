@@ -1,5 +1,5 @@
 import styles from './Piano.module.css'
-import { MIDI_C3, MIDI_C5, midiToName } from '../utils/pitch'
+import { MIDI_C2, MIDI_B5, midiToName } from '../utils/pitch'
 
 const BLACK_MIDI_RESIDUES = new Set([1, 3, 6, 8, 10])
 
@@ -9,14 +9,14 @@ function isWhite(midi: number): boolean {
 
 const WHITE_NOTES: number[] = (() => {
   const out: number[] = []
-  for (let m = MIDI_C3; m <= MIDI_C5; m++) {
+  for (let m = MIDI_C2; m <= MIDI_B5; m++) {
     if (isWhite(m)) out.push(m)
   }
   return out
 })()
 
 function hasBlackAfter(white: number): boolean {
-  return white + 1 <= MIDI_C5 && BLACK_MIDI_RESIDUES.has((white + 1) % 12)
+  return white + 1 <= MIDI_B5 && BLACK_MIDI_RESIDUES.has((white + 1) % 12)
 }
 
 interface PianoProps {
@@ -26,7 +26,7 @@ interface PianoProps {
 
 export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
   return (
-    <div className={styles.piano} role="group" aria-label="钢琴 C3-C5">
+    <div className={styles.piano} role="group" aria-label="钢琴 C2-B5">
       {WHITE_NOTES.map(white => (
         <div key={white} className={styles.whiteWrap}>
           <button

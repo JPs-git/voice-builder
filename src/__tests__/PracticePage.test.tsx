@@ -48,15 +48,15 @@ describe('PracticePage', () => {
     expect(screen.getByText('音高谱（科学记谱法）')).toBeDefined()
   })
 
-  it('highlights the detected note when within C3-C5', () => {
+  it('highlights the detected note when within C2-B5', () => {
     framelessFrames(261.63) // C4
     renderPracticePage()
     const c4 = screen.getByRole('button', { name: 'C4' })
     expect(c4.getAttribute('data-active')).toBe('true')
   })
 
-  it('does not highlight when pitch is outside C3-C5', () => {
-    framelessFrames(1300) // E6 > C5
+  it('does not highlight when pitch is outside C2-B5', () => {
+    framelessFrames(1300) // E6 > B5
     renderPracticePage()
     for (const btn of screen.getAllByRole('button')) {
       expect(btn.getAttribute('data-active')).not.toBe('true')

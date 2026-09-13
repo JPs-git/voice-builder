@@ -10,9 +10,8 @@ import {
   centsOffset,
   isNaturalMidi,
   MIDI_C2,
-  MIDI_C3,
   MIDI_C4,
-  MIDI_C5,
+  MIDI_B5,
   MIDI_C6,
 } from '../utils/pitch'
 
@@ -129,9 +128,9 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
           markArea: {
             silent: true,
             data: [[{
-              yAxis: MIDI_C3,
+              yAxis: MIDI_C2,
               itemStyle: { color: hexToRgba('#3B82F6', 0.05) },
-            }, { yAxis: MIDI_C5 }]],
+            }, { yAxis: MIDI_B5 }]],
           },
           markLine: {
             silent: true,

@@ -4,7 +4,7 @@
 
 ## 目标
 
-新增第二个页面「钢琴训练页」：顶部一个模拟钢琴（C3–C5，25 键）可听参考音，下方一个音高谱，用**科学音高记法**（C4、D4）显示音高。通过顶部工具栏**一个居中的按钮**切换页面。
+新增第二个页面「钢琴训练页」：顶部一个模拟钢琴（C2–B5，48 键）可听参考音，下方一个音高谱，用**科学音高记法**（C4、D4）显示音高。通过顶部工具栏**一个居中的按钮**切换页面。
 
 ## 核心原则
 
@@ -70,7 +70,7 @@ A4=440Hz、MIDI 69 标准：
 
 ## 5. 钢琴组件 `src/components/Piano.tsx` + `Piano.module.css`
 
-- 25 键 C3–C5（MIDI 48–72），白键 flex 行 + 黑键绝对定位嵌套在所属白键左缘
+- 48 键 C2–B5（MIDI 36–83），白键 flex 行 + 黑键绝对定位嵌套在所属白键左缘
 - Props：`{ currentMidi: number | null; onKeyPress: (midi: number) => void }`
 - `currentMidi` 对应键用 `data-active` 高亮；每键 `role="button"` + `aria-label="C4"` / `aria-pressed`
 - 点击 → `onKeyPress(midi)` → `getPianoSynth().play(midi)`
@@ -81,7 +81,7 @@ A4=440Hz、MIDI 69 标准：
 
 - **Y 轴**：`type:'value'`，`min:36 (C2)` / `max:84 (C6)`，数据点为连续 MIDI 值 `[time, freqToMidi(f0)]`（`f0==null → null`）
   - `axisLabel.formatter = v ⇒ midiToName(Math.round(v))`
-- **钢琴区**：`markArea` 覆盖 C3–C5（48–72）淡色底；`markLine` 虚线标 C4
+- **钢琴区**：`markArea` 覆盖 C2–B5（36–83）淡色底；`markLine` 虚线标 C4
 - **tooltip**（用户选定"仅曲线+tooltip"形态）：显示 时间 / ♬ 记谱法 ± 音分，如 `C4 +23音分`
 - 超界：f0 低于 65.4Hz 或高于 1046Hz 时曲线在 36/84 处裁剪，tooltip 仍显示真实记谱法
 - Props：`{ cursorTime?: number }`；空数据时配合 `<EmptyState>` 显示
@@ -90,7 +90,7 @@ A4=440Hz、MIDI 69 标准：
 
 - `useOutletContext<{ cursorTime: number }>()` 取回放游标（AppShell 单实例下发）
 - `latestFrame = useAppStore(s => s.latestFrame)`；`currentMidi = f0 ? nearestMidi(f0) : null`，仅当 48 ≤ midi ≤ 72 才高亮（超出钢琴范围不高亮）
-- 布局：上部钢琴卡片（标题「钢琴 C3–C5」+ `<Piano />`），下部音高谱卡片（`<PitchChart />`）；复用 AnalysisPage 的 card/chartWrapper 样式约定
+- 布局：上部钢琴卡片（标题「钢琴 C2–B5」+ `<Piano />`），下部音高谱卡片（`<PitchChart />`）；复用 AnalysisPage 的 card/chartWrapper 样式约定
 
 ## 8. 样式
 

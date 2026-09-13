@@ -7,6 +7,7 @@ export const MIDI_C2 = 36
 export const MIDI_C3 = 48
 export const MIDI_C4 = 60
 export const MIDI_C5 = 72
+export const MIDI_B5 = 83
 export const MIDI_C6 = 84
 
 export function midiToFreq(midi: number): number {

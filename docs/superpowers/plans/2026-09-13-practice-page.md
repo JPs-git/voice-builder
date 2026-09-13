@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a second route `/practice` — a piano (C3–C5) reference keyboard plus a pitch chart rendered in scientific pitch notation (C4, D4), switched via a centered toolbar button that does NOT interrupt recording.
+**Goal:** Add a second route `/practice` — a piano (C2–B5) reference keyboard plus a pitch chart rendered in scientific pitch notation (C4, D4), switched via a centered toolbar button that does NOT interrupt recording.
 
 **Architecture:** A shared persistent shell (`AppShell`) owns `useToolbar` (§ recording/playback lifecycle) and renders the routed page via `<Outlet context>`. New pure modules: `src/utils/pitch.ts` (note math), `src/audio/PianoSynth.ts` (Web Audio tone synth), `src/components/Piano.tsx`, `src/components/PitchChart.tsx`, `src/routes/PracticePage.tsx`. `AnalysisPage` slims to content only; `App.tsx` gains an index + `/practice` layout route.
 
@@ -370,7 +370,7 @@ git commit -m "feat: PianoSynth Web Audio tone generator (3 harmonics + decay)"
 
 ### Task 3: Piano keyboard component (`src/components/Piano.tsx`)
 
-25 keys C3–C5 (MIDI 48–72). White keys in a flex row; black keys absolutely positioned inside the preceding white key's wrap. Highlights the live detected note via `currentMidi`.
+48 keys C2–B5 (MIDI 36–83). White keys in a flex row; black keys absolutely positioned inside the preceding white key's wrap. Highlights the live detected note via `currentMidi`.
 
 **Files:**
 - Create: `src/components/Piano.tsx`
@@ -564,7 +564,7 @@ git commit -m "feat: Piano keyboard component (C3-C5, live note highlight)"
 
 ### Task 4: Pitch chart in scientific notation (`src/components/PitchChart.tsx`)
 
-F0 contour whose Y axis is note-index (MIDI) over C2–C6 (36–84), piano zone C3–C5 shaded via markArea, C4 dashed markLine, tooltip shows `♬ C4 +23 音分`. Mirrors `F0Chart`'s render structure (rAF on frames, sync on cursorTime, initial sync) so tests are deterministic.
+F0 contour whose Y axis is note-index (MIDI) over C2–C6 (36–84), piano zone C2–B5 shaded via markArea, C4 dashed markLine, tooltip shows `♬ C4 +23 音分`. Mirrors `F0Chart`'s render structure (rAF on frames, sync on cursorTime, initial sync) so tests are deterministic.
 
 **Files:**
 - Create: `src/components/PitchChart.tsx`
@@ -1323,7 +1323,7 @@ git commit -m "refactor: shared AppShell shell with route layout and outlet cont
 
 ### Task 7: Practice page (`src/routes/PracticePage.tsx`) + chart sizing
 
-Wires Piano + PitchChart into a page with cards, reading `cursorTime`/`hasData` from shell context. Highlights the piano key only when the detected pitch falls inside C3–C5.
+Wires Piano + PitchChart into a page with cards, reading `cursorTime`/`hasData` from shell context. Highlights the piano key only when the detected pitch falls inside C2–B5.
 
 **Files:**
 - Create: `src/routes/PracticePage.tsx`
@@ -1598,7 +1598,7 @@ npm run dev
 - [ ] **Step 2: Verify in browser**
   1. Toolbar shows no centered button removal — brand left, centered `⇄ 钢琴训练`, actions right.
   2. Analysis page still renders charts; clicking record works.
-  3. Click `⇄ 钢琴训练` → practice page: C3–C5 piano renders, click keys → distinct pitched tones, pitch chart card visible.
+  3. Click `⇄ 钢琴训练` → practice page: C2–B5 piano renders, click keys → distinct pitched tones, pitch chart card visible.
   4. Record while on piano page → consecutive notes light up the matching piano key; tooltip over curve shows `♬ C4 +n 音分`.
   5. Click `⇄ 返回分析` while recording → recording did NOT stop, charts continue, `isCapturing` button still shows 停止录音.
   6. Import a WAV → frames populate pitch chart; playback cursor line works.
