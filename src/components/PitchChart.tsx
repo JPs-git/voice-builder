@@ -11,6 +11,8 @@ import {
   MIDI_C2,
   MIDI_C4,
   MIDI_B5,
+  MIDI_G2,
+  MIDI_E5,
 } from '../utils/pitch'
 
 const WINDOW = 10
@@ -106,8 +108,8 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
       },
       yAxis: {
         type: 'value',
-        min: MIDI_C2,
-        max: MIDI_B5,
+        min: MIDI_G2,
+        max: MIDI_E5,
         minInterval: 1,
         maxInterval: 1,
         axisLine: { lineStyle: { color: '#D0D5DD' } },

@@ -9,6 +9,8 @@ export const MIDI_C4 = 60
 export const MIDI_C5 = 72
 export const MIDI_B5 = 83
 export const MIDI_C6 = 84
+export const MIDI_G2 = 43
+export const MIDI_E5 = 76
 
 export function midiToFreq(midi: number): number {
   return A4_FREQ * 2 ** ((midi - A4_MIDI) / 12)
