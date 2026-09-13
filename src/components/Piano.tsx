@@ -35,7 +35,7 @@ export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
             data-active={currentMidi === white}
             aria-label={midiToName(white)}
             aria-pressed={currentMidi === white}
-            onClick={() => onKeyPress(white)}
+            onPointerDown={() => onKeyPress(white)}
           >
             <span className={styles.noteLabel}>{midiToName(white)}</span>
           </button>
@@ -46,7 +46,7 @@ export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
               data-active={currentMidi === white + 1}
               aria-label={midiToName(white + 1)}
               aria-pressed={currentMidi === white + 1}
-              onClick={() => onKeyPress(white + 1)}
+              onPointerDown={() => onKeyPress(white + 1)}
             />
           )}
         </div>

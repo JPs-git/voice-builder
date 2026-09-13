@@ -12,7 +12,7 @@ describe('Piano', () => {
   it('fires onKeyPress with the midi note on click', () => {
     const onKeyPress = vi.fn()
     render(<Piano onKeyPress={onKeyPress} />)
-    fireEvent.click(screen.getByRole('button', { name: 'C4' }))
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'C4' }))
     expect(onKeyPress).toHaveBeenCalledWith(60)
   })
 

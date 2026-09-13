@@ -75,7 +75,7 @@ describe('PracticePage', () => {
     const play = vi.fn()
     vi.mocked(getPianoSynth).mockReturnValue({ play, stopAll: vi.fn() } as any)
     renderPracticePage()
-    fireEvent.click(screen.getByRole('button', { name: 'C4' }))
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'C4' }))
     expect(play).toHaveBeenCalledWith(60)
   })
 
