@@ -80,17 +80,17 @@ A4=440Hz、MIDI 69 标准：
 复用 `useECharts()`，风格对齐 F0Chart（rAF 节流、`isLive` 10s 滚动窗、`__cursor` 回放线、`connectNulls:false`）：
 
 - **Y 轴**：`type:'value'`，`min:36 (C2)` / `max:84 (C6)`，数据点为连续 MIDI 值 `[time, freqToMidi(f0)]`（`f0==null → null`）
-  - `axisLabel.formatter = v ⇒ midiToName(Math.round(v))`
+  - `axisLabel.formatter = v ⇒ midiToName(Math.round(v))`，`minInterval:1`：纵轴**每个整数半音**都有坐标参考线（splitLine）与标签（含黑键音如 `C#4`）
 - **钢琴区**：`markArea` 覆盖 C2–B5（36–83）淡色底；`markLine` 虚线标 C4
-- **tooltip**（用户选定"仅曲线+tooltip"形态）：显示 时间 / ♬ 记谱法 ± 音分，如 `C4 +23音分`
+- **tooltip**（用户选定"仅曲线+tooltip"形态）：显示 时间 / ♬ 记谱法整数音符，如 `♬ C4`（去掉音分）
 - 超界：f0 低于 65.4Hz 或高于 1046Hz 时曲线在 36/84 处裁剪，tooltip 仍显示真实记谱法
 - Props：`{ cursorTime?: number }`；空数据时配合 `<EmptyState>` 显示
 
 ## 7. 页面 `src/routes/PracticePage.tsx` + module.css
 
 - `useOutletContext<{ cursorTime: number }>()` 取回放游标（AppShell 单实例下发）
-- `latestFrame = useAppStore(s => s.latestFrame)`；`currentMidi = f0 ? nearestMidi(f0) : null`，仅当 48 ≤ midi ≤ 72 才高亮（超出钢琴范围不高亮）
-- 布局：上部钢琴卡片（标题「钢琴 C2–B5」+ `<Piano />`），下部音高谱卡片（`<PitchChart />`）；复用 AnalysisPage 的 card/chartWrapper 样式约定
+- `latestFrame = useAppStore(s => s.latestFrame)`；`currentMidi = f0 ? nearestMidi(f0) : null`，仅当 36 ≤ midi ≤ 83（C2–B5）才高亮（超出钢琴范围不高亮）
+- 布局：上部钢琴卡片（无标题，直接 `<Piano />`），下部音高谱卡片（标题「音高」+ `<PitchChart />`）；复用 AnalysisPage 的 card/chartWrapper 样式约定
 
 ## 8. 样式
 

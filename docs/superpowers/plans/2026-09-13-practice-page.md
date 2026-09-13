@@ -564,7 +564,7 @@ git commit -m "feat: Piano keyboard component (C3-C5, live note highlight)"
 
 ### Task 4: Pitch chart in scientific notation (`src/components/PitchChart.tsx`)
 
-F0 contour whose Y axis is note-index (MIDI) over C2–C6 (36–84), piano zone C2–B5 shaded via markArea, C4 dashed markLine, tooltip shows `♬ C4 +23 音分`. Mirrors `F0Chart`'s render structure (rAF on frames, sync on cursorTime, initial sync) so tests are deterministic.
+F0 contour whose Y axis is note-index (MIDI) over C2–C6 (36–84), piano zone C2–B5 shaded via markArea, C4 dashed markLine, tooltip shows `♬ C4`. Mirrors `F0Chart`'s render structure (rAF on frames, sync on cursorTime, initial sync) so tests are deterministic.
 
 **Files:**
 - Create: `src/components/PitchChart.tsx`
@@ -1599,6 +1599,6 @@ npm run dev
   1. Toolbar shows no centered button removal — brand left, centered `⇄ 钢琴训练`, actions right.
   2. Analysis page still renders charts; clicking record works.
   3. Click `⇄ 钢琴训练` → practice page: C2–B5 piano renders, click keys → distinct pitched tones, pitch chart card visible.
-  4. Record while on piano page → consecutive notes light up the matching piano key; tooltip over curve shows `♬ C4 +n 音分`.
+  4. Record while on piano page → consecutive notes light up the matching piano key; tooltip over curve shows `♬ C4`.
   5. Click `⇄ 返回分析` while recording → recording did NOT stop, charts continue, `isCapturing` button still shows 停止录音.
   6. Import a WAV → frames populate pitch chart; playback cursor line works.

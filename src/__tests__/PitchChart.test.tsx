@@ -39,12 +39,16 @@ describe('PitchChart', () => {
     expect(lastOption().yAxis.max).toBe(84)
   })
 
-  it('labels Y axis with scientific pitch names', () => {
+  it('labels Y axis at every integer semitone', () => {
     useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
     render(<PitchChart />)
     expect(lastOption().yAxis.axisLabel.formatter(60)).toBe('C4')
-    expect(lastOption().yAxis.axisLabel.formatter(61)).toBe('')
+    expect(lastOption().yAxis.axisLabel.formatter(61)).toBe('C#4')
     expect(lastOption().yAxis.axisLabel.formatter(48)).toBe('C3')
+    for (let midi = 36; midi <= 84; midi++) {
+      expect(lastOption().yAxis.axisLabel.formatter(midi)).not.toBe('')
+    }
+    expect(lastOption().yAxis.axisLabel.minInterval).toBe(1)
   })
 
   it('renders f0 as continuous midi values', () => {
@@ -70,14 +74,15 @@ describe('PitchChart', () => {
     expect(markLine.yAxis).toBe(60)
   })
 
-  it('formats tooltip with note name and cents', () => {
+  it('formats tooltip with integer note only (no cents)', () => {
     useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
     render(<PitchChart />)
     const formatter = lastOption().tooltip.formatter
     const html = formatter([{ value: [0.1, freqToMidi(261.63)] }])
     expect(html).toContain('C4')
-    expect(html).toContain('+0')
-    expect(html).toContain('音分')
+    expect(html).not.toContain('音分')
+    expect(html).not.toContain('+0')
+    expect(formatter([{ value: [0.1, 61.4] }])).toContain('C#4')
   })
 
   it('formats tooltip as placeholder when pitch is null', () => {

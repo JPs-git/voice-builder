@@ -7,8 +7,6 @@ import {
   midiToName,
   midiToFreq,
   nearestMidi,
-  centsOffset,
-  isNaturalMidi,
   MIDI_C2,
   MIDI_C4,
   MIDI_B5,
@@ -88,9 +86,7 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
           let pitchText = '--'
           if (midi != null && Number.isFinite(midi)) {
             const freq = midiToFreq(midi)
-            const note = nearestMidi(freq)
-            const cents = Math.round(centsOffset(freq, note))
-            pitchText = `${midiToName(note)} ${cents >= 0 ? '+' : ''}${cents} 音分`
+            pitchText = midiToName(nearestMidi(freq))
           }
           return `<div style="font-size:11px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>
 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1F2937;line-height:1.8;">
@@ -113,7 +109,7 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
         min: MIDI_C2,
         max: MIDI_C6,
         axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { color: '#667085', fontSize: 11, formatter: (v: number) => (isNaturalMidi(v) ? midiToName(v) : '') },
+        axisLabel: { color: '#667085', fontSize: 11, minInterval: 1, formatter: (v: number) => midiToName(v) },
         splitLine: { lineStyle: { color: '#F2F4F7' } },
       },
       color: ['#E23E57'],

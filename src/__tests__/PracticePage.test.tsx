@@ -45,7 +45,7 @@ describe('PracticePage', () => {
   it('renders the piano and pitch chart cards', () => {
     renderPracticePage()
     expect(screen.getByRole('group', { name: /钢琴/ })).toBeDefined()
-    expect(screen.getByText('音高谱（科学记谱法）')).toBeDefined()
+    expect(screen.getByText('音高')).toBeDefined()
   })
 
   it('highlights the detected note when within C2-B5', () => {
