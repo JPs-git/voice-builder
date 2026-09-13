@@ -1,0 +1,51 @@
+.piano {
+  display: flex;
+  gap: 2px;
+  height: 170px;
+  padding: 10px 12px;
+  user-select: none;
+  background: #F9FAFB;
+  border-radius: var(--radius-sm);
+}
+.whiteWrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+.white {
+  flex: 1;
+  border: 1px solid var(--border-strong);
+  border-radius: 0 0 5px 5px;
+  background: linear-gradient(#fff, #F2F4F7);
+  cursor: pointer;
+  padding: 0;
+  padding-bottom: 8px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mute);
+}
+.white:hover, .black:hover { filter: brightness(0.96); }
+.white[data-active="true"] {
+  background: var(--info-soft);
+  border-color: var(--info);
+  color: var(--info);
+}
+.black {
+  position: absolute;
+  top: 0;
+  left: 58%;
+  width: 58%;
+  height: 62%;
+  border: none;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(#374151, #111827);
+  cursor: pointer;
+  z-index: 2;
+}
+.black[data-active="true"] { background: var(--info); }
+.noteLabel { pointer-events: none; }
