@@ -6,6 +6,7 @@
   user-select: none;
   background: #F9FAFB;
   border-radius: var(--radius-sm);
+  -webkit-tap-highlight-color: transparent;
 }
 .whiteWrap {
   position: relative;
@@ -29,7 +30,27 @@
   font-weight: 600;
   color: var(--text-mute);
 }
-.white:hover, .black:hover { filter: brightness(0.96); }
+@media (hover: hover) and (pointer: fine) {
+  .white:hover,
+  .black:hover {
+    filter: brightness(0.96);
+  }
+  .white:hover .noteLabel,
+  .black:hover .noteLabel {
+    opacity: 1;
+  }
+}
+
+.white:active,
+.black:active {
+  filter: brightness(0.9);
+}
+
+.white:active .noteLabel,
+.black:active .noteLabel {
+  opacity: 1;
+}
+
 .white[data-active="true"] {
   background: var(--info-soft);
   border-color: var(--info);
@@ -56,4 +77,24 @@
   outline: 2px solid var(--info);
   outline-offset: 1px;
 }
-.noteLabel { pointer-events: none; }
+.noteLabel {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.noteLabel[data-octave-marker="true"] {
+  opacity: 1;
+}
+.black .noteLabel {
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--text-mute);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1px 4px;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12);
+}

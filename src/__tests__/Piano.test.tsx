@@ -41,12 +41,27 @@ describe('Piano', () => {
     }
   })
 
-  it('shows no visible label on black keys', () => {
+  it('keeps labels visible by default only on C-octave keys', () => {
     render(<Piano onKeyPress={() => {}} />)
-    const blackMidi = [37, 39, 42, 44, 46, 49, 51, 54, 56, 58, 61, 63, 66, 68, 70, 73, 75, 78, 80, 82]
-    for (const midi of blackMidi) {
+    for (const midi of [36, 48, 60, 72]) {
       const btn = screen.getByRole('button', { name: midiToName(midi) })
-      expect(btn.textContent).toBe('')
+      const label = btn.querySelector('span')
+      expect(label?.getAttribute('data-octave-marker')).toBe('true')
+    }
+    for (const midi of [37, 38, 43, 61, 62, 76, 83]) {
+      const btn = screen.getByRole('button', { name: midiToName(midi) })
+      const label = btn.querySelector('span')
+      expect(label?.getAttribute('data-octave-marker')).toBe('false')
+    }
+  })
+
+  it('carries hover labels on black keys with their note name', () => {
+    render(<Piano onKeyPress={() => {}} />)
+    for (const midi of [37, 44, 61, 70, 82]) {
+      const btn = screen.getByRole('button', { name: midiToName(midi) })
+      const label = btn.querySelector('span')
+      expect(label?.getAttribute('data-octave-marker')).toBe('false')
+      expect(label?.textContent).toBe(midiToName(midi))
     }
   })
 })

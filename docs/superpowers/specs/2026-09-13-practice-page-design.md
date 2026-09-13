@@ -73,6 +73,8 @@ A4=440Hz、MIDI 69 标准：
 - 48 键 C2–B5（MIDI 36–83），白键 flex 行 + 黑键绝对定位嵌套在所属白键左缘
 - Props：`{ currentMidi: number | null; onKeyPress: (midi: number) => void }`
 - `currentMidi` 对应键用 `data-active` 高亮；每键 `role="button"` + `aria-label="C4"` / `aria-pressed`
+- 标签：只有 C 音（C2/C3/C4/C5，`data-octave-marker="true"`）常态显示；其余键名在**真悬停设备**（`@media (hover:hover) and (pointer:fine)`）`:hover` 时显示，黑键为悬浮小标签；`pointerdown` 按下的 `:active` 也显示（PC 与触屏一致）
+- 按压反馈 `:active`（`brightness(0.9)`）+ `-webkit-tap-highlight-color:transparent`，`:`hover 反馈限定在 hover 媒体查询内 → 移动端避免 sticky hover 造成的高亮残留
 - 点击 → `onKeyPress(midi)` → `getPianoSynth().play(midi)`
 
 ## 6. 音高谱 `src/components/PitchChart.tsx`（新增）

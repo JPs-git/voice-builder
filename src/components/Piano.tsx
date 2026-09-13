@@ -1,7 +1,9 @@
 import styles from './Piano.module.css'
-import { MIDI_C2, MIDI_B5, midiToName } from '../utils/pitch'
+import { MIDI_C2, MIDI_C3, MIDI_C4, MIDI_C5, MIDI_B5, midiToName } from '../utils/pitch'
 
 const BLACK_MIDI_RESIDUES = new Set([1, 3, 6, 8, 10])
+
+const OCTAVE_MARKERS = new Set([MIDI_C2, MIDI_C3, MIDI_C4, MIDI_C5])
 
 function isWhite(midi: number): boolean {
   return !BLACK_MIDI_RESIDUES.has(midi % 12)
@@ -37,7 +39,12 @@ export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
             aria-pressed={currentMidi === white}
             onPointerDown={() => onKeyPress(white)}
           >
-            <span className={styles.noteLabel}>{midiToName(white)}</span>
+            <span
+              className={styles.noteLabel}
+              data-octave-marker={OCTAVE_MARKERS.has(white) ? 'true' : 'false'}
+            >
+              {midiToName(white)}
+            </span>
           </button>
           {hasBlackAfter(white) && (
             <button
@@ -47,7 +54,11 @@ export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
               aria-label={midiToName(white + 1)}
               aria-pressed={currentMidi === white + 1}
               onPointerDown={() => onKeyPress(white + 1)}
-            />
+            >
+              <span className={styles.noteLabel} data-octave-marker="false">
+                {midiToName(white + 1)}
+              </span>
+            </button>
           )}
         </div>
       ))}
