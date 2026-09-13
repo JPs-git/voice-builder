@@ -564,7 +564,7 @@ git commit -m "feat: Piano keyboard component (C3-C5, live note highlight)"
 
 ### Task 4: Pitch chart in scientific notation (`src/components/PitchChart.tsx`)
 
-F0 contour whose Y axis is note-index (MIDI) over C2–C6 (36–84), piano zone C2–B5 shaded via markArea, C4 dashed markLine, tooltip shows `♬ C4`. Mirrors `F0Chart`'s render structure (rAF on frames, sync on cursorTime, initial sync) so tests are deterministic.
+F0 contour whose Y axis is note-index (MIDI) over C2–B5 (36–83), every natural note labeled with a horizontal gridline (no sharps), piano zone = full axis via markArea, C4 dashed markLine, tooltip shows `♬ C4`. Mirrors `F0Chart`'s render structure (rAF on frames, sync on cursorTime, initial sync) so tests are deterministic.
 
 **Files:**
 - Create: `src/components/PitchChart.tsx`

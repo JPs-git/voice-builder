@@ -32,23 +32,28 @@ describe('PitchChart', () => {
     setOptionMock.mockClear()
   })
 
-  it('maps Y axis to C2-C6 midi range', () => {
+  it('maps Y axis to C2-B5 midi range', () => {
     useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
     render(<PitchChart />)
     expect(lastOption().yAxis.min).toBe(36)
-    expect(lastOption().yAxis.max).toBe(84)
+    expect(lastOption().yAxis.max).toBe(83)
   })
 
-  it('labels Y axis at every integer semitone', () => {
+  it('labels naturals and draws gridlines only at natural notes', () => {
     useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
     render(<PitchChart />)
-    expect(lastOption().yAxis.axisLabel.formatter(60)).toBe('C4')
-    expect(lastOption().yAxis.axisLabel.formatter(61)).toBe('C#4')
-    expect(lastOption().yAxis.axisLabel.formatter(48)).toBe('C3')
-    for (let midi = 36; midi <= 84; midi++) {
-      expect(lastOption().yAxis.axisLabel.formatter(midi)).not.toBe('')
+    const yAxis = lastOption().yAxis
+    expect(yAxis.axisLabel.formatter(60)).toBe('C4')
+    expect(yAxis.axisLabel.formatter(61)).toBe('C#4')
+    const naturals = [36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59,
+      60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83]
+    for (let midi = 36; midi <= 83; midi++) {
+      const nat = naturals.includes(midi)
+      expect(yAxis.axisLabel.interval(0, String(midi))).toBe(nat)
+      expect(yAxis.splitLine.interval(0, String(midi))).toBe(nat)
     }
-    expect(lastOption().yAxis.axisLabel.minInterval).toBe(1)
+    expect(yAxis.minInterval).toBe(1)
+    expect(yAxis.maxInterval).toBe(1)
   })
 
   it('renders f0 as continuous midi values', () => {

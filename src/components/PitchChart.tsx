@@ -7,10 +7,10 @@ import {
   midiToName,
   midiToFreq,
   nearestMidi,
+  isNaturalMidi,
   MIDI_C2,
   MIDI_C4,
   MIDI_B5,
-  MIDI_C6,
 } from '../utils/pitch'
 
 const WINDOW = 10
@@ -107,10 +107,21 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
       yAxis: {
         type: 'value',
         min: MIDI_C2,
-        max: MIDI_C6,
+        max: MIDI_B5,
+        minInterval: 1,
+        maxInterval: 1,
         axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { color: '#667085', fontSize: 11, minInterval: 1, formatter: (v: number) => midiToName(v) },
-        splitLine: { lineStyle: { color: '#F2F4F7' } },
+        axisTick: { show: false },
+        axisLabel: {
+          color: '#667085',
+          fontSize: 11,
+          interval: (_index: number, value: string) => isNaturalMidi(Number(value)),
+          formatter: (v: number) => midiToName(v),
+        },
+        splitLine: {
+          interval: (_index: number, value: string) => isNaturalMidi(Number(value)),
+          lineStyle: { color: '#F2F4F7' },
+        },
       },
       color: ['#E23E57'],
       series: [

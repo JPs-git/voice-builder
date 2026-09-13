@@ -79,11 +79,11 @@ A4=440Hz、MIDI 69 标准：
 
 复用 `useECharts()`，风格对齐 F0Chart（rAF 节流、`isLive` 10s 滚动窗、`__cursor` 回放线、`connectNulls:false`）：
 
-- **Y 轴**：`type:'value'`，`min:36 (C2)` / `max:84 (C6)`，数据点为连续 MIDI 值 `[time, freqToMidi(f0)]`（`f0==null → null`）
-  - `axisLabel.formatter = v ⇒ midiToName(Math.round(v))`，`minInterval:1`：纵轴**每个整数半音**都有坐标参考线（splitLine）与标签（含黑键音如 `C#4`）
+- **Y 轴**：`type:'value'`，`min:36 (C2)` / `max:83 (B5)`，`minInterval:1`+`maxInterval:1`（每半音一个刻度），数据点为连续 MIDI 值 `[time, freqToMidi(f0)]`（`f0==null → null`）
+  - `axisLabel.formatter = v ⇒ midiToName(Math.round(v))`；`axisLabel.interval` 与 `splitLine.interval` 均为 `(i, v) ⇒ isNaturalMidi(+v)`：纵轴**只**为 C2–B5 的每个自然音（白键）显示标签 + 水平参考线（splitLine），不带升降记号；
 - **钢琴区**：`markArea` 覆盖 C2–B5（36–83）淡色底；`markLine` 虚线标 C4
 - **tooltip**（用户选定"仅曲线+tooltip"形态）：显示 时间 / ♬ 记谱法整数音符，如 `♬ C4`（去掉音分）
-- 超界：f0 低于 65.4Hz 或高于 1046Hz 时曲线在 36/84 处裁剪，tooltip 仍显示真实记谱法
+- 超界：f0 低于 65.4Hz 或高于 987.8Hz 时曲线在 36/83 处裁剪，tooltip 仍显示真实记谱法
 - Props：`{ cursorTime?: number }`；空数据时配合 `<EmptyState>` 显示
 
 ## 7. 页面 `src/routes/PracticePage.tsx` + module.css
