@@ -39,6 +39,7 @@ describe('PracticePage', () => {
   beforeEach(() => {
     useAppStore.getState().reset()
     setOptionMock.mockClear()
+    vi.mocked(getPianoSynth).mockImplementation(() => ({ play: vi.fn(), stopAll: vi.fn() } as any))
   })
 
   it('renders the piano and pitch chart cards', () => {
@@ -76,5 +77,13 @@ describe('PracticePage', () => {
     renderPracticePage()
     fireEvent.click(screen.getByRole('button', { name: 'C4' }))
     expect(play).toHaveBeenCalledWith(60)
+  })
+
+  it('calls PianoSynth stopAll on unmount', () => {
+    const stopAll = vi.fn()
+    vi.mocked(getPianoSynth).mockReturnValue({ play: vi.fn(), stopAll } as any)
+    const { unmount } = renderPracticePage()
+    unmount()
+    expect(stopAll).toHaveBeenCalled()
   })
 })
