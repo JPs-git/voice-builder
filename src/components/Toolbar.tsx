@@ -6,9 +6,10 @@ import type { ToolItem } from '../hooks/useToolbar'
 interface ToolbarProps {
   toolItems: ToolItem[]
   onToolClick: (toolId: string) => void
+  nav?: { label: string; onClick: () => void }
 }
 
-export function Toolbar({ toolItems, onToolClick }: ToolbarProps) {
+export function Toolbar({ toolItems, onToolClick, nav }: ToolbarProps) {
   return (
     <header className={styles.toolbar}>
       <div className={styles.brand}>
@@ -16,6 +17,12 @@ export function Toolbar({ toolItems, onToolClick }: ToolbarProps) {
         <span className={styles.title}>在线声音训练</span>
         <span className={styles.subtitle}>「看见自己的声音」</span>
       </div>
+
+      {nav && (
+        <div className={styles.nav}>
+          <Button icon="⇄" label={nav.label} onClick={nav.onClick} />
+        </div>
+      )}
 
       <div className={styles.actions}>
         {toolItems.map(item => (
