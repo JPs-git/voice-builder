@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useMatch, useNavigate } from 'react-router-dom'
 import { useToolbar } from '../hooks/useToolbar'
 import { Toolbar } from '../components/Toolbar'
 import { ConfigDrawer } from '../components/ConfigDrawer'
@@ -17,9 +17,8 @@ export function AppShell() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
 
-  const { pathname } = useLocation()
   const navigate = useNavigate()
-  const isPractice = pathname === '/practice'
+  const isPractice = useMatch('/practice') != null
 
   const { toolItems, handleClickTool, cursorTime, hasData, fileInputRef, handleFileChange }
     = useToolbar(

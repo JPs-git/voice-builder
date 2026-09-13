@@ -44,7 +44,7 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [frames, cursorTime]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [frames]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     renderChart(frames, cursorTime, isLiveRef.current)
