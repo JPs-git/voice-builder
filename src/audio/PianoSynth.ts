@@ -11,7 +11,7 @@ const HARMONIC_AMPS = [1, 0.5, 0.25]
 
 export class PianoSynth {
   private ctx: AudioContext | null = null
-  private active = new Map<number, SynthEntry>()
+  private active = new Set<SynthEntry>()
 
   private getContext(): AudioContext {
     if (!this.ctx) {
@@ -23,7 +23,7 @@ export class PianoSynth {
     return this.ctx
   }
 
-  play(midi: number, duration: number = DEFAULT_DURATION): AudioContext {
+  play(midi: number, duration: number = DEFAULT_DURATION): void {
     const ctx = this.getContext()
     const freq = midiToFreq(midi)
     const start = ctx.currentTime
@@ -34,37 +34,35 @@ export class PianoSynth {
     gain.gain.exponentialRampToValueAtTime(0.001, start + duration)
     gain.connect(ctx.destination)
 
-    const oscs: OscillatorNode[] = []
+    const entry: SynthEntry = { oscs: [], gain, remaining: HARMONIC_AMPS.length }
+    this.active.add(entry)
+
     for (const amp of HARMONIC_AMPS) {
       const osc = ctx.createOscillator()
       osc.type = 'sine'
-      osc.frequency.value = freq * (oscs.length + 1)
+      osc.frequency.value = freq * (entry.oscs.length + 1)
       const vg = ctx.createGain()
       vg.gain.value = amp
       osc.connect(vg)
       vg.connect(gain)
       osc.start(start)
       osc.stop(start + duration)
-      osc.onended = () => this.release(midi)
-      oscs.push(osc)
+      osc.onended = () => this.release(entry)
+      entry.oscs.push(osc)
     }
-
-    this.active.set(midi, { oscs, gain, remaining: oscs.length })
-    return ctx
   }
 
-  private release(midi: number): void {
-    const entry = this.active.get(midi)
-    if (!entry) return
+  private release(entry: SynthEntry): void {
+    if (!this.active.has(entry)) return
     entry.remaining -= 1
     if (entry.remaining <= 0) {
       entry.gain.disconnect()
-      this.active.delete(midi)
+      this.active.delete(entry)
     }
   }
 
   stopAll(): void {
-    for (const entry of this.active.values()) {
+    for (const entry of this.active) {
       for (const osc of entry.oscs) {
         try { osc.stop() } catch { /* already stopped */ }
       }

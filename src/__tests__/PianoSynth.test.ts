@@ -3,10 +3,12 @@ import { PianoSynth, getPianoSynth } from '../audio/PianoSynth'
 import { midiToFreq } from '../utils/pitch'
 
 const createdOscs: any[] = []
+const createdGains: any[] = []
 const createdCtxs: any[] = []
 
 function mockAudioContext() {
   createdOscs.length = 0
+  createdGains.length = 0
   createdCtxs.length = 0
   const osc = () => {
     const o: any = {
@@ -20,15 +22,15 @@ function mockAudioContext() {
     createdOscs.push(o)
     return o
   }
-  const gain = () => ({
-    gain: {
-      value: 1,
-      setValueAtTime: vi.fn(),
-      exponentialRampToValueAtTime: vi.fn(),
-    },
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  })
+  const gain = () => {
+    const g: any = {
+      gain: { value: 1, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+    }
+    createdGains.push(g)
+    return g
+  }
   const ctx: any = {
     currentTime: 0,
     state: 'suspended',
@@ -78,5 +80,38 @@ describe('PianoSynth', () => {
 
   it('returns the same singleton instance', () => {
     expect(getPianoSynth()).toBe(getPianoSynth())
+  })
+
+  it('disconnects the entry gain after all 3 oscillators end', () => {
+    const synth = new PianoSynth()
+    synth.play(60)
+    const masterGain = createdGains[0]
+    for (let i = 0; i < 3; i++) createdOscs[i].onended()
+    expect(masterGain.disconnect).toHaveBeenCalledTimes(1)
+  })
+
+  it('releases overlapping same-note plays independently', () => {
+    const synth = new PianoSynth()
+    synth.play(60) // master = createdGains[0], oscs 0-2
+    synth.play(60) // master = createdGains[4], oscs 3-5
+    // end first note's oscs -> only its own master is disconnected
+    for (let i = 0; i < 3; i++) createdOscs[i].onended()
+    expect(createdGains[0].disconnect).toHaveBeenCalledTimes(1)
+    expect(createdGains[4].disconnect).not.toHaveBeenCalled()
+    // end second note's oscs -> its master is disconnected too
+    for (let i = 3; i < 6; i++) createdOscs[i].onended()
+    expect(createdGains[4].disconnect).toHaveBeenCalledTimes(1)
+  })
+
+  it('stopAll stops all oscs, disconnects gains, and closes the context', () => {
+    const synth = new PianoSynth()
+    synth.play(60)
+    synth.play(64)
+    synth.stopAll()
+    expect(createdOscs.length).toBe(6)
+    for (let i = 0; i < 6; i++) expect(createdOscs[i].stop).toHaveBeenCalled()
+    expect(createdGains[0].disconnect).toHaveBeenCalled()
+    expect(createdGains[4].disconnect).toHaveBeenCalled()
+    expect(createdCtxs[0].close).toHaveBeenCalled()
   })
 })
