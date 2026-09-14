@@ -14,7 +14,7 @@ export class PianoSynth {
   private active = new Set<SynthEntry>()
 
   private getContext(): AudioContext {
-    if (!this.ctx) {
+    if (!this.ctx || this.ctx.state === 'closed') {
       this.ctx = new AudioContext()
     }
     if (this.ctx.state === 'suspended') {

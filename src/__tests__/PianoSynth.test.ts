@@ -71,6 +71,18 @@ describe('PianoSynth', () => {
     expect(createdCtxs[0].resume).toHaveBeenCalled()
   })
 
+  it('rebuilds the AudioContext when the browser closed it', () => {
+    const synth = new PianoSynth()
+    synth.play(60)
+    const closedCtx = createdCtxs[0]
+    closedCtx.state = 'closed'
+    synth.play(72)
+    const rebuiltCtx = createdCtxs[0]
+    expect(rebuiltCtx).not.toBe(closedCtx)
+    expect(rebuiltCtx.createOscillator).toHaveBeenCalledTimes(3)
+    expect(closedCtx.createOscillator).toHaveBeenCalledTimes(3)
+  })
+
   it('stopAll() closes the AudioContext', () => {
     const synth = new PianoSynth()
     synth.play(60)

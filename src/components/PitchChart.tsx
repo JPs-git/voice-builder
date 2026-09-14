@@ -5,8 +5,6 @@ import type { AnalysisFrame } from '../types'
 import {
   freqToMidi,
   midiToName,
-  midiToFreq,
-  nearestMidi,
   isNaturalMidi,
   MIDI_C2,
   MIDI_C4,
@@ -95,8 +93,7 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
           const midi = p.value?.[1]
           let pitchText = '--'
           if (midi != null && Number.isFinite(midi)) {
-            const freq = midiToFreq(midi)
-            pitchText = midiToName(nearestMidi(freq))
+            pitchText = midiToName(midi)
           }
           return `<div style="font-size:11px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>
 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1F2937;line-height:1.8;">
