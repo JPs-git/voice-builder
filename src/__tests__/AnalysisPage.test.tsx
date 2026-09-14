@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom'
 import { AnalysisPage } from '../routes/AnalysisPage'
 import { useAppStore } from '../store/appStore'
 
@@ -16,16 +17,17 @@ vi.mock('../hooks/useECharts', () => ({
   }),
 }))
 
-vi.mock('../hooks/useToolbar', () => ({
-  useToolbar: () => ({
-    toolItems: [],
-    handleClickTool: vi.fn(),
-    hasData: true,
-    cursorTime: -1,
-    fileInputRef: { current: null },
-    handleFileChange: vi.fn(),
-  }),
-}))
+function renderAnalysisPage() {
+  return render(
+    <MemoryRouter initialEntries={['/']}>
+      <Routes>
+        <Route element={<Outlet context={{ cursorTime: -1, hasData: true }} />}>
+          <Route index element={<AnalysisPage />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  )
+}
 
 function lastFormantOption() {
   const calls = setOptionMock.mock.calls
@@ -53,7 +55,7 @@ describe('AnalysisPage legend', () => {
 
   it('toggles F1 series hidden on legend click', () => {
     useAppStore.getState().setFrames(FRAMES)
-    render(<AnalysisPage />)
+    renderAnalysisPage()
 
     const f1Btn = screen.getByRole('button', { name: 'F1' })
     expect(f1Btn.getAttribute('data-active')).toBe('true')

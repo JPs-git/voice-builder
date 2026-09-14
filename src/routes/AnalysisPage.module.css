@@ -111,9 +111,8 @@
 
 @media (max-width: 768px) {
   .page {
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
+    flex: 1;
+    min-height: 0;
   }
   .content {
     flex: 1;
