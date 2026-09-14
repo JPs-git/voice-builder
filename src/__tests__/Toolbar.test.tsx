@@ -13,7 +13,7 @@ describe('Toolbar', () => {
       <Toolbar
         toolItems={ITEMS}
         onToolClick={() => {}}
-        nav={{ label: '⇄ 钢琴训练', onClick: vi.fn() }}
+        nav={{ label: '钢琴训练', onClick: vi.fn() }}
       />,
     )
     expect(screen.getByRole('button', { name: /钢琴训练/ })).toBeDefined()
@@ -30,7 +30,7 @@ describe('Toolbar', () => {
       <Toolbar
         toolItems={ITEMS}
         onToolClick={() => {}}
-        nav={{ label: '⇄ 返回分析', onClick: onNav }}
+        nav={{ label: '返回分析', onClick: onNav }}
       />,
     )
     fireEvent.click(screen.getByRole('button', { name: /返回分析/ }))

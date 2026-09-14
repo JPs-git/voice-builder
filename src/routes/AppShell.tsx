@@ -34,7 +34,7 @@ export function AppShell() {
       <Toolbar
         toolItems={toolItems}
         onToolClick={handleClickTool}
-        nav={{ label: isPractice ? '⇄ 返回分析' : '⇄ 钢琴训练', onClick: togglePage }}
+        nav={{ label: isPractice ? '返回分析' : '音高参考', onClick: togglePage }}
       />
       <Outlet context={{ cursorTime, hasData } satisfies ShellContext} />
       <Toast />

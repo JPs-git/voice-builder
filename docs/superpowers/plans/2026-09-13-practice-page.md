@@ -1596,9 +1596,9 @@ npm run dev
 ```
 
 - [ ] **Step 2: Verify in browser**
-  1. Toolbar shows no centered button removal — brand left, centered `⇄ 钢琴训练`, actions right.
+  1. Toolbar shows no centered button removal — brand left, centered ⇄ **音高参考** (icon `⇄`, label `音高参考`), actions right.
   2. Analysis page still renders charts; clicking record works.
-  3. Click `⇄ 钢琴训练` → practice page: C2–B5 piano renders, click keys → distinct pitched tones, pitch chart card visible.
+  3. Click `⇄ 音高参考` → practice page: C2–B5 piano renders, click keys → distinct pitched tones, pitch chart card visible.
   4. Record while on piano page → consecutive notes light up the matching piano key; tooltip over curve shows `♬ C4`.
   5. Click `⇄ 返回分析` while recording → recording did NOT stop, charts continue, `isCapturing` button still shows 停止录音.
   6. Import a WAV → frames populate pitch chart; playback cursor line works.

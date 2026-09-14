@@ -46,7 +46,7 @@
 
 - `ToolbarProps` 增加可选 `nav?: { label: string; onClick: () => void }`
 - `Toolbar.tsx` 在 brand 与 actions 之间新增居中区域 `.nav`（CSS：`flex:1; justify-content:center`），仅当传入 `nav` 时渲染
-- AppShell 计算：分析页显示 `⇄ 钢琴训练`，钢琴页显示 `⇄ 返回分析`
+- AppShell 计算：分析页显示 ⇄ **音高参考**（icon `⇄` + label `音高参考`），钢琴页显示 ⇄ **返回分析**
 - **不走 `handleClickTool`**：纯导航，天然绕过所有音频前置检查，符合"切页不中断"约束。`useToolbar.ts` 零改动。
 
 ## 3. 记谱法工具 `src/utils/pitch.ts`（新增，纯函数）

@@ -53,12 +53,12 @@ describe('AppShell', () => {
   it('shows analysis page with "go to practice" nav by default', () => {
     renderApp('/')
     expect(screen.getByText('analysis-content')).toBeDefined()
-    expect(screen.getByRole('button', { name: /钢琴训练/ })).toBeDefined()
+    expect(screen.getByRole('button', { name: /音高参考/ })).toBeDefined()
   })
 
   it('navigates to practice and flips the nav label', () => {
     renderApp('/')
-    fireEvent.click(screen.getByRole('button', { name: /钢琴训练/ }))
+    fireEvent.click(screen.getByRole('button', { name: /音高参考/ }))
     expect(screen.getByText(/practice-content/)).toBeDefined()
     expect(screen.getByRole('button', { name: /返回分析/ })).toBeDefined()
   })
