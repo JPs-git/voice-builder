@@ -31,6 +31,22 @@ describe('Piano', () => {
     }
   })
 
+  it('marks the note label of the highlighted key as active', () => {
+    render(<Piano currentMidi={61} onKeyPress={() => {}} />)
+    const activeLabel = screen.getByRole('button', { name: 'C#4' }).querySelector('span')
+    expect(activeLabel?.getAttribute('data-active')).toBe('true')
+    const inactiveLabel = screen.getByRole('button', { name: 'C4' }).querySelector('span')
+    expect(inactiveLabel?.getAttribute('data-active')).toBe('false')
+  })
+
+  it('marks no note label active when currentMidi is null', () => {
+    render(<Piano currentMidi={null} onKeyPress={() => {}} />)
+    for (const btn of screen.getAllByRole('button')) {
+      const label = btn.querySelector('span')
+      expect(label?.getAttribute('data-active')).toBe('false')
+    }
+  })
+
   it('labels every white key with its note name', () => {
     render(<Piano onKeyPress={() => {}} />)
     const naturalMidi = [36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59,

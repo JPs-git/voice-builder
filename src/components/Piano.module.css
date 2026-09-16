@@ -82,7 +82,8 @@
   opacity: 0;
   transition: opacity 0.12s ease;
 }
-.noteLabel[data-octave-marker="true"] {
+.noteLabel[data-octave-marker="true"],
+.noteLabel[data-active="true"] {
   opacity: 1;
 }
 .black .noteLabel {
