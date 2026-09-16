@@ -42,6 +42,7 @@ export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
             <span
               className={styles.noteLabel}
               data-octave-marker={OCTAVE_MARKERS.has(white) ? 'true' : 'false'}
+              data-active={currentMidi === white ? 'true' : 'false'}
             >
               {midiToName(white)}
             </span>
@@ -55,7 +56,7 @@ export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
               aria-pressed={currentMidi === white + 1}
               onPointerDown={() => onKeyPress(white + 1)}
             >
-              <span className={styles.noteLabel} data-octave-marker="false">
+              <span className={styles.noteLabel} data-octave-marker="false" data-active={currentMidi === white + 1 ? 'true' : 'false'}>
                 {midiToName(white + 1)}
               </span>
             </button>
