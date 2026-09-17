@@ -25,6 +25,7 @@ interface AppActions {
   resetPresets: () => void
   appendFrame: (frame: AnalysisFrame) => void
   setFrames: (frames: AnalysisFrame[]) => void
+  setLatestFrame: (frame: AnalysisFrame | null) => void
   clearFrames: () => void
   toggleFormantVisible: (key: FormantSeries) => void
   reset: () => void
@@ -127,6 +128,8 @@ export const useAppStore = create<AppStore>()(
         frames,
         latestFrame: frames.length > 0 ? frames[frames.length - 1] : null,
       }),
+
+      setLatestFrame: (frame) => set({ latestFrame: frame }),
 
       clearFrames: () => set({
         frames: [],

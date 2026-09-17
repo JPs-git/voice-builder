@@ -1,10 +1,20 @@
 import type { ChangeEvent } from 'react'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useAnalysis } from '../hooks/useAnalysis'
 import { useToastStore } from '../store/toastStore'
 import { useAppStore } from '../store/appStore'
 import { recordingBuffer } from '../audio/recordingBuffer'
+
+const audioEngineMock = vi.hoisted(() => ({
+  startCapture: vi.fn(),
+  stopCapture: vi.fn(),
+}))
+
+vi.mock('../ts', () => ({
+  getAudioEngine: () => audioEngineMock,
+  resetAudioEngine: () => {},
+}))
 
 if (typeof Blob.prototype.arrayBuffer !== 'function') {
   Blob.prototype.arrayBuffer = function () {
@@ -84,5 +94,56 @@ describe('useAnalysis import error feedback', () => {
     })
 
     expect(useAppStore.getState().frames).toEqual([])
+  })
+})
+
+describe('useAnalysis record/pause latestFrame', () => {
+  let captureCallback: ((chunk: Float32Array, rate: number) => void) | null = null
+
+  beforeEach(() => {
+    resetStores()
+    audioEngineMock.startCapture.mockReset()
+    audioEngineMock.stopCapture.mockReset()
+    captureCallback = null
+    audioEngineMock.startCapture.mockImplementation(
+      async (cb: (chunk: Float32Array, rate: number) => void) => {
+        captureCallback = cb
+      },
+    )
+  })
+  afterEach(() => resetStores())
+
+  it('restores latestFrame to the last complete frame after pausing', async () => {
+    const { result } = renderHook(() => useAnalysis())
+
+    await act(async () => {
+      await result.current.onRecord()
+    })
+    expect(result.current.isCapturing).toBe(true)
+
+    const rate = 16000
+    const voiced = new Float32Array(rate)
+    for (let i = 0; i < voiced.length; i++) {
+      voiced[i] = 0.5 * Math.sin((2 * Math.PI * 220 * i) / rate)
+    }
+
+    await act(async () => {
+      for (let start = 0; start < voiced.length; start += 1024) {
+        captureCallback!(voiced.slice(start, start + 1024), rate)
+      }
+    })
+
+    const beforePause = useAppStore.getState()
+    expect(beforePause.frames.length).toBeGreaterThan(0)
+    const lastComplete = beforePause.latestFrame
+
+    await act(async () => {
+      await result.current.onRecord()
+    })
+
+    const after = useAppStore.getState()
+    expect(result.current.isCapturing).toBe(false)
+    expect(after.latestFrame).toBe(lastComplete)
+    expect(after.frames.length).toBeGreaterThan(beforePause.frames.length)
   })
 })
