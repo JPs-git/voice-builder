@@ -84,6 +84,16 @@ describe('appStore', () => {
       useAppStore.getState().setFrames(frames)
       expect(useAppStore.getState().frames).toHaveLength(2)
     })
+
+    it('setLatestFrame updates latestFrame without touching frames', () => {
+      const f1 = makeFrame({ time: 0.01, f0: 220 })
+      const f2 = makeFrame({ time: 0.02, f0: 225 })
+      useAppStore.getState().appendFrame(f1)
+      useAppStore.getState().appendFrame(f2)
+      useAppStore.getState().setLatestFrame(f1)
+      expect(useAppStore.getState().latestFrame).toBe(f1)
+      expect(useAppStore.getState().frames).toEqual([f1, f2])
+    })
   })
 
   describe('clearFrames', () => {

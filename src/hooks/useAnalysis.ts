@@ -48,8 +48,11 @@ export function useAnalysis() {
     const pipeline = pipelineRef.current
     if (pipeline) {
       if (flush) {
+        const store = useAppStore.getState()
+        const lastComplete = store.latestFrame
         pipeline.flush()
         frameOffsetRef.current += pipeline.frameCount
+        store.setLatestFrame(lastComplete)
       }
       pipeline.reset()
       pipelineRef.current = null
