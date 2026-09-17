@@ -1,0 +1,1 @@
+export const F0_RANGE = { min: 60, max: 1000 } as const

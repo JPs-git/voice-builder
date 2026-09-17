@@ -35,6 +35,20 @@ describe('detectPitch at 16kHz / 400-sample frames', () => {
     assert.ok(Math.abs(f0 - 440) < 20)
   })
 
+  it('detects 800 Hz sine wave (lag 20 at 16kHz)', () => {
+    const signal = generateSine(800, sampleRate, frameSize)
+    const f0 = detectPitch(signal, sampleRate)
+    assert.ok(f0 !== null, 'should detect voiced')
+    assert.ok(Math.abs(f0 - 800) < 20, `expected ~800Hz, got ${f0}Hz`)
+  })
+
+  it('detects 988 Hz sine wave (B5) near the upper ceiling', () => {
+    const signal = generateSine(988, sampleRate, frameSize)
+    const f0 = detectPitch(signal, sampleRate)
+    assert.ok(f0 !== null, 'should detect voiced')
+    assert.ok(Math.abs(f0 - 988) < 30, `expected ~988Hz, got ${f0}Hz`)
+  })
+
   it('returns null for silence', () => {
     const signal = new Float32Array(frameSize)
     const f0 = detectPitch(signal, sampleRate)

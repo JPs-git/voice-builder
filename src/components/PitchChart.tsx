@@ -31,6 +31,41 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+function findFrameAtTime(frames: AnalysisFrame[], time: number): AnalysisFrame | null {
+  let best: AnalysisFrame | null = null
+  let bestDist = Infinity
+  for (const f of frames) {
+    const d = Math.abs(f.time - time)
+    if (d < bestDist) {
+      bestDist = d
+      best = f
+    }
+  }
+  return bestDist <= 0.005 ? best : null
+}
+
+export function formatPitchTooltip(params: any, frames: AnalysisFrame[]): string {
+  if (!params || params.length === 0) return ''
+  const p = params[0]
+  const time = p.value?.[0]
+  const frame = typeof time === 'number' ? findFrameAtTime(frames, time) : null
+  let pitchText = '--'
+  if (frame && frame.f0 != null && frame.f0 > 0) {
+    pitchText = midiToName(freqToMidi(frame.f0))
+  } else if (!frame) {
+    const midi = p.value?.[1]
+    if (midi != null && Number.isFinite(midi)) {
+      pitchText = midiToName(midi)
+    }
+  }
+  return `<div style="font-size:11px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>
+<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1F2937;line-height:1.8;">
+  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E23E57;"></span>
+  <span style="flex:0 0 auto;color:#475467;">音高</span>
+  <span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;">♬ ${pitchText}</span>
+</div>`
+}
+
 interface PitchChartProps {
   cursorTime?: number
 }
@@ -86,22 +121,7 @@ export function PitchChart({ cursorTime = -1 }: PitchChartProps) {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross', label: { backgroundColor: '#475467' } },
-        formatter: (params: any) => {
-          if (!params || params.length === 0) return ''
-          const p = params[0]
-          const time = p.value?.[0]
-          const midi = p.value?.[1]
-          let pitchText = '--'
-          if (midi != null && Number.isFinite(midi)) {
-            pitchText = midiToName(midi)
-          }
-          return `<div style="font-size:11px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>
-<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1F2937;line-height:1.8;">
-  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E23E57;"></span>
-  <span style="flex:0 0 auto;color:#475467;">音高</span>
-  <span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;">♬ ${pitchText}</span>
-</div>`
-        },
+        formatter: (params: any) => formatPitchTooltip(params, data),
       },
       xAxis: {
         type: 'value',

@@ -18,6 +18,34 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+function findFrameAtTime(frames: AnalysisFrame[], time: number): AnalysisFrame | null {
+  let best: AnalysisFrame | null = null
+  let bestDist = Infinity
+  for (const f of frames) {
+    const d = Math.abs(f.time - time)
+    if (d < bestDist) {
+      bestDist = d
+      best = f
+    }
+  }
+  return bestDist <= 0.005 ? best : null
+}
+
+export function formatF0Tooltip(params: any, frames: AnalysisFrame[]): string {
+  if (!params || params.length === 0) return ''
+  const p = params[0]
+  const time = p.value?.[0]
+  const frame = typeof time === 'number' ? findFrameAtTime(frames, time) : null
+  const f0 = frame ? frame.f0 : p.value?.[1]
+  const f0Text = (f0 != null && f0 > 0) ? `${Math.round(f0)} Hz` : '--'
+  return `<div style="font-size:11px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>
+<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1F2937;line-height:1.8;">
+  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1F2937;"></span>
+  <span style="flex:0 0 auto;color:#475467;">F0</span>
+  <span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;">${f0Text}</span>
+</div>`
+}
+
 function buildMarkAreas(zones: typeof TARGET_ZONES) {
   return zones.map(z => ([{
     yAxis: z.range[0],
@@ -102,19 +130,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross', label: { backgroundColor: '#475467' } },
-        formatter: (params: any) => {
-          if (!params || params.length === 0) return ''
-          const p = params[0]
-          const time = p.value?.[0]
-          const f0 = p.value?.[1]
-          const f0Text = (f0 != null && f0 > 0) ? `${Math.round(f0)} Hz` : '--'
-          return `<div style="font-size:11px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>
-<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1F2937;line-height:1.8;">
-  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1F2937;"></span>
-  <span style="flex:0 0 auto;color:#475467;">F0</span>
-  <span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;">${f0Text}</span>
-</div>`
-        },
+        formatter: (params: any) => formatF0Tooltip(params, data),
       },
       xAxis: {
         type: 'value',

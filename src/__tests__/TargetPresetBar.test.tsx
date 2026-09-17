@@ -2,11 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { TargetPresetBar } from '../components/TargetPresetBar'
 import { useAppStore } from '../store/appStore'
+import { useToastStore } from '../store/toastStore'
 import { VOWEL_PRESETS } from '../types'
 
 describe('TargetPresetBar', () => {
   beforeEach(() => {
     useAppStore.getState().reset()
+    useToastStore.setState({ toasts: [] })
   })
 
   it('renders vowel preset buttons', () => {
@@ -72,5 +74,18 @@ describe('TargetPresetBar', () => {
     fireEvent.blur(f0Lo)
     expect(f0Lo.value).toBe(String(vowelA.f0[0]))
     expect(useAppStore.getState().bands.f0.range).toEqual(vowelA.f0)
+  })
+
+  it('clamps F0 upper value above detection ceiling and shows toast', () => {
+    render(<TargetPresetBar />)
+    const f0Hi = screen.getByLabelText('F0上限') as HTMLInputElement
+
+    fireEvent.change(f0Hi, { target: { value: '1100' } })
+
+    expect(useAppStore.getState().bands.f0.range[1]).toBe(1000)
+    expect(useToastStore.getState().toasts).toHaveLength(1)
+
+    fireEvent.blur(f0Hi)
+    expect(f0Hi.value).toBe('1000')
   })
 })

@@ -91,15 +91,23 @@ describe('PitchChart', () => {
     expect(markLine.yAxis).toBe(60)
   })
 
-  it('formats tooltip with integer note only (no cents)', () => {
-    useAppStore.getState().setFrames([{ time: 0.1, f0: 220, f1: 0, f2: 0 }])
+  it('formats tooltip with the note from the real frame (no cents)', () => {
+    useAppStore.getState().setFrames([{ time: 0.1, f0: midiToFreq(61.4), f1: 0, f2: 0 }])
     render(<PitchChart />)
     const formatter = lastOption().tooltip.formatter
-    const html = formatter([{ value: [0.1, freqToMidi(261.63)] }])
-    expect(html).toContain('C4')
+    const html = formatter([{ value: [0.1, 60] }])
+    expect(html).toContain('C#4')
     expect(html).not.toContain('音分')
     expect(html).not.toContain('+0')
-    expect(formatter([{ value: [0.1, 61.4] }])).toContain('C#4')
+  })
+
+  it('shows the true note above the E5 ceiling instead of the clamped axis value', () => {
+    useAppStore.getState().setFrames([{ time: 0.1, f0: 700, f1: 0, f2: 0 }])
+    render(<PitchChart />)
+    const formatter = lastOption().tooltip.formatter
+    const html = formatter([{ value: [0.1, 76] }])
+    expect(html).toContain('♬ F5')
+    expect(html).not.toMatch(/♬\s*E5/)
   })
 
   it('formats tooltip as placeholder when pitch is null', () => {

@@ -1,5 +1,6 @@
 import { Complex } from './complex'
 import { applyHamming, applyPreEmphasis } from './signal-utils'
+import { F0_RANGE } from '../config/analysisRanges'
 
 export function autocorrelate(signal: Float32Array, order: number): number[] {
   const r = new Array(order + 1).fill(0)
@@ -198,8 +199,8 @@ export function rootsToFormants(roots: Complex[], sampleRate: number): FormantPe
 }
 
 export function detectPitch(signal: Float32Array, sampleRate: number): number | null {
-  const minFreq = 60
-  const maxFreq = 500
+  const minFreq = F0_RANGE.min
+  const maxFreq = F0_RANGE.max
   const minPeriod = Math.max(Math.ceil(sampleRate / maxFreq), 1)
   const maxPeriod = Math.min(Math.floor(sampleRate / minFreq), signal.length - 1)
 
@@ -216,10 +217,12 @@ export function detectPitch(signal: Float32Array, sampleRate: number): number | 
 
   if (r[0] === 0) return null
 
-  let maxR = 0
+  let maxR = -Infinity
   let maxIdx = minPeriod
   for (let k = minPeriod; k <= maxPeriod; k++) {
-    if (r[k] > maxR) {
+    const left = r[k - 1]
+    const right = k < maxPeriod ? r[k + 1] : -Infinity
+    if (r[k] > left && r[k] > right && r[k] > maxR) {
       maxR = r[k]
       maxIdx = k
     }
