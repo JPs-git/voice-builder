@@ -1,11 +1,17 @@
 import { useCallback, useState, useEffect } from 'react'
 import { VOWEL_PRESETS } from '../types'
 import { useAppStore } from '../store/appStore'
+import { useToastStore } from '../store/toastStore'
+import { F0_RANGE } from '../config/analysisRanges'
 import type { TargetBands } from '../types'
 import styles from './TargetPresetBar.module.css'
 
 function bandKeyToId(key: 'f0' | 'f1' | 'f2', index: 0 | 1): string {
   return `${key}-${index}`
+}
+
+function clampF0(num: number): number {
+  return Math.min(num, F0_RANGE.max)
 }
 
 function makeLocalValues(bands: TargetBands) {
@@ -41,9 +47,10 @@ export function TargetPresetBar() {
       setLocalValues(prev => ({ ...prev, [id]: value }))
       const num = parseFloat(value)
       if (!Number.isFinite(num)) return
+      const clamped = key === 'f0' ? clampF0(num) : num
       const current = bands[key].range
       const next: [number, number] =
-        index === 0 ? [num, current[1]] : [current[0], num]
+        index === 0 ? [clamped, current[1]] : [current[0], clamped]
       if (next[0] < next[1]) {
         const updatedBands = { ...bands, [key]: { ...bands[key], range: next } }
         setBands({ [key]: next })
@@ -53,6 +60,12 @@ export function TargetPresetBar() {
           updatedBands.f1.range,
           updatedBands.f2.range,
         )
+        if (clamped !== num) {
+          useToastStore.getState().showToast(
+            'info',
+            `F0 已超出检测上限 ${F0_RANGE.max}Hz，已自动设为 ${F0_RANGE.max}Hz`,
+          )
+        }
       }
     },
     [bands, setBands, activePreset, savePresetOverride],
@@ -66,9 +79,10 @@ export function TargetPresetBar() {
         setLocalValues(prev => ({ ...prev, [id]: String(bands[key].range[index]) }))
         return
       }
+      const clamped = key === 'f0' ? clampF0(num) : num
       const current = bands[key].range
       const next: [number, number] =
-        index === 0 ? [num, current[1]] : [current[0], num]
+        index === 0 ? [clamped, current[1]] : [current[0], clamped]
       if (next[0] < next[1]) {
         const updatedBands = { ...bands, [key]: { ...bands[key], range: next } }
         setBands({ [key]: next })
@@ -147,8 +161,8 @@ export function TargetPresetBar() {
             <span className={styles.bandKey}>{key.toUpperCase()}</span>
             <input
               type="number"
-              min={key === 'f0' ? 20 : 100}
-              max={key === 'f0' ? 600 : 3500}
+              min={key === 'f0' ? F0_RANGE.min : 100}
+              max={key === 'f0' ? F0_RANGE.max : 3500}
               step={key === 'f0' ? 5 : 10}
               className={styles.bandLo}
               value={localValues[bandKeyToId(key, 0)]}
@@ -160,8 +174,8 @@ export function TargetPresetBar() {
             <span className={styles.bandDash}>—</span>
             <input
               type="number"
-              min={key === 'f0' ? 20 : 100}
-              max={key === 'f0' ? 600 : 3500}
+              min={key === 'f0' ? F0_RANGE.min : 100}
+              max={key === 'f0' ? F0_RANGE.max : 3500}
               step={key === 'f0' ? 5 : 10}
               className={styles.bandHi}
               value={localValues[bandKeyToId(key, 1)]}
