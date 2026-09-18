@@ -34,6 +34,8 @@ const mocks = vi.hoisted(() => ({
   probeAudioDuration: vi.fn(),
   probeWavDuration: vi.fn(),
   decodeAudioFile: vi.fn(),
+  startCapture: vi.fn(),
+  stopCapture: vi.fn(),
 }))
 
 vi.mock('../dsp', () => ({
@@ -48,6 +50,14 @@ vi.mock('../audio/audioDecoder', () => ({
   probeAudioDuration: mocks.probeAudioDuration,
   probeWavDuration: mocks.probeWavDuration,
   decodeAudioFile: mocks.decodeAudioFile,
+}))
+
+vi.mock('../ts', () => ({
+  getAudioEngine: () => ({
+    startCapture: mocks.startCapture,
+    stopCapture: mocks.stopCapture,
+  }),
+  resetAudioEngine: () => {},
 }))
 
 function wavFile() {
@@ -266,5 +276,34 @@ describe('real mp3/m4a file routing', () => {
     })
 
     expect(toastMessages()).toContain('浏览器不支持该音频格式或文件已损坏，请尝试 wav/mp3/m4a。')
+  })
+})
+
+describe('onRecord mic failure toasts', () => {
+  it('shows upgrade guidance on the Firefox cross-rate sample rate error', async () => {
+    mocks.startCapture.mockRejectedValue(new DOMException(
+      'Connecting AudioNodes from AudioContexts with different sample-rate is currently not supported.',
+      'NotSupportedError',
+    ))
+
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => {
+      await result.current.onRecord()
+    })
+
+    expect(result.current.isRequesting).toBe(false)
+    expect(toastMessages()).toContain('当前 Firefox 无法以所需采样率连接麦克风，请升级 Firefox（≥148）或改用 Chrome/Edge。')
+    expect(toastMessages()).not.toContain('无法启动录音,请检查麦克风权限。')
+  })
+
+  it('keeps the generic permission toast for other capture errors', async () => {
+    mocks.startCapture.mockRejectedValue(new DOMException('Permission denied', 'NotAllowedError'))
+
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => {
+      await result.current.onRecord()
+    })
+
+    expect(toastMessages()).toContain('无法启动录音,请检查麦克风权限。')
   })
 })
