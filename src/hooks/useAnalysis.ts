@@ -139,7 +139,18 @@ export function useAnalysis() {
       setIsRequesting(false)
     } catch (err) {
       console.error('Failed to start recording:', err)
-      useToastStore.getState().showToast('error', '无法启动录音,请检查麦克风权限。')
+      // Firefox rejects mic streams whose device rate differs from a custom
+      // AudioContext rate (NotSupportedError); guide users instead of a
+      // generic permission toast.
+      if (
+        err instanceof DOMException &&
+        err.name === 'NotSupportedError' &&
+        /different sample-rate/.test(err.message)
+      ) {
+        useToastStore.getState().showToast('error', '当前 Firefox 无法以所需采样率连接麦克风，请升级 Firefox（≥148）或改用 Chrome/Edge。')
+      } else {
+        useToastStore.getState().showToast('error', '无法启动录音,请检查麦克风权限。')
+      }
       setIsRequesting(false)
     }
   }, [isCapturing, isRequesting, stopRecording, onAudioChunk])
