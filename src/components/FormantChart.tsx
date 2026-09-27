@@ -24,6 +24,8 @@ const PORTRAIT_COLORS = {
   f2: '#2D7DFC',
 }
 
+const SPARSE_TICKS = [0, 1000, 2000, 3000, 3500]
+
 const PORTRAIT_MARK_AREA: Partial<Record<'f1' | 'f2', string>> = {
   f1: '#E9F2FE',
   f2: '#FDF5EB',
@@ -204,7 +206,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         max: FREQ_MAX,
         interval: 500,
         axisLine: { lineStyle: { color: '#B8C4D1' } },
-        axisLabel: { color: '#7D8DA8', fontSize: 11, formatter: (v: number) => [0, 1000, 2000, 3000, 3500].includes(v) ? `${v} Hz` : '' },
+        axisLabel: { color: '#7D8DA8', fontSize: 11, formatter: (v: number) => SPARSE_TICKS.some(t => Math.abs(v - t) < 1) ? `${Math.round(v)} Hz` : '' },
+        axisTick: { show: false },
         splitLine: { lineStyle: { color: '#EDF1F5' } },
       } : {
         type: 'value',
