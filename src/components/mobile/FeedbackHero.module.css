@@ -3,10 +3,10 @@
   border: 1px solid var(--color-border-default);
   border-radius: 6px;
   box-shadow: none;
-  padding: 12px 14px;
+  padding: 8px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 .header {
   display: flex;
@@ -29,7 +29,7 @@
 .heroIcon i:nth-child(3) { height: 13px; }
 .title {
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--m-text);
   white-space: nowrap;
 }
@@ -104,14 +104,13 @@
 .columns {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  padding-top: 2px;
 }
 .column {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 2px;
+  gap: 2px;
+  padding: 0;
   border-left: 1px solid var(--m-divider);
 }
 .column:first-child {
@@ -120,6 +119,7 @@
 .columnKey {
   font-size: 10px;
   font-weight: 400;
+  line-height: 1.2;
   color: var(--m-secondary);
   font-family: var(--font-sans);
 }
