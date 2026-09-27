@@ -9,7 +9,6 @@ const BAND_KEYS = ['f0', 'f1', 'f2'] as const
 const BAND_BAR_COLORS = { f0: '#13B98B', f1: '#E84C68', f2: '#4387F5' }
 
 export function TrainingGoalCard() {
-  const bands = useAppStore(s => s.bands)
   const activePreset = useAppStore(s => s.activePreset)
   const switchPreset = useAppStore(s => s.switchPreset)
   const { localValues, onInputChange, onCommit, onInputKeyDown } = usePresetBands()
