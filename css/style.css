@@ -39,8 +39,37 @@
   --c-f4: #F59E0B;
 
   /* 字体 */
-  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, Menlo, monospace;
+  /* ---- ui-design-portrait v1.0（仅竖版消费，桌面不动） ---- */
+  --color-brand-primary: #E94262;
+  --color-brand-primary-hover: #D93655;
+  --color-brand-primary-soft: #FFF0F3;
+  --color-text-primary: #18304A;
+  --color-text-secondary: #6F8197;
+  --color-text-tertiary: #9AA9BA;
+  --color-surface-page: #F7F9FC;
+  --color-border-default: #E4EAF0;
+  --color-border-subtle: #EDF1F5;
+  --color-border-strong: #D4DDE7;
+  --color-success: #12A981;
+  --color-success-soft: #E8F8F3;
+  --color-warning: #F5A623;
+  --color-warning-soft: #FFF6E5;
+  --color-error: #E65368;
+  --color-info: #4387F5;
+  --color-info-soft: #EEF5FF;
+  --color-chart-f0: #13B98B;
+  --color-chart-f1: #E84C68;
+  --color-chart-f2: #4387F5;
+  --color-chart-f0-soft: #E9F8F3;
+  --color-chart-f1-soft: #FFF0F3;
+  --color-chart-f2-soft: #EEF5FF;
+  --color-chart-grid: #EDF1F5;
+  --color-chart-axis: #B8C4D1;
+  --color-chart-target-line: #AAB7C5;
+  --shadow-portrait-card: 0 2px 10px rgba(24, 48, 74, .06);
+  --shadow-floating: 0 12px 32px rgba(24, 48, 74, .12);
 }
 
 /* ---------- 基础 reset ---------- */
