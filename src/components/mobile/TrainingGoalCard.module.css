@@ -89,8 +89,8 @@
   height: 40px;
 }
 .bandKey {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--color-text-primary);
   min-width: 22px;
   font-family: inherit;
@@ -103,7 +103,7 @@
   background: transparent;
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
   text-align: center;

@@ -156,7 +156,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         max: maxTime,
         axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: isPortrait
-          ? { show: true, color: '#6F8197', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
+          ? { show: true, color: '#8D9BAC', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
           : { show: false },
         splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
@@ -165,7 +165,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         min: 0,
         max: 500,
         axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
-        axisLabel: { color: isPortrait ? '#6F8197' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
+        axisLabel: { color: isPortrait ? '#8D9BAC' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
         splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
       color: [f0Color],

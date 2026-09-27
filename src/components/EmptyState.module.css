@@ -16,5 +16,5 @@
   font-weight: 600;
   color: var(--text-soft);
 }
-.desc { font-size: 12px; }
+.desc { font-size: 13px; font-weight: 400; }
 .icon { font-size: 24px; line-height: 1; }

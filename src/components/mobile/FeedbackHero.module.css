@@ -40,8 +40,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   padding: 7px 10px;
   min-height: 28px;
   box-sizing: border-box;
@@ -79,7 +79,7 @@
 }
 .readoutLabel {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--color-success);
 }
 .readoutRow {
@@ -94,8 +94,8 @@
   font-variant-numeric: tabular-nums;
 }
 .readoutUnit {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--color-text-secondary);
   margin-left: 6px;
 }
@@ -116,8 +116,8 @@
   border-left: none;
 }
 .columnKey {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 400;
   color: var(--color-text-secondary);
   font-family: var(--font-sans);
 }
@@ -127,14 +127,15 @@
   gap: 4px;
 }
 .columnValue {
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.1;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
 }
 .columnUnit {
   font-size: 12px;
+  font-weight: 400;
   color: var(--color-text-tertiary);
 }
 .columnStatus {
