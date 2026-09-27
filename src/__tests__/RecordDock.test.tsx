@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { RecordDock } from '../components/mobile/RecordDock'
 
 describe('RecordDock', () => {
@@ -41,7 +41,25 @@ describe('RecordDock', () => {
     )
     expect(screen.getByLabelText('停止录音')).toBeTruthy()
     expect(screen.queryByLabelText('开始录音')).toBeNull()
-    expect(screen.getByTestId('dock-hint').textContent).toBe('再次点击停止')
+    expect(screen.getByTestId('dock-hint').textContent).toBe('正在录音')
+    expect(screen.getByTestId('dock-timer')).toBeTruthy()
+  })
+
+  it('counts recording seconds while capturing', () => {
+    vi.useFakeTimers()
+    try {
+      const { rerender } = render(
+        <RecordDock onRecord={() => {}} isCapturing={false} isRequesting={false} goalLabel="a" onGoalClick={() => {}} />,
+      )
+      rerender(
+        <RecordDock onRecord={() => {}} isCapturing isRequesting={false} goalLabel="a" onGoalClick={() => {}} />,
+      )
+      expect(screen.getByTestId('dock-timer').textContent).toBe('00:00')
+      act(() => { vi.advanceTimersByTime(4000) })
+      expect(screen.getByTestId('dock-timer').textContent).toBe('00:04')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('locks the mic while the microphone permission is pending', () => {

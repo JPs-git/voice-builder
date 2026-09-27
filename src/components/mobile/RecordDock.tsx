@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import styles from './RecordDock.module.css'
 
 export interface RecordDockProps {
@@ -23,6 +24,13 @@ function MicGlyph() {
 }
 
 export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick }: RecordDockProps) {
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    if (!isCapturing) { setElapsed(0); return }
+    const id = window.setInterval(() => setElapsed(s => s + 1), 1000)
+    return () => window.clearInterval(id)
+  }, [isCapturing])
+  const timer = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
   const micLabel = isRequesting ? '麦克风授权中' : isCapturing ? '停止录音' : '开始录音'
   return (
     <div className={styles.dock} data-portrait-dock="true">
@@ -35,12 +43,13 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
       <span className={styles.micHalo} data-testid="dock-mic-halo">
         <button type="button" className={styles.mic} data-recording={isCapturing}
           onClick={onRecord} disabled={isRequesting} aria-label={micLabel}>
-          {isCapturing ? '■' : <MicGlyph />}
+          {isCapturing ? '●' : <MicGlyph />}
         </button>
       </span>
       <span className={styles.hint} data-testid="dock-hint">
-        {isCapturing ? '再次点击停止' : '点击开始录音'}
+        {isCapturing ? '正在录音' : '点击开始录音'}
       </span>
+      {isCapturing && <span className={styles.timer} data-testid="dock-timer">{timer}</span>}
     </div>
   )
 }

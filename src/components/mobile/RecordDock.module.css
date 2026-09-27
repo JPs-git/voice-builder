@@ -7,12 +7,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  padding: 8px 16px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
   background: var(--panel);
   border-top: 1px solid var(--border);
   border-radius: 20px 20px 0 0;
-  box-shadow: 0 -4px 16px rgba(16, 24, 40, 0.08);
+  box-shadow: var(--shadow-floating);
   font-family: var(--font-sans);
 }
 .goal {
@@ -40,10 +40,10 @@
   height: 40px;
   padding: 0 10px;
   border-radius: 10px;
-  background: var(--primary-soft);
+  background: var(--color-brand-primary-soft);
   font-size: 20px;
   font-weight: 800;
-  color: var(--primary);
+  color: var(--color-brand-primary);
   white-space: nowrap;
   overflow: hidden;
   flex-shrink: 0;
@@ -65,34 +65,34 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 88px;
-  height: 88px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: #FBDCE1;
+  background: transparent;
 }
 .mic {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   display: grid;
   place-items: center;
   border: none;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--color-brand-primary);
   color: #fff;
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(226, 62, 87, 0.35);
+  box-shadow: 0 0 0 6px var(--color-brand-primary-soft), 0 4px 12px rgba(233, 66, 98, .35);
   transition: transform .1s ease;
 }
 .mic svg { display: block; }
-.mic:active { transform: scale(0.94); }
+.mic:active { transform: scale(.98); }
 .mic:focus-visible {
   outline: 2px solid var(--info);
   outline-offset: 2px;
 }
 .mic:disabled {
-  background: var(--text-mute);
+  background: var(--color-text-tertiary);
   box-shadow: none;
   cursor: not-allowed;
   transform: none;
@@ -103,11 +103,17 @@
 .hint {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
-  color: var(--text-mute);
+  font-size: 12px;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.timer {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 @keyframes mic-pulse {
@@ -117,7 +123,7 @@
 
 @media (max-width: 360px) {
   .dock { gap: 8px; padding-left: 12px; padding-right: 12px; }
-  .micHalo { width: 76px; height: 76px; }
+  .micHalo { width: 64px; height: 64px; }
   .mic { width: 56px; height: 56px; }
   .hint { display: none; }
 }
