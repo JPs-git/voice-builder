@@ -19,7 +19,7 @@ const GRID_DESKTOP = { left: 72, right: 32, top: 20, bottom: 36 }
 const GRID_PORTRAIT = { left: 48, right: 12, top: 16, bottom: 28 }
 
 const F0_COLOR_DESKTOP = '#1F2937'
-const F0_COLOR_PORTRAIT = '#3B82F6'
+const F0_COLOR_PORTRAIT = '#13B98B'
 
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '')
@@ -152,19 +152,19 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         type: 'value',
         min: minTime,
         max: maxTime,
-        axisLine: { lineStyle: { color: '#D0D5DD' } },
+        axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: isPortrait
-          ? { show: true, color: '#667085', fontSize: 10, hideOverlap: true, formatter: (v: number) => `${v}s` }
+          ? { show: true, color: '#6F8197', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
           : { show: false },
-        splitLine: { lineStyle: { color: '#F2F4F7' } },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
       yAxis: {
         type: 'value',
         min: 0,
         max: 500,
-        axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { color: '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
-        splitLine: { lineStyle: { color: '#F2F4F7' } },
+        axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
+        axisLabel: { color: isPortrait ? '#6F8197' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
       color: [f0Color],
       series: [

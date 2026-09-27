@@ -207,15 +207,20 @@ describe('portrait chart options', () => {
     expect(lines[1].label.color).toBe('#F5A9B8')
   })
 
-  it('shows the F0 x axis labels with a seconds suffix in portrait', () => {
+  it('shows the F0 x axis labels with token colors in portrait', () => {
     setMatchMedia(true)
     render(<F0Chart />)
     const option = lastOption()
     expect(option.xAxis.axisLabel.show).toBe(true)
     expect(option.xAxis.axisLabel.formatter(5)).toBe('5s')
     expect(option.xAxis.axisLabel.hideOverlap).toBe(true)
-    expect(option.xAxis.axisLabel.color).toBe('#667085')
-    expect(option.xAxis.axisLabel.fontSize).toBe(10)
+    expect(option.xAxis.axisLabel.color).toBe('#6F8197')
+    expect(option.xAxis.axisLabel.fontSize).toBe(11)
+    expect(option.xAxis.splitLine.lineStyle.color).toBe('#EDF1F5')
+    expect(option.xAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
+    expect(option.yAxis.axisLabel.color).toBe('#6F8197')
+    expect(option.yAxis.splitLine.lineStyle.color).toBe('#EDF1F5')
+    expect(option.yAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
   })
 
   it('tightens the F0 grid in portrait', () => {
@@ -224,13 +229,13 @@ describe('portrait chart options', () => {
     expect(lastOption().grid).toEqual({ left: 48, right: 12, top: 16, bottom: 28 })
   })
 
-  it('draws the F0 line in blue but keeps the per-zone target colors in portrait', () => {
+  it('draws the F0 line in token green but keeps the per-zone target colors in portrait', () => {
     setMatchMedia(true)
     render(<F0Chart />)
     const series = lastOption().series[0]
-    expect(series.lineStyle.color).toBe('#3B82F6')
-    expect(series.itemStyle.color).toBe('#3B82F6')
-    expect(lastOption().color).toEqual(['#3B82F6'])
+    expect(series.lineStyle.color).toBe('#13B98B')
+    expect(series.itemStyle.color).toBe('#13B98B')
+    expect(lastOption().color).toEqual(['#13B98B'])
     expect(series.markArea.data[0][0].itemStyle.color).toBe('rgba(91, 206, 250, 0.15)')
     expect(series.markArea.data[1][0].itemStyle.color).toBe('rgba(245, 169, 184, 0.15)')
     expect(series.markLine.data[0].lineStyle.color).toBe('rgba(91, 206, 250, 0.4)')
@@ -263,24 +268,34 @@ describe('portrait chart options', () => {
     expect(option.xAxis.axisLabel.show).toBe(true)
     expect(option.xAxis.axisLabel.formatter(5)).toBe('5s')
     expect(option.xAxis.axisLabel.hideOverlap).toBe(true)
+    expect(option.xAxis.axisLabel.color).toBe('#6F8197')
+    expect(option.xAxis.axisLabel.fontSize).toBe(11)
+    expect(option.xAxis.splitLine.lineStyle.color).toBe('#EDF1F5')
+    expect(option.xAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
+    expect(option.yAxis.axisLabel.color).toBe('#6F8197')
+    expect(option.yAxis.splitLine.lineStyle.color).toBe('#EDF1F5')
+    expect(option.yAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
     expect(option.grid).toEqual({ left: 48, right: 12, top: 16, bottom: 28 })
   })
 
-  it('paints the formant mark areas from the band colors in portrait', () => {
+  it('paints the formant mark areas from the token colors in portrait', () => {
     setMatchMedia(true)
     render(<FormantChart />)
     const f1 = seriesByName('F1')
-    expect(f1.markArea.data[0][0].itemStyle.color).toBe('rgba(59, 130, 246, 0.1)')
-    expect(f1.markLine.lineStyle.color).toBe('rgba(59, 130, 246, 0.55)')
+    expect(f1.markArea.data[0][0].itemStyle.color).toBe('rgba(232, 76, 104, 0.1)')
+    expect(f1.markLine.lineStyle.color).toBe('rgba(232, 76, 104, 0.55)')
   })
 
-  it('uses the green/red/blue series colors in portrait', () => {
+  it('uses the token green/red/blue series colors with 2px widths in portrait', () => {
     setMatchMedia(true)
     render(<FormantChart />)
-    expect(lastOption().color).toEqual(['#10B981', '#E23E57', '#3B82F6'])
-    expect(seriesByName('F0').lineStyle.color).toBe('#10B981')
-    expect(seriesByName('F1').lineStyle.color).toBe('#E23E57')
-    expect(seriesByName('F2').lineStyle.color).toBe('#3B82F6')
+    expect(lastOption().color).toEqual(['#13B98B', '#E84C68', '#4387F5'])
+    expect(seriesByName('F0').lineStyle.color).toBe('#13B98B')
+    expect(seriesByName('F0').lineStyle.width).toBe(2)
+    expect(seriesByName('F1').lineStyle.color).toBe('#E84C68')
+    expect(seriesByName('F1').lineStyle.width).toBe(2)
+    expect(seriesByName('F2').lineStyle.color).toBe('#4387F5')
+    expect(seriesByName('F2').lineStyle.width).toBe(2)
   })
 
   it('re-renders with portrait options when the viewport crosses the breakpoint', () => {

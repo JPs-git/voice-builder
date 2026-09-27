@@ -19,9 +19,9 @@ const COLORS = {
 }
 
 const PORTRAIT_COLORS = {
-  f0: '#10B981',
-  f1: '#E23E57',
-  f2: '#3B82F6',
+  f0: '#13B98B',
+  f1: '#E84C68',
+  f2: '#4387F5',
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -121,7 +121,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     const visible = seriesVisibleRef.current
     const keys = ['f0', 'f1', 'f2'] as const
     const palette = isPortrait ? PORTRAIT_COLORS : COLORS
-    const markColor = (k: keyof TargetBands) => currentBands[k].color
+    const markColor = (k: keyof TargetBands) => isPortrait ? PORTRAIT_COLORS[k] : currentBands[k].color
     const seriesData: Record<string, any[]> = {}
     for (const k of keys) {
       seriesData[k] = visible[k] ? data.map(f => [f.time, f[k] ?? null]) : []
@@ -176,19 +176,19 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         type: 'value',
         min: minTime,
         max: maxTime,
-        axisLine: { lineStyle: { color: '#D0D5DD' } },
+        axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: isPortrait
-          ? { show: true, color: '#667085', fontSize: 10, hideOverlap: true, formatter: (v: number) => `${v}s` }
+          ? { show: true, color: '#6F8197', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
           : { show: false },
-        splitLine: { lineStyle: { color: '#F2F4F7' } },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
       yAxis: {
         type: 'value',
         min: 0,
         max: FREQ_MAX,
-        axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { color: '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
-        splitLine: { lineStyle: { color: '#F2F4F7' } },
+        axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
+        axisLabel: { color: isPortrait ? '#6F8197' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
       color: keys.map(k => palette[k]),
       series: [
@@ -198,7 +198,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
           showSymbol: false,
           connectNulls: false,
           color: palette[k],
-          lineStyle: { color: palette[k], width: k === 'f0' ? 2 : 1.5 },
+          lineStyle: { color: palette[k], width: isPortrait ? 2 : (k === 'f0' ? 2 : 1.5) },
           itemStyle: { color: palette[k] },
           markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, markColor(k)) } : undefined,
           markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, markColor(k)) : undefined,
