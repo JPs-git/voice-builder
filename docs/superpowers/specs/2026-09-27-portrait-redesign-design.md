@@ -126,9 +126,30 @@ src/components/mobile/MobileMoreMenu.module.css
 
 `main` 底部留 `padding-bottom: 116px` 防止 `RecordDock`（含 safe-area）遮挡最后一个图表。
 
+### 4.7 录音状态的单一来源
+
+`useAnalysis` 把 `isCapturing` / `isRequesting` 存在**组件本地 state**，`usePlayback` 把 `isPlaying` 存在本地 state。因此**全应用只能有一个 `useToolbar` 实例**（由 `AppShell` 持有）。
+
+`AnalysisPortrait` **不得**再次调用 `useToolbar`——否则会创建第二个 `useAnalysis`，其 `isCapturing` 与 AppShell 的脱钩，且两个 `onRecord` 闭包会争抢同一个 `AudioEngine` 单例。
+
+正确做法：扩展既有的 `ShellContext`，由 `AppShell` 把录音状态与回调透传给路由组件。
+
+```ts
+export interface ShellContext {
+  cursorTime: number
+  hasData: boolean
+  isCapturing: boolean
+  isRequesting: boolean
+  onRecord: () => void   // AppShell 内绑定 handleClickTool('record')
+}
+```
+
+`AnalysisPortrait` 通过 `useOutletContext<ShellContext>()` 取用。`PracticePortrait` / `PracticeLandscape` 只解构 `cursorTime` / `hasData`，新增字段对它们无影响。
+
+
 ## 5. 数据流
 
-零新增数据流。`RecordDock.onRecord` 与 `MobileMoreMenu.onSelect` 均回调到 `useToolbar.handleClickTool`，因此：
+零新增数据流。`RecordDock.onRecord` 与 `MobileMoreMenu.onSelect` 均最终回调到 `AppShell` 内唯一那个 `useToolbar` 实例的 `handleClickTool`（前者经 `ShellContext.onRecord` 透传，见 §4.7），因此：
 
 - 点 Dock 麦克风 → 完整走录音流程（含 `isRequesting` 授权态）。
 - 点 `...` 里的「回放」→ 先 `stop()` 播放，再切播放态。

@@ -538,17 +538,13 @@ Expected: FAIL — `Failed to resolve import "../components/mobile/TrainingGoalC
 创建 `src/components/mobile/TrainingGoalCard.tsx`：
 
 ```tsx
-import { VOWEL_PRESETS } from '../../types'
+import { VOWEL_PRESETS, presetShortLabel } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { F0_RANGE } from '../../config/analysisRanges'
 import { usePresetBands, bandKeyToId } from '../../hooks/usePresetBands'
 import styles from './TrainingGoalCard.module.css'
 
 const BAND_KEYS = ['f0', 'f1', 'f2'] as const
-
-export function presetShortLabel(presetName: string): string {
-  return VOWEL_PRESETS[presetName]?.label.replace('元音 ', '') ?? '—'
-}
 
 export function TrainingGoalCard() {
   const bands = useAppStore(s => s.bands)
@@ -863,13 +859,10 @@ describe('FeedbackHero', () => {
   })
 
   it('maps status to a glyph', () => {
-    const hit: FormantStatus = 'hit'
-    const low: FormantStatus = 'low'
-    const none: FormantStatus = 'none'
-    render(<FeedbackHero data-status-map={{ hit, low, none }} />)
-    expect(screen.getByTestId('status-hit').textContent).toBe('✓')
-    expect(screen.getByTestId('status-low').textContent).toBe('↓')
-    expect(screen.getByTestId('status-none').textContent).toBe('—')
+    expect(statusGlyph('hit')).toBe('✓')
+    expect(statusGlyph('low')).toBe('↓')
+    expect(statusGlyph('high')).toBe('↑')
+    expect(statusGlyph('none')).toBe('—')
   })
 
   it('shows the detected voice register', () => {
@@ -931,11 +924,7 @@ function formatValue(value: number | null | undefined): string {
   return String(Math.round(value))
 }
 
-interface FeedbackHeroProps {
-  dataStatusMap?: Partial<Record<FormantStatus, FormantStatus>>
-}
-
-export function FeedbackHero({ dataStatusMap }: FeedbackHeroProps) {
+export function FeedbackHero() {
   const latestFrame = useAppStore(s => s.latestFrame)
   const bands = useAppStore(s => s.bands)
   const formantVisible = useAppStore(s => s.formantVisible)
@@ -950,15 +939,6 @@ export function FeedbackHero({ dataStatusMap }: FeedbackHeroProps) {
 
   return (
     <section className={styles.card} aria-label="实时反馈">
-      {dataStatusMap ? (
-        <div className={styles.glyphProbe}>
-          {(['hit', 'low', 'high', 'none'] as FormantStatus[]).map(s => (
-            <span key={s} data-testid={`status-${s}`}>
-              {statusGlyph(dataStatusMap[s] ?? s)}
-            </span>
-          ))}
-        </div>
-      ) : null}
 
       <div className={styles.top}>
         <div className={styles.readout}>
@@ -2125,7 +2105,7 @@ import { useOutletContext } from 'react-router-dom'
 import { useAppStore } from '../store/appStore'
 import { useToolbar } from '../hooks/useToolbar'
 import type { ShellContext } from './AppShell'
-import { TrainingGoalCard, presetShortLabel } from '../components/mobile/TrainingGoalCard'
+import { TrainingGoalCard } from '../components/mobile/TrainingGoalCard'
 import { FeedbackHero } from '../components/mobile/FeedbackHero'
 import { RecordDock } from '../components/mobile/RecordDock'
 import { F0Chart } from '../components/F0Chart'
@@ -2133,6 +2113,7 @@ import { FormantChart } from '../components/FormantChart'
 import { EmptyState } from '../components/EmptyState'
 import { TipWidget } from '../components/TipWidget'
 import type { FormantSeries } from '../types'
+import { presetShortLabel } from '../types'
 import styles from './AnalysisPage.module.css'
 
 const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
@@ -2144,27 +2125,19 @@ const SERIES_COLORS: Record<FormantSeries, string> = {
 }
 
 export function AnalysisPortrait() {
-  const { cursorTime, hasData } = useOutletContext<ShellContext>()
+  const { cursorTime, hasData, isCapturing, isRequesting, onRecord } =
+    useOutletContext<ShellContext>()
 
   const formantVisible = useAppStore(s => s.formantVisible)
   const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
   const activePreset = useAppStore(s => s.activePreset)
-
-  const { toolItems, handleClickTool } = useToolbar(
-    useCallback(() => {}, []),
-    useCallback(() => {}, []),
-    useCallback(() => {}, []),
-  )
 
   const goalRef = useRef<HTMLDivElement>(null)
   const scrollToGoal = useCallback(() => {
     goalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
-  const recordItem = toolItems.find(i => i.id === 'record')
   const goalLabel = presetShortLabel(activePreset)
-  const isCapturing = recordItem?.recording ?? false
-  const isRequesting = recordItem?.disabled ?? false
 
   return (
     <div className={styles.page} data-layout="portrait">
@@ -2241,7 +2214,7 @@ export function AnalysisPortrait() {
       </main>
 
       <RecordDock
-        onRecord={() => handleClickTool('record')}
+        onRecord={onRecord}
         isCapturing={isCapturing}
         isRequesting={isRequesting}
         goalLabel={goalLabel}
@@ -2455,6 +2428,9 @@ const PORTRAIT_QUERY = '(max-width: 768px)'
 export interface ShellContext {
   cursorTime: number
   hasData: boolean
+  isCapturing: boolean
+  isRequesting: boolean
+  onRecord: () => void
 }
 
 export function AppShell() {
@@ -2466,14 +2442,24 @@ export function AppShell() {
   const isPractice = useMatch('/practice') != null
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
 
-  const { toolItems, handleClickTool, cursorTime, hasData, fileInputRef, handleFileChange }
-    = useToolbar(
-      () => setConfigOpen(true),
-      () => setHelpOpen(true),
-      () => setAboutOpen(true),
-    )
+  const {
+    toolItems, handleClickTool, cursorTime, hasData,
+    isCapturing, isRequesting, fileInputRef, handleFileChange,
+  } = useToolbar(
+    () => setConfigOpen(true),
+    () => setHelpOpen(true),
+    () => setAboutOpen(true),
+  )
 
   const togglePage = () => navigate(isPractice ? '/' : '/practice')
+
+  const shellContext: ShellContext = {
+    cursorTime,
+    hasData,
+    isCapturing,
+    isRequesting,
+    onRecord: () => handleClickTool('record'),
+  }
 
   return (
     <>
@@ -2485,7 +2471,7 @@ export function AppShell() {
           ? <MobileMoreMenu items={toolItems} onSelect={handleClickTool} />
           : undefined}
       />
-      <Outlet context={{ cursorTime, hasData } satisfies ShellContext} />
+      <Outlet context={shellContext} />
       <Toast />
       <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
@@ -2530,7 +2516,7 @@ git commit -m "feat(shell): 竖屏顶栏切换为溢出菜单并暴露录音状�
 | §4.4 `MobileMoreMenu`（排除 record，6 项） | Task 6 Step 1 |
 | §4.5 竖版图表配置表 | Task 4 Step 1 六条断言 |
 | §4.6 AnalysisPortrait 布局顺序 + 116px padding | Task 7 Step 1/4 |
-| §5 数据流（全部经 `handleClickTool`） | Task 7 Step 3（`onRecord={() => handleClickTool('record')}`）、Task 8 Step 4（`onSelect={handleClickTool}`） |
+| §5 数据流（全部经 `handleClickTool`） | Task 7 Step 3（`ShellContext` 传入 AppShell 唯一的 `useToolbar` 实例派生的 `onRecord`）、Task 8 Step 4（`onSelect={handleClickTool}`） |
 | §6 测试策略 7 项 | Task 1/2/3/4/5/6/7/8 各自的测试文件 |
 | §8 风险：菜单漏项 | Task 6 Step 1 断言 labels 数组恰好 6 项 |
 | §8 风险：safe-area | Task 5 Step 4 CSS |
