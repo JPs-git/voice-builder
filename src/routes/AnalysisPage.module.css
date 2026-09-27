@@ -108,6 +108,7 @@
   border-radius: 50%;
   display: inline-block;
 }
+.portraitTabs { display: none; }
 
 @media (max-width: 768px) {
   .page {
@@ -140,4 +141,37 @@
     min-height: 0;
     margin: 8px auto;
   }
+  .portraitMain {
+    padding: 12px 14px 116px;
+    gap: 12px;
+  }
+  .portraitSlot { flex-shrink: 0; }
+  .portraitTabs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .portraitTab {
+    background: none;
+    border: none;
+    padding: 2px 0;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    cursor: pointer;
+  }
+  .portraitTabDivider {
+    color: var(--border-strong);
+    font-size: 13px;
+  }
+  .portraitCard { flex: 0 0 auto; }
+  .portraitCard .chartWrapper {
+    height: 240px;
+    min-height: 240px;
+    margin: 8px auto;
+  }
+  .portraitCard .chartArea { min-height: 160px; }
 }
