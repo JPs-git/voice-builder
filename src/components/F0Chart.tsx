@@ -124,6 +124,8 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
     const f0Color = isPortrait ? F0_COLOR_PORTRAIT : F0_COLOR_DESKTOP
     const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => zone.color
+    const dots = data.filter(f => f.f0 != null && f.f0 > 0)
+    const lastDot = dots[dots.length - 1]
 
     const hasData = data.length > 0
     let minTime: number, maxTime: number
@@ -177,6 +179,13 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
           itemStyle: { color: f0Color },
           markArea: { silent: true, data: buildMarkAreas(TARGET_ZONES, zoneColor) },
           markLine: { silent: true, symbol: 'none', data: buildMarkLineData(TARGET_ZONES, zoneColor) },
+          markPoint: isPortrait && lastDot ? {
+            silent: true,
+            symbol: 'circle',
+            symbolSize: 7,
+            itemStyle: { color: f0Color },
+            data: [{ coord: [lastDot.time, lastDot.f0], symbolSize: 7 }],
+          } : undefined,
           data: seriesData,
         },
         {

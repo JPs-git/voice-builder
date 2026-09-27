@@ -318,4 +318,17 @@ describe('portrait chart options', () => {
     expect(lastOption().grid.left).toBe(48)
     expect(lastOption().xAxis.axisLabel.show).toBe(true)
   })
+
+  it('marks the latest F0 sample with a 6-8px dot', () => {
+    setMatchMedia(true)
+    const st = useAppStore.getState()
+    st.clearFrames()
+    st.appendFrame({ time: 1, f0: 240, f1: 900, f2: 1200 })
+    st.appendFrame({ time: 2, f0: 245, f1: 920, f2: 1250 })
+    render(<F0Chart />)
+    const mp = lastOption().series[0].markPoint
+    expect(mp.data[0].coord).toEqual([2, 245])
+    expect(mp.data[0].symbolSize).toBeGreaterThanOrEqual(6)
+    expect(mp.data[0].symbolSize).toBeLessThanOrEqual(8)
+  })
 })
