@@ -105,20 +105,18 @@ describe('FeedbackHero', () => {
     expect(screen.getByTestId('hero-col-f2-status').textContent).toBe('↑')
   })
 
-  it('shows the detected voice register', () => {
-    setFrame(240, 900, 1200, 'chest')
+  it('renders the design header and readout panel', () => {
+    setFrame(245, 920, 1250)
     render(<FeedbackHero />)
-    const register = screen.getByTestId('hero-register')
-    expect(register.textContent).toBe('真声')
-    expect(register.getAttribute('data-register')).toBe('chest')
+    expect(screen.getByText('实时反馈')).toBeTruthy()
+    expect(screen.getByTestId('hero-f0').textContent).toBe('245')
+    expect(screen.getByTestId('hero-badge').textContent).toBe('目标范围内')
   })
 
-  it('falls back to the unvoiced register when the frame carries none', () => {
-    setFrame(240, 900, 1200)
+  it('omits the register row to match the 390px design', () => {
+    setFrame(240, 900, 1200, 'chest')
     render(<FeedbackHero />)
-    const register = screen.getByTestId('hero-register')
-    expect(register.textContent).toBe('—')
-    expect(register.getAttribute('data-register')).toBe('unvoiced')
+    expect(screen.queryByTestId('hero-register')).toBeNull()
   })
 
   it('treats a non-finite or non-positive F0 as missing', () => {

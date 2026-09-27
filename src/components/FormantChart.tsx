@@ -18,6 +18,12 @@ const COLORS = {
   f2: '#3B82F6',
 }
 
+const PORTRAIT_COLORS = {
+  f0: '#10B981',
+  f1: '#E23E57',
+  f2: '#3B82F6',
+}
+
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '')
   const r = parseInt(h.substring(0, 2), 16)
@@ -114,6 +120,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   ) {
     const visible = seriesVisibleRef.current
     const keys = ['f0', 'f1', 'f2'] as const
+    const palette = isPortrait ? PORTRAIT_COLORS : COLORS
     const markColor = (k: keyof TargetBands) => currentBands[k].color
     const seriesData: Record<string, any[]> = {}
     for (const k of keys) {
@@ -152,7 +159,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
           for (const k of tooltipKeys) {
             const name = k.toUpperCase()
             const p = byName[name]
-            const color = COLORS[k as keyof typeof COLORS]
+            const color = palette[k as keyof typeof palette]
             const raw = p?.value?.[1]
             const v = (raw != null && raw > 0) ? Math.round(raw) : null
             const text = v == null ? '--' : `${v} Hz`
@@ -183,16 +190,16 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         axisLabel: { color: '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
         splitLine: { lineStyle: { color: '#F2F4F7' } },
       },
-      color: keys.map(k => COLORS[k]),
+      color: keys.map(k => palette[k]),
       series: [
         ...keys.map(k => ({
           name: k.toUpperCase(),
           type: 'line' as const,
           showSymbol: false,
           connectNulls: false,
-          color: COLORS[k],
-          lineStyle: { color: COLORS[k], width: k === 'f0' ? 2 : 1.5 },
-          itemStyle: { color: COLORS[k] },
+          color: palette[k],
+          lineStyle: { color: palette[k], width: k === 'f0' ? 2 : 1.5 },
+          itemStyle: { color: palette[k] },
           markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, markColor(k)) } : undefined,
           markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, markColor(k)) : undefined,
           data: seriesData[k],

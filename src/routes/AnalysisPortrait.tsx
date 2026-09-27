@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useAppStore } from '../store/appStore'
 import type { ShellContext } from './AppShell'
@@ -16,10 +16,12 @@ import styles from './AnalysisPage.module.css'
 const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
 
 const SERIES_COLORS: Record<FormantSeries, string> = {
-  f0: '#1F2937',
+  f0: '#10B981',
   f1: '#E23E57',
   f2: '#3B82F6',
 }
+
+type ChartTab = 'f0' | 'formant'
 
 export function AnalysisPortrait() {
   const { cursorTime, hasData, isCapturing, isRequesting, onRecord } =
@@ -29,9 +31,17 @@ export function AnalysisPortrait() {
   const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
   const activePreset = useAppStore(s => s.activePreset)
 
+  const [activeTab, setActiveTab] = useState<ChartTab>('f0')
+
   const goalRef = useRef<HTMLDivElement>(null)
   const scrollToGoal = useCallback(() => {
     goalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
+  const scrollToChart = useCallback((tab: ChartTab) => {
+    setActiveTab(tab)
+    document.getElementById(tab === 'f0' ? 'f0Chart' : 'formantChart')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [])
 
   const goalLabel = presetShortLabel(activePreset)
@@ -47,28 +57,43 @@ export function AnalysisPortrait() {
           <FeedbackHero />
         </div>
 
-        <nav className={styles.portraitTabs} aria-label="图表导航">
-          <button
-            type="button"
-            className={styles.portraitTab}
-            onClick={() => document.getElementById('f0Chart')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-          >
-            基频
-          </button>
-          <span className={styles.portraitTabDivider} aria-hidden="true">|</span>
-          <button
-            type="button"
-            className={styles.portraitTab}
-            onClick={() => document.getElementById('formantChart')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-          >
-            共振峰
-          </button>
-        </nav>
+        <section className={`${styles.card} ${styles.portraitChartsCard}`}>
+          <nav className={styles.portraitTabs} aria-label="图表导航">
+            <button
+              type="button"
+              className={styles.portraitTab}
+              data-active={String(activeTab === 'f0')}
+              onClick={() => scrollToChart('f0')}
+            >
+              基频
+            </button>
+            <button
+              type="button"
+              className={styles.portraitTab}
+              data-active={String(activeTab === 'formant')}
+              onClick={() => scrollToChart('formant')}
+            >
+              共振峰
+            </button>
+          </nav>
 
-        <section className={`${styles.card} ${styles.portraitCard}`}>
-          <div className={styles.chartWrapper}>
-            <div className={styles.chartHeader}>
+          <div className={styles.chartPanel}>
+            <div className={styles.chartPanelHeader}>
               <h2 className={styles.cardTitle}>基频</h2>
+              <div className={styles.f0Legend} data-testid="f0-legend" aria-label="图例">
+                <span className={styles.f0LegendItem}>
+                  <i className={styles.f0LegendLine} aria-hidden="true" />
+                  当前值
+                </span>
+                <span className={styles.f0LegendItem}>
+                  <i className={styles.f0LegendZone} aria-hidden="true" />
+                  目标区间
+                </span>
+                <span className={styles.f0LegendItem}>
+                  <i className={styles.f0LegendTarget} aria-hidden="true" />
+                  目标线
+                </span>
+              </div>
             </div>
             <div className={styles.chartArea}>
               <F0Chart cursorTime={cursorTime} />
@@ -79,33 +104,34 @@ export function AnalysisPortrait() {
               />
             </div>
           </div>
-        </section>
 
-        <section className={`${styles.card} ${styles.portraitCard}`}>
-          <div className={`${styles.chartHeader} ${styles.chartHeaderLegend}`}>
-            <h2 className={styles.cardTitle}>共振峰</h2>
-            <div className={styles.cardLegend} aria-label="图例">
-              {LEGEND_KEYS.map(key => (
-                <button
-                  key={key}
-                  className={styles.legendItem}
-                  data-key={key}
-                  data-active={String(formantVisible[key])}
-                  onClick={() => toggleFormantVisible(key)}
-                >
-                  <i style={{ background: SERIES_COLORS[key] }}></i>
-                  {key.toUpperCase()}
-                </button>
-              ))}
+          <div className={styles.chartPanel}>
+            <div className={styles.chartPanelHeader}>
+              <h2 className={styles.cardTitle}>共振峰</h2>
+              <div className={styles.cardLegend} data-testid="formant-legend" aria-label="图例">
+                {LEGEND_KEYS.map(key => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={styles.legendItem}
+                    data-key={key}
+                    data-active={String(formantVisible[key])}
+                    onClick={() => toggleFormantVisible(key)}
+                  >
+                    <i style={{ background: SERIES_COLORS[key] }} />
+                    {key.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className={styles.chartArea}>
-            <FormantChart cursorTime={cursorTime} />
-            <EmptyState
-              title="曲线待生成"
-              description="录音或导入音频后显示共振峰曲线"
-              visible={!hasData}
-            />
+            <div className={styles.chartArea}>
+              <FormantChart cursorTime={cursorTime} />
+              <EmptyState
+                title="曲线待生成"
+                description="录音或导入音频后显示共振峰曲线"
+                visible={!hasData}
+              />
+            </div>
           </div>
         </section>
       </main>

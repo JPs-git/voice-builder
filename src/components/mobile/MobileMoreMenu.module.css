@@ -4,18 +4,21 @@
   display: flex;
 }
 .trigger {
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 42px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border-strong);
-  border-radius: 50%;
+  border: 1px solid var(--border);
+  border-radius: 13px;
   background: var(--panel);
-  color: var(--text-soft);
+  color: var(--text);
   font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
   line-height: 1;
   font-family: inherit;
   cursor: pointer;
+  box-shadow: var(--shadow-card);
 }
 .trigger:hover { background: #F9FAFB; color: var(--text); }
 .trigger:focus-visible {

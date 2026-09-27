@@ -56,15 +56,16 @@
 }
 
 .toolbar[data-compact="true"] {
-  padding: 8px 14px;
+  padding: 10px 16px;
   gap: 10px;
+  border-bottom: none;
 }
 .toolbar[data-compact="true"] .logo {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
 }
 .toolbar[data-compact="true"] .subtitle { display: none; }
-.toolbar[data-compact="true"] .title { font-size: 16px; }
+.toolbar[data-compact="true"] .title { font-size: 21px; font-weight: 800; }
 .toolbar[data-compact="true"] .brand {
   min-width: 0;
   flex-shrink: 1;

@@ -10,15 +10,20 @@ export function TrainingGoalCard() {
   const bands = useAppStore(s => s.bands)
   const activePreset = useAppStore(s => s.activePreset)
   const switchPreset = useAppStore(s => s.switchPreset)
-  const { localValues, onInputChange, onCommit, onInputKeyDown, onReset } = usePresetBands()
+  const { localValues, onInputChange, onCommit, onInputKeyDown } = usePresetBands()
 
   const presetKeys = Object.keys(VOWEL_PRESETS) as (keyof typeof VOWEL_PRESETS)[]
 
   return (
     <section className={styles.card} aria-label="训练目标">
       <header className={styles.header}>
+        <span className={styles.targetIcon} role="img" aria-label="训练目标图标">◎</span>
         <span className={styles.title}>训练目标</span>
-        <div className={styles.presetGroup}>
+        <span className={styles.chevron} aria-hidden="true">›</span>
+      </header>
+
+      <div className={styles.body}>
+        <div className={styles.vowelBox}>
           <select
             className={styles.select}
             value={activePreset}
@@ -32,36 +37,26 @@ export function TrainingGoalCard() {
             ))}
           </select>
         </div>
-        <button
-          type="button"
-          className={styles.reset}
-          onClick={onReset}
-          aria-label="重置所有预设"
-        >
-          ⟲
-        </button>
-      </header>
 
-      <div className={styles.bands}>
-        {BAND_KEYS.map(key => (
-          <BandRangeRow
-            key={key}
-            bandKey={key}
-            localValues={localValues}
-            onInputChange={onInputChange}
-            onCommit={onCommit}
-            onInputKeyDown={onInputKeyDown}
-            className={styles.bandRow}
-            keyClassName={styles.bandKey}
-            inputClassName={styles.bandInput}
-            dashClassName={styles.dash}
-            unitClassName={styles.unit}
-            style={{ borderLeftColor: bands[key].color }}
-          />
-        ))}
+        <div className={styles.bands}>
+          {BAND_KEYS.map(key => (
+            <BandRangeRow
+              key={key}
+              bandKey={key}
+              localValues={localValues}
+              onInputChange={onInputChange}
+              onCommit={onCommit}
+              onInputKeyDown={onInputKeyDown}
+              className={styles.bandRow}
+              keyClassName={styles.bandKey}
+              inputClassName={styles.bandInput}
+              dashClassName={styles.dash}
+              unitClassName={styles.unit}
+              style={{ borderLeftColor: bands[key].color }}
+            />
+          ))}
+        </div>
       </div>
-
-      <span className={styles.chevron} aria-hidden="true">›</span>
     </section>
   )
 }

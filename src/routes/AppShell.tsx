@@ -58,7 +58,7 @@ export function AppShell() {
       <Toolbar
         toolItems={toolItems}
         onToolClick={handleClickTool}
-        nav={{ label: isPractice ? '返回分析' : '音高参考', onClick: togglePage }}
+        nav={isPortrait ? undefined : { label: isPractice ? '返回分析' : '音高参考', onClick: togglePage }}
         moreMenu={isPortrait
           ? <MobileMoreMenu items={toolItems} onSelect={handleClickTool} />
           : undefined}

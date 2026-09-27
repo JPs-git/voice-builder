@@ -123,9 +123,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
   ) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
     const f0Color = isPortrait ? F0_COLOR_PORTRAIT : F0_COLOR_DESKTOP
-    const zoneColor: (zone: TargetZone) => string = isPortrait
-      ? () => f0Color
-      : (zone: TargetZone) => zone.color
+    const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => zone.color
 
     const hasData = data.length > 0
     let minTime: number, maxTime: number

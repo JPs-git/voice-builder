@@ -49,6 +49,7 @@ describe('AppShell toolbar density', () => {
     renderShell()
     expect(screen.getByLabelText('更多操作')).toBeTruthy()
     expect(screen.queryByText('导入音频')).toBeNull()
+    expect(screen.queryByText('音高参考')).toBeNull()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('true')
   })
 
@@ -57,6 +58,7 @@ describe('AppShell toolbar density', () => {
     renderShell()
     expect(screen.queryByLabelText('更多操作')).toBeNull()
     expect(screen.getByText('导入音频')).toBeTruthy()
+    expect(screen.getByText('音高参考')).toBeTruthy()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('false')
     expect(document.querySelectorAll('header button[id]').length).toBe(7)
   })

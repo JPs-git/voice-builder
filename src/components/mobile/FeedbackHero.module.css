@@ -1,138 +1,158 @@
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 14px;
   box-shadow: var(--shadow-card);
-  padding: 14px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.top {
+.header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
 }
-.readout {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-width: 0;
+.heroIcon {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 18px;
 }
-.readoutLabel {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-soft);
+.heroIcon i {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--text);
 }
-.readoutValue {
-  font-size: 40px;
+.heroIcon i:nth-child(1) { height: 10px; }
+.heroIcon i:nth-child(2) { height: 18px; }
+.heroIcon i:nth-child(3) { height: 13px; }
+.title {
+  font-size: 17px;
   font-weight: 800;
-  line-height: 1;
   color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.readoutUnit {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-mute);
+  white-space: nowrap;
 }
 .badge {
+  margin-left: auto;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  padding: 5px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   white-space: nowrap;
+}
+.badgeDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .badge[data-tone="idle"] {
   background: #F2F4F7;
   color: var(--text-mute);
 }
 .badge[data-tone="hit"] {
-  background: var(--hit-soft);
+  background: #E6F7ED;
   color: #047857;
+  border: 1px solid #B9E9CC;
 }
 .badge[data-tone="warn"] {
   background: var(--warn-soft);
   color: #B45309;
 }
+.readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  background: #E9F8EF;
+  border-radius: 12px;
+  padding: 10px 12px 12px;
+}
+.readoutLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hit);
+}
+.readoutRow {
+  display: inline-flex;
+  align-items: baseline;
+}
+.readoutValue {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.readoutUnit {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-mute);
+  margin-left: 6px;
+}
 .columns {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border-top: 1px dashed var(--border);
-  padding-top: 12px;
+  padding-top: 2px;
 }
 .column {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 4px;
+  gap: 4px;
+  padding: 4px;
   border-left: 1px solid var(--border);
 }
 .column:first-child {
   border-left: none;
 }
 .columnKey {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  color: var(--text-soft);
-  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-mute);
+  font-family: var(--font-sans);
+}
+.columnValueRow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
 }
 .columnValue {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 19px;
+  font-weight: 800;
   line-height: 1.1;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 .columnUnit {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-mute);
 }
 .columnStatus {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
 }
 .columnStatus[data-status="hit"] {
-  color: var(--hit);
+  background: #E6F7ED;
+  color: #059669;
 }
 .columnStatus[data-status="low"],
 .columnStatus[data-status="high"] {
-  color: var(--warn);
+  background: var(--warn-soft);
+  color: #B45309;
 }
 .columnStatus[data-status="none"] {
-  color: var(--text-mute);
-}
-.registerRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px dashed var(--border);
-  padding-top: 10px;
-}
-.registerLabel {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-soft);
-}
-.registerValue {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-}
-.registerValue[data-register="chest"] {
-  color: var(--hit);
-}
-.registerValue[data-register="mixed"] {
-  color: var(--warn);
-}
-.registerValue[data-register="falsetto"] {
-  color: var(--primary);
-}
-.registerValue[data-register="unvoiced"] {
+  background: #F2F4F7;
   color: var(--text-mute);
 }

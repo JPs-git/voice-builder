@@ -61,6 +61,21 @@ describe('RecordDock', () => {
     expect(onRecord).not.toHaveBeenCalled()
   })
 
+  it('renders a microphone glyph with a halo behind the idle mic', () => {
+    render(
+      <RecordDock
+        onRecord={() => {}}
+        isCapturing={false}
+        isRequesting={false}
+        goalLabel="元音 a"
+        onGoalClick={() => {}}
+      />,
+    )
+    const dock = document.querySelector('[data-portrait-dock="true"]')
+    expect(dock?.querySelector('[data-testid="dock-mic-halo"]')).toBeTruthy()
+    expect(dock?.querySelector('svg')).toBeTruthy()
+  })
+
   it('shows the current goal and opens it on click', () => {
     const onGoalClick = vi.fn()
     render(

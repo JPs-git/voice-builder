@@ -7,8 +7,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: var(--panel);
   border-top: 1px solid var(--border);
   border-radius: 20px 20px 0 0;
@@ -20,47 +20,59 @@
   min-width: 0;
   min-height: 44px;
   display: flex;
-  align-items: baseline;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   padding: 8px 12px;
-  background: var(--panel);
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  background: none;
+  border: none;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
 }
-.goal:active { background: #F9FAFB; }
 .goal:focus-visible {
   outline: 2px solid var(--info);
   outline-offset: 2px;
 }
 .goalLabel {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: var(--primary-soft);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+  flex-shrink: 0;
 }
 .goalHint {
-  font-size: 11px;
-  color: var(--text-mute);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
   white-space: nowrap;
   flex-shrink: 0;
 }
 .goalChevron {
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   color: var(--text-mute);
   flex-shrink: 0;
-  align-self: center;
+}
+.micHalo {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: #FBDCE1;
 }
 .mic {
-  flex-shrink: 0;
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
   border: none;
@@ -73,6 +85,7 @@
   box-shadow: 0 4px 12px rgba(226, 62, 87, 0.35);
   transition: transform .1s ease;
 }
+.mic svg { display: block; }
 .mic:active { transform: scale(0.94); }
 .mic:focus-visible {
   outline: 2px solid var(--info);
@@ -88,11 +101,11 @@
   animation: mic-pulse 1.6s ease-in-out infinite;
 }
 .hint {
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--text-soft);
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-mute);
   white-space: nowrap;
-  max-width: 84px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -104,6 +117,8 @@
 
 @media (max-width: 360px) {
   .dock { gap: 8px; padding-left: 12px; padding-right: 12px; }
+  .micHalo { width: 76px; height: 76px; }
+  .mic { width: 56px; height: 56px; }
   .hint { display: none; }
 }
 

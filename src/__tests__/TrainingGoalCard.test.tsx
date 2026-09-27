@@ -61,22 +61,15 @@ describe('TrainingGoalCard', () => {
     expect(document.activeElement).not.toBe(f0Lo)
   })
 
-  it('restores the default preset bands and clears overrides on reset', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('renders the design header with target icon, title and chevron', () => {
     render(<TrainingGoalCard />)
+    expect(screen.getByText('训练目标')).toBeTruthy()
+    expect(screen.getByLabelText('训练目标图标')).toBeTruthy()
+  })
 
-    const f1Lo = screen.getByLabelText('F1下限') as HTMLInputElement
-    fireEvent.change(f1Lo, { target: { value: '700' } })
-    fireEvent.blur(f1Lo)
-    fireEvent.change(screen.getByLabelText('选择元音预设'), { target: { value: 'vowel-i' } })
-    expect(useAppStore.getState().bands.f1.range).toEqual(VOWEL_PRESETS['vowel-i'].f1)
-    expect(useAppStore.getState().presetOverrides).toHaveLength(1)
-
-    fireEvent.click(screen.getByLabelText('重置所有预设'))
-
-    expect(useAppStore.getState().presetOverrides).toHaveLength(0)
-    expect(useAppStore.getState().activePreset).toBe('vowel-a')
-    expect(useAppStore.getState().bands.f1.range).toEqual(VOWEL_PRESETS['vowel-a'].f1)
+  it('omits the reset control to match the 390px design', () => {
+    render(<TrainingGoalCard />)
+    expect(screen.queryByLabelText('重置所有预设')).toBeNull()
   })
 
   it('renders a decorative chevron', () => {

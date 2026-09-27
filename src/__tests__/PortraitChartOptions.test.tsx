@@ -224,16 +224,18 @@ describe('portrait chart options', () => {
     expect(lastOption().grid).toEqual({ left: 48, right: 12, top: 16, bottom: 28 })
   })
 
-  it('draws the F0 line and target zones in blue in portrait', () => {
+  it('draws the F0 line in blue but keeps the per-zone target colors in portrait', () => {
     setMatchMedia(true)
     render(<F0Chart />)
     const series = lastOption().series[0]
     expect(series.lineStyle.color).toBe('#3B82F6')
     expect(series.itemStyle.color).toBe('#3B82F6')
     expect(lastOption().color).toEqual(['#3B82F6'])
-    expect(series.markArea.data[0][0].itemStyle.color).toBe('rgba(59, 130, 246, 0.15)')
-    expect(series.markLine.data[0].lineStyle.color).toBe('rgba(59, 130, 246, 0.4)')
-    expect(series.markLine.data[0].label.color).toBe('#3B82F6')
+    expect(series.markArea.data[0][0].itemStyle.color).toBe('rgba(91, 206, 250, 0.15)')
+    expect(series.markArea.data[1][0].itemStyle.color).toBe('rgba(245, 169, 184, 0.15)')
+    expect(series.markLine.data[0].lineStyle.color).toBe('rgba(91, 206, 250, 0.4)')
+    expect(series.markLine.data[0].label.color).toBe('#5BCEFA')
+    expect(series.markLine.data[1].label.color).toBe('#F5A9B8')
   })
 
   it('keeps the landscape formant grid and hidden x axis labels', () => {
@@ -270,6 +272,15 @@ describe('portrait chart options', () => {
     const f1 = seriesByName('F1')
     expect(f1.markArea.data[0][0].itemStyle.color).toBe('rgba(59, 130, 246, 0.1)')
     expect(f1.markLine.lineStyle.color).toBe('rgba(59, 130, 246, 0.55)')
+  })
+
+  it('uses the green/red/blue series colors in portrait', () => {
+    setMatchMedia(true)
+    render(<FormantChart />)
+    expect(lastOption().color).toEqual(['#10B981', '#E23E57', '#3B82F6'])
+    expect(seriesByName('F0').lineStyle.color).toBe('#10B981')
+    expect(seriesByName('F1').lineStyle.color).toBe('#E23E57')
+    expect(seriesByName('F2').lineStyle.color).toBe('#3B82F6')
   })
 
   it('re-renders with portrait options when the viewport crosses the breakpoint', () => {
