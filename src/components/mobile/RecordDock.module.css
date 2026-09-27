@@ -75,7 +75,6 @@
 .mic {
   width: 46px;
   height: 46px;
-  position: relative;
   display: grid;
   place-items: center;
   border: none;
@@ -89,11 +88,6 @@
   transition: transform .1s ease;
 }
 .mic svg { display: block; width: 15px; height: 20px; }
-.mic::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-}
 .mic:active { transform: scale(.98); }
 .mic:focus-visible {
   outline: 2px solid var(--info);
