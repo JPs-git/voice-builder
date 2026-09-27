@@ -56,7 +56,9 @@
 }
 
 .toolbar[data-compact="true"] {
-  padding: 13px 16px;   /* 38px logo + 26 = 64px header */
+  height: 64px;
+  box-sizing: border-box;
+  padding: 10px 16px;
   gap: 10px;
   border-bottom: none;
 }
