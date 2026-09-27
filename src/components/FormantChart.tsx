@@ -1,10 +1,16 @@
 import { useRef, useEffect } from 'react'
 import { useECharts } from '../hooks/useECharts'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame, TargetBands } from '../types'
 
 const WINDOW = 10
 const FREQ_MAX = 3500
+
+const PORTRAIT_QUERY = '(max-width: 768px)'
+
+const GRID_DESKTOP = { left: 72, right: 32, top: 20, bottom: 36 }
+const GRID_PORTRAIT = { left: 48, right: 12, top: 16, bottom: 28 }
 
 const COLORS = {
   f0: '#1F2937',
@@ -20,20 +26,20 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-function buildMarkArea(band: { range: [number, number]; color: string }) {
+function buildMarkArea(range: [number, number], color: string) {
   return [[{
-    yAxis: band.range[0],
-    itemStyle: { color: hexToRgba(band.color, 0.10) },
-  }, { yAxis: band.range[1] }]]
+    yAxis: range[0],
+    itemStyle: { color: hexToRgba(color, 0.10) },
+  }, { yAxis: range[1] }]]
 }
 
-function buildMarkLine(band: { range: [number, number]; color: string }, name: string) {
-  const mid = Math.round((band.range[0] + band.range[1]) / 2)
+function buildMarkLine(range: [number, number], name: string, color: string) {
+  const mid = Math.round((range[0] + range[1]) / 2)
   return {
     silent: true,
     symbol: 'none',
-    lineStyle: { color: hexToRgba(band.color, 0.55), type: 'dashed' as const, width: 1 },
-    label: { formatter: name, color: band.color, fontSize: 11, position: 'insideEndTop' },
+    lineStyle: { color: hexToRgba(color, 0.55), type: 'dashed' as const, width: 1 },
+    label: { formatter: name, color, fontSize: 11, position: 'insideEndTop' },
     data: [{ yAxis: mid }],
   }
 }
@@ -48,6 +54,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   const bands = useAppStore(s => s.bands)
   const formantVisible = useAppStore(s => s.formantVisible)
   const { chartRef, setOption, getInstance } = useECharts()
+  const isPortrait = useMediaQuery(PORTRAIT_QUERY)
   const rafRef = useRef<number | null>(null)
   const isLiveRef = useRef(false)
   const seriesVisibleRef = useRef({ f0: true, f1: true, f2: true })
@@ -55,17 +62,17 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   useEffect(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     rafRef.current = requestAnimationFrame(() => {
-      renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+      renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
       rafRef.current = null
     })
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [frames])
+  }, [frames, isPortrait])
 
   useEffect(() => {
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
-  }, [cursorTime, bands])
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
+  }, [cursorTime, bands, isPortrait])
 
   useEffect(() => {
     isLiveRef.current = frames.length > 1
@@ -73,9 +80,9 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
 
   useEffect(() => {
     seriesVisibleRef.current = formantVisible
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formantVisible])
+  }, [formantVisible, isPortrait])
 
   // Chart click → find nearest frame
   useEffect(() => {
@@ -103,9 +110,11 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     currentBands: TargetBands,
     isLive: boolean,
     useAnimation: boolean,
+    isPortrait: boolean,
   ) {
     const visible = seriesVisibleRef.current
     const keys = ['f0', 'f1', 'f2'] as const
+    const markColor = (k: keyof TargetBands) => currentBands[k].color
     const seriesData: Record<string, any[]> = {}
     for (const k of keys) {
       seriesData[k] = visible[k] ? data.map(f => [f.time, f[k] ?? null]) : []
@@ -130,7 +139,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     setOption({
       animation: useAnimation,
       backgroundColor: 'transparent',
-      grid: { left: 72, right: 32, top: 20, bottom: 36 },
+      grid: isPortrait ? GRID_PORTRAIT : GRID_DESKTOP,
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross', label: { backgroundColor: '#475467' } },
@@ -161,7 +170,9 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         min: minTime,
         max: maxTime,
         axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { show: false },
+        axisLabel: isPortrait
+          ? { show: true, color: '#667085', fontSize: 10, hideOverlap: true, formatter: (v: number) => `${v}s` }
+          : { show: false },
         splitLine: { lineStyle: { color: '#F2F4F7' } },
       },
       yAxis: {
@@ -182,8 +193,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
           color: COLORS[k],
           lineStyle: { color: COLORS[k], width: k === 'f0' ? 2 : 1.5 },
           itemStyle: { color: COLORS[k] },
-          markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k]) } : undefined,
-          markLine: visible[k] ? buildMarkLine(currentBands[k], `${k.toUpperCase()} 目标`) : undefined,
+          markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, markColor(k)) } : undefined,
+          markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, markColor(k)) : undefined,
           data: seriesData[k],
         })),
         {
@@ -204,8 +215,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   }
 
   useEffect(() => {
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
+  }, [isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="formantChart" ref={chartRef} />
 }
