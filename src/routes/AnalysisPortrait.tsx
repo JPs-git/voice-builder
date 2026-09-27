@@ -16,8 +16,8 @@ import styles from './AnalysisPage.module.css'
 const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
 
 const SERIES_COLORS: Record<FormantSeries, string> = {
-  f0: '#10B981',
-  f1: '#E23E57',
+  f0: '#13B98B',
+  f1: '#E84C68',
   f2: '#3B82F6',
 }
 

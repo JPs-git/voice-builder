@@ -217,13 +217,13 @@
     width: 18px;
     height: 3px;
     border-radius: 2px;
-    background: var(--info);
+    background: var(--color-info);
   }
   .f0LegendZone {
     width: 16px;
     height: 12px;
     border-radius: 3px;
-    background: #F8C3CE;
+    background: var(--color-chart-f1-soft);
   }
   .f0LegendTarget {
     width: 18px;
