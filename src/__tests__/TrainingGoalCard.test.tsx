@@ -15,19 +15,17 @@ describe('TrainingGoalCard', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders a preset dropdown seeded with the active preset and all six vowels', () => {
+  it('renders preset tabs seeded with the active preset', () => {
     render(<TrainingGoalCard />)
-    const select = screen.getByLabelText('选择元音预设') as HTMLSelectElement
-    expect(select.value).toBe('vowel-a')
-    for (const short of ['a', 'o', 'e', 'i', 'u', 'ü']) {
-      expect(screen.getByRole('option', { name: short })).toBeTruthy()
-    }
+    const buttons = screen.getAllByRole('button')
+    expect(buttons.map(b => b.textContent)).toEqual(['a', 'o', 'e', 'i', 'u', 'ü'])
+    expect(screen.getByRole('button', { name: 'a' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('combobox')).toBeNull()
   })
 
-  it('switches bands when a preset is chosen from the dropdown', () => {
+  it('switches bands when a tab is chosen', () => {
     render(<TrainingGoalCard />)
-    const select = screen.getByLabelText('选择元音预设') as HTMLSelectElement
-    fireEvent.change(select, { target: { value: 'vowel-i' } })
+    fireEvent.click(screen.getByRole('button', { name: 'i' }))
     const vowelI = VOWEL_PRESETS['vowel-i']
     expect(useAppStore.getState().bands.f1.range).toEqual(vowelI.f1)
     expect(useAppStore.getState().bands.f2.range).toEqual(vowelI.f2)

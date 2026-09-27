@@ -1,0 +1,4 @@
+.tabs { display: flex; gap: 6px; min-height: 44px; align-items: center; }
+.tab { flex: 1; min-width: 44px; height: 36px; border-radius: 10px; border: 1px solid var(--color-border-default); background: var(--panel); color: var(--color-text-primary); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.tab[aria-pressed="true"] { background: var(--color-brand-primary-soft); border-color: var(--color-brand-primary); color: var(--color-brand-primary); }
+.tab:focus-visible { outline: 2px solid var(--info); outline-offset: 1px; }
