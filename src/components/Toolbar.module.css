@@ -56,18 +56,18 @@
 }
 
 .toolbar[data-compact="true"] {
-  height: 64px;
+  height: 40px;
   box-sizing: border-box;
-  padding: 10px 16px;
+  padding: 4px 16px;
   gap: 10px;
   border-bottom: none;
 }
 .toolbar[data-compact="true"] .logo {
-  width: 28px;
-  height: 28px;
+  height: 24px;
+  width: auto;
 }
 .toolbar[data-compact="true"] .subtitle { display: none; }
-.toolbar[data-compact="true"] .title { font-size: 17px; font-weight: 600; }
+.toolbar[data-compact="true"] .title { font-size: 20px; font-weight: 700; color: var(--m-text); }
 .toolbar[data-compact="true"] .brand {
   min-width: 0;
   flex-shrink: 1;
