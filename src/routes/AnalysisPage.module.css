@@ -142,7 +142,8 @@
     margin: 8px auto;
   }
   .portraitMain {
-    padding: 16px 16px 116px;
+    background: var(--m-page);
+    padding: 12px 16px 116px;
     gap: 12px;
   }
   .portraitSlot { flex-shrink: 0; }
@@ -150,9 +151,10 @@
     flex: 0 0 auto;
     padding: 4px 12px 12px;
     gap: 10px;
-    border-radius: 16px;
+    border-radius: 6px;
+    background: #FFFFFF;
+    box-shadow: none;
     min-height: 340px;
-    margin-top: 12px;
   }
   .portraitTabs {
     display: flex;
@@ -169,7 +171,7 @@
     border: none;
     padding: 6px 2px 10px;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text-mute);
     cursor: pointer;
@@ -181,15 +183,16 @@
     content: "";
     position: absolute;
     left: 0;
-    right: 0;
+    right: auto;
+    width: 62px;
     bottom: 0;
     height: 2px;
     border-radius: 2px;
-    background: var(--info);
+    background: var(--m-underline);
   }
   .chartPanel {
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border: 1px solid var(--m-card-border);
+    border-radius: 6px;
     background: var(--panel);
     padding: 10px;
     display: flex;
@@ -244,6 +247,7 @@
     min-height: 32px;
     box-sizing: border-box;
   }
+  .portraitChartsCard .cardTitle { font-size: 14px; font-weight: 700; color: var(--m-text); }
 }
 
 @media (max-width: 359px) {

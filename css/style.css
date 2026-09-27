@@ -70,6 +70,37 @@
   --color-chart-target-line: #AAB7C5;
   --shadow-portrait-card: 0 2px 10px rgba(24, 48, 74, .06);
   --shadow-floating: 0 12px 32px rgba(24, 48, 74, .12);
+  /* ---- measured-2026-09-27（仅竖版消费） ---- */
+  --m-page: #F4F9FC;
+  --m-text: #0A2344;
+  --m-secondary: #909DB3;
+  --m-axis: #7D8DA8;
+  --m-legend: #67778D;
+  --m-inactive: #A7B4C5;
+  --m-green: #07C188;
+  --m-check: #00AE7B;
+  --m-green-soft: #EFFCF8;
+  --m-circle: #E9FBF7;
+  --m-mint: #F3FBFA;
+  --m-blue: #2D7DFC;
+  --m-underline: #60A3FE;
+  --m-band-male: #E4F3FE;
+  --m-dash-male: #BEDAFD;
+  --m-label-male: #4691F5;
+  --m-orange: #FEB941;
+  --m-band-orange: #FDF5EB;
+  --m-dash-orange: #FEB232;
+  --m-pink: #EF627D;
+  --m-pink-soft: #FCEFF2;
+  --m-dash-pink: #FDCFD9;
+  --m-chev: #7687A0;
+  --m-record: #EE4264;
+  --m-record-ring: #F7E0E7;
+  --m-red: #EF5064;
+  --m-divider: #EAEAEB;
+  --m-card-border: #EBEFF8;
+  --m-grid: #F0F4F9;
+  --m-pill-border: #EAF0F8;
 }
 
 /* ---------- 基础 reset ---------- */
