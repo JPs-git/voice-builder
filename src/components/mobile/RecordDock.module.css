@@ -1,0 +1,112 @@
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 16px rgba(16, 24, 40, 0.08);
+  font-family: var(--font-sans);
+}
+.goal {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.goal:active { background: #F9FAFB; }
+.goal:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+.goalLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.goalHint {
+  font-size: 11px;
+  color: var(--text-mute);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.goalChevron {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-mute);
+  flex-shrink: 0;
+  align-self: center;
+}
+.mic {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(226, 62, 87, 0.35);
+  transition: transform .1s ease;
+}
+.mic:active { transform: scale(0.94); }
+.mic:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+.mic:disabled {
+  background: var(--text-mute);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+.mic[data-recording="true"] {
+  animation: mic-pulse 1.6s ease-in-out infinite;
+}
+.hint {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-soft);
+  white-space: nowrap;
+  max-width: 84px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(226, 62, 87, 0.18); }
+  50%      { box-shadow: 0 0 0 10px rgba(226, 62, 87, 0.05); }
+}
+
+@media (max-width: 360px) {
+  .dock { gap: 8px; padding-left: 12px; padding-right: 12px; }
+  .hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mic[data-recording="true"] { animation: none; }
+}
