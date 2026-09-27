@@ -16,9 +16,9 @@ import styles from './AnalysisPage.module.css'
 const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
 
 const SERIES_COLORS: Record<FormantSeries, string> = {
-  f0: '#13B98B',
-  f1: '#E84C68',
-  f2: '#4387F5',
+  f0: '#07C188',
+  f1: '#EF5064',
+  f2: '#2D7DFC',
 }
 
 type ChartTab = 'f0' | 'formant'
@@ -95,7 +95,7 @@ export function AnalysisPortrait() {
                 </span>
               </div>
             </div>
-            <div className={styles.chartArea}>
+            <div className={`${styles.chartArea} ${styles.f0Area}`}>
               <F0Chart cursorTime={cursorTime} />
               <EmptyState
                 title="还没有声音数据"
@@ -125,7 +125,7 @@ export function AnalysisPortrait() {
                 ))}
               </div>
             </div>
-            <div className={styles.chartArea}>
+            <div className={`${styles.chartArea} ${styles.formantArea}`}>
               <FormantChart cursorTime={cursorTime} />
               <EmptyState
                 title="曲线待生成"

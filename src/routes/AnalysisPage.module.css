@@ -216,46 +216,60 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: var(--text-soft);
+    color: var(--m-legend);
     white-space: nowrap;
   }
   .f0LegendLine {
     width: 18px;
     height: 3px;
     border-radius: 2px;
-    background: var(--color-info);
+    background: #2D7DFC;
   }
   .f0LegendZone {
     width: 16px;
     height: 12px;
     border-radius: 3px;
-    background: var(--color-chart-f1-soft);
+    background: #FCEFF2;
   }
   .f0LegendTarget {
     width: 18px;
     height: 0;
-    border-top: 2px dashed var(--text-mute);
+    border-top: 2px dashed #2D7DFC;
   }
-  .portraitChartsCard .chartArea {
+  .f0Area {
     position: relative;
-    min-height: 300px;
-    height: 300px;
+    height: 140px;
+    min-height: 140px;
+    overflow: hidden;
+  }
+  .formantArea {
+    position: relative;
+    height: 120px;
+    min-height: 120px;
     overflow: hidden;
   }
   .legendItem {
-    padding: 8px 10px;
-    min-height: 32px;
+    padding: 2px 8px;
+    min-height: 0;
     box-sizing: border-box;
+    border-color: var(--m-pill-border);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--m-text);
+  }
+  .legendItem i {
+    width: 5px;
+    height: 5px;
   }
   .portraitChartsCard .cardTitle { font-size: 14px; font-weight: 700; color: var(--m-text); }
 }
 
 @media (max-width: 359px) {
   .portraitMain { padding: 12px 12px 116px; }
-  .portraitChartsCard .chartArea { height: 280px; min-height: 280px; }
+  .f0Area { height: 120px; min-height: 120px; }
+  .formantArea { height: 105px; min-height: 105px; }
 }
 
 @media (min-width: 431px) and (max-width: 767px) {
   .portraitMain { padding: 16px 20px 116px; }
-  .portraitChartsCard .chartArea { height: 340px; }
 }

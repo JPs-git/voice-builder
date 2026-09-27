@@ -11,7 +11,12 @@ const TARGET_ZONES = [
   { label: '女声', range: [180, 300], color: '#F5A9B8' },
 ]
 
-type TargetZone = (typeof TARGET_ZONES)[number]
+const TARGET_ZONES_PORTRAIT = [
+  { label: '男声', range: [80, 150], color: '#E4F3FE', dash: '#BEDAFD', labelColor: '#4691F5' },
+  { label: '女声', range: [180, 300], color: '#FCEFF2', dash: '#FDCFD9', labelColor: '#EF627D' },
+]
+
+type TargetZone = { label: string; range: number[]; color: string; dash?: string; labelColor?: string }
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -19,7 +24,7 @@ const GRID_DESKTOP = { left: 72, right: 32, top: 20, bottom: 36 }
 const GRID_PORTRAIT = { left: 48, right: 12, top: 16, bottom: 28 }
 
 const F0_COLOR_DESKTOP = '#1F2937'
-const F0_COLOR_PORTRAIT = '#13B98B'
+const F0_COLOR_PORTRAIT = '#2D7DFC'
 
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '')
@@ -57,7 +62,7 @@ export function formatF0Tooltip(params: any, frames: AnalysisFrame[]): string {
 </div>`
 }
 
-function buildMarkAreas(zones: typeof TARGET_ZONES, colorFor: (zone: TargetZone) => string) {
+function buildMarkAreas(zones: TargetZone[], colorFor: (zone: TargetZone) => string) {
   return zones.map(z => ([{
     yAxis: z.range[0],
     itemStyle: { color: hexToRgba(colorFor(z), 0.15) },
@@ -66,16 +71,18 @@ function buildMarkAreas(zones: typeof TARGET_ZONES, colorFor: (zone: TargetZone)
   }]))
 }
 
-function buildMarkLineData(zones: typeof TARGET_ZONES, colorFor: (zone: TargetZone) => string) {
+function buildMarkLineData(zones: TargetZone[], colorFor: (zone: TargetZone) => string) {
   return zones.map(z => {
     const mid = Math.round((z.range[0] + z.range[1]) / 2)
     const color = colorFor(z)
+    const lineColor = z.dash ?? color
+    const labelColor = z.labelColor ?? color
     return {
       yAxis: mid,
-      lineStyle: { color: hexToRgba(color, 0.4), type: 'dashed' as const, width: 1 },
+      lineStyle: { color: hexToRgba(lineColor, 0.4), type: 'dashed' as const, width: 1 },
       label: {
         formatter: z.label,
-        color,
+        color: labelColor,
         fontSize: 11,
         position: 'insideEndTop',
       },
@@ -123,6 +130,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
   ) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
     const f0Color = isPortrait ? F0_COLOR_PORTRAIT : F0_COLOR_DESKTOP
+    const zones = isPortrait ? TARGET_ZONES_PORTRAIT : TARGET_ZONES
     const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => zone.color
     const dots = data.filter(f => f.f0 != null && f.f0 > 0)
     const lastDot = dots[dots.length - 1]
@@ -156,7 +164,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         max: maxTime,
         axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: isPortrait
-          ? { show: true, color: '#8D9BAC', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
+          ? { show: true, color: '#7D8DA8', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
           : { show: false },
         splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
@@ -164,8 +172,9 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         type: 'value',
         min: 0,
         max: 500,
+        ...(isPortrait ? { interval: 100 } : {}),
         axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
-        axisLabel: { color: isPortrait ? '#8D9BAC' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
+        axisLabel: { color: isPortrait ? '#7D8DA8' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
         splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
       color: [f0Color],
@@ -177,8 +186,8 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
           connectNulls: false,
           lineStyle: { color: f0Color, width: 2 },
           itemStyle: { color: f0Color },
-          markArea: { silent: true, data: buildMarkAreas(TARGET_ZONES, zoneColor) },
-          markLine: { silent: true, symbol: 'none', data: buildMarkLineData(TARGET_ZONES, zoneColor) },
+          markArea: { silent: true, data: buildMarkAreas(zones, zoneColor) },
+          markLine: { silent: true, symbol: 'none', data: buildMarkLineData(zones, zoneColor) },
           markPoint: isPortrait && lastDot ? {
             silent: true,
             symbol: 'circle',

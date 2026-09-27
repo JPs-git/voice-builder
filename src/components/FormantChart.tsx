@@ -19,9 +19,20 @@ const COLORS = {
 }
 
 const PORTRAIT_COLORS = {
-  f0: '#13B98B',
-  f1: '#E84C68',
-  f2: '#4387F5',
+  f0: '#07C188',
+  f1: '#EF5064',
+  f2: '#2D7DFC',
+}
+
+const PORTRAIT_MARK_AREA: Partial<Record<'f1' | 'f2', string>> = {
+  f1: '#E9F2FE',
+  f2: '#FDF5EB',
+}
+
+const PORTRAIT_MARK_LINE = {
+  f0: '#07C188',
+  f1: '#2D7DFC',
+  f2: '#FEB232',
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -121,7 +132,12 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     const visible = seriesVisibleRef.current
     const keys = ['f0', 'f1', 'f2'] as const
     const palette = isPortrait ? PORTRAIT_COLORS : COLORS
-    const markColor = (k: keyof TargetBands) => isPortrait ? PORTRAIT_COLORS[k] : currentBands[k].color
+    const areaColor = (k: keyof TargetBands) => isPortrait
+      ? (PORTRAIT_MARK_AREA as Record<string, string>)[k]
+      : currentBands[k].color
+    const lineColor = (k: keyof TargetBands) => isPortrait
+      ? PORTRAIT_MARK_LINE[k]
+      : currentBands[k].color
     const seriesData: Record<string, any[]> = {}
     for (const k of keys) {
       seriesData[k] = visible[k] ? data.map(f => [f.time, f[k] ?? null]) : []
@@ -178,17 +194,25 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         max: maxTime,
         axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: isPortrait
-          ? { show: true, color: '#8D9BAC', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
+          ? { show: true, color: '#7D8DA8', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
           : { show: false },
         splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
       },
-      yAxis: {
+      yAxis: isPortrait ? {
         type: 'value',
         min: 0,
         max: FREQ_MAX,
-        axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
-        axisLabel: { color: isPortrait ? '#8D9BAC' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
-        splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
+        interval: 500,
+        axisLine: { lineStyle: { color: '#B8C4D1' } },
+        axisLabel: { color: '#7D8DA8', fontSize: 11, formatter: (v: number) => [0, 1000, 2000, 3000, 3500].includes(v) ? `${v} Hz` : '' },
+        splitLine: { lineStyle: { color: '#EDF1F5' } },
+      } : {
+        type: 'value',
+        min: 0,
+        max: FREQ_MAX,
+        axisLine: { lineStyle: { color: '#D0D5DD' } },
+        axisLabel: { color: '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
+        splitLine: { lineStyle: { color: '#F2F4F7' } },
       },
       color: keys.map(k => palette[k]),
       series: [
@@ -200,8 +224,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
           color: palette[k],
           lineStyle: { color: palette[k], width: isPortrait ? 2 : (k === 'f0' ? 2 : 1.5) },
           itemStyle: { color: palette[k] },
-          markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, markColor(k)) } : undefined,
-          markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, markColor(k)) : undefined,
+          markArea: visible[k] && !(isPortrait && k === 'f0') && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, areaColor(k)) } : undefined,
+          markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, lineColor(k)) : undefined,
           data: seriesData[k],
         })),
         {

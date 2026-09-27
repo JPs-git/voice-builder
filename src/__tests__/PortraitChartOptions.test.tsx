@@ -214,11 +214,11 @@ describe('portrait chart options', () => {
     expect(option.xAxis.axisLabel.show).toBe(true)
     expect(option.xAxis.axisLabel.formatter(5)).toBe('5s')
     expect(option.xAxis.axisLabel.hideOverlap).toBe(true)
-    expect(option.xAxis.axisLabel.color).toBe('#8D9BAC')
+    expect(option.xAxis.axisLabel.color).toBe('#7D8DA8')
     expect(option.xAxis.axisLabel.fontSize).toBe(11)
     expect(option.xAxis.splitLine.lineStyle.color).toBe('#EDF1F5')
     expect(option.xAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
-    expect(option.yAxis.axisLabel.color).toBe('#8D9BAC')
+    expect(option.yAxis.axisLabel.color).toBe('#7D8DA8')
     expect(option.yAxis.splitLine.lineStyle.color).toBe('#EDF1F5')
     expect(option.yAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
   })
@@ -229,18 +229,27 @@ describe('portrait chart options', () => {
     expect(lastOption().grid).toEqual({ left: 48, right: 12, top: 16, bottom: 28 })
   })
 
-  it('draws the F0 line in token green but keeps the per-zone target colors in portrait', () => {
+  it('draws the F0 line in measured blue with pink/blue zones in portrait', () => {
     setMatchMedia(true)
     render(<F0Chart />)
     const series = lastOption().series[0]
-    expect(series.lineStyle.color).toBe('#13B98B')
-    expect(series.itemStyle.color).toBe('#13B98B')
-    expect(lastOption().color).toEqual(['#13B98B'])
-    expect(series.markArea.data[0][0].itemStyle.color).toBe('rgba(91, 206, 250, 0.15)')
-    expect(series.markArea.data[1][0].itemStyle.color).toBe('rgba(245, 169, 184, 0.15)')
-    expect(series.markLine.data[0].lineStyle.color).toBe('rgba(91, 206, 250, 0.4)')
-    expect(series.markLine.data[0].label.color).toBe('#5BCEFA')
-    expect(series.markLine.data[1].label.color).toBe('#F5A9B8')
+    expect(series.lineStyle.color).toBe('#2D7DFC')
+    expect(series.itemStyle.color).toBe('#2D7DFC')
+    expect(lastOption().color).toEqual(['#2D7DFC'])
+    expect(series.markArea.data[0][0].itemStyle.color).toBe('rgba(228, 243, 254, 0.15)')
+    expect(series.markArea.data[1][0].itemStyle.color).toBe('rgba(252, 239, 242, 0.15)')
+    expect(series.markLine.data[0].lineStyle.color).toBe('rgba(190, 218, 253, 0.4)')
+    expect(series.markLine.data[1].lineStyle.color).toBe('rgba(253, 207, 217, 0.4)')
+    expect(series.markLine.data[0].label.color).toBe('#4691F5')
+    expect(series.markLine.data[1].label.color).toBe('#EF627D')
+  })
+
+  it('uses measured F0 portrait yAxis ticks', () => {
+    setMatchMedia(true)
+    render(<F0Chart />)
+    const yAxis = lastOption().yAxis
+    expect(yAxis.max).toBe(500)
+    expect(yAxis.interval).toBe(100)
   })
 
   it('keeps the landscape formant grid and hidden x axis labels', () => {
@@ -268,33 +277,50 @@ describe('portrait chart options', () => {
     expect(option.xAxis.axisLabel.show).toBe(true)
     expect(option.xAxis.axisLabel.formatter(5)).toBe('5s')
     expect(option.xAxis.axisLabel.hideOverlap).toBe(true)
-    expect(option.xAxis.axisLabel.color).toBe('#8D9BAC')
+    expect(option.xAxis.axisLabel.color).toBe('#7D8DA8')
     expect(option.xAxis.axisLabel.fontSize).toBe(11)
     expect(option.xAxis.splitLine.lineStyle.color).toBe('#EDF1F5')
     expect(option.xAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
-    expect(option.yAxis.axisLabel.color).toBe('#8D9BAC')
+    expect(option.yAxis.axisLabel.color).toBe('#7D8DA8')
     expect(option.yAxis.splitLine.lineStyle.color).toBe('#EDF1F5')
     expect(option.yAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
     expect(option.grid).toEqual({ left: 48, right: 12, top: 16, bottom: 28 })
   })
 
-  it('paints the formant mark areas from the token colors in portrait', () => {
+  it('uses measured formant portrait yAxis ticks with sparse labels', () => {
     setMatchMedia(true)
     render(<FormantChart />)
-    const f1 = seriesByName('F1')
-    expect(f1.markArea.data[0][0].itemStyle.color).toBe('rgba(232, 76, 104, 0.1)')
-    expect(f1.markLine.lineStyle.color).toBe('rgba(232, 76, 104, 0.55)')
+    const yAxis = lastOption().yAxis
+    expect(yAxis.max).toBe(3500)
+    expect(yAxis.interval).toBe(500)
+    expect(yAxis.axisLabel.formatter(1000)).toBe('1000 Hz')
+    expect(yAxis.axisLabel.formatter(500)).toBe('')
+    expect(yAxis.axisLabel.formatter(0)).toBe('0 Hz')
+    expect(yAxis.axisLabel.formatter(3500)).toBe('3500 Hz')
   })
 
-  it('uses the token green/red/blue series colors with 2px widths in portrait', () => {
+  it('paints the formant mark areas from the measured colors in portrait', () => {
     setMatchMedia(true)
     render(<FormantChart />)
-    expect(lastOption().color).toEqual(['#13B98B', '#E84C68', '#4387F5'])
-    expect(seriesByName('F0').lineStyle.color).toBe('#13B98B')
+    const f0 = seriesByName('F0')
+    expect(f0.markArea).toBe(undefined)
+    const f1 = seriesByName('F1')
+    expect(f1.markArea.data[0][0].itemStyle.color).toBe('rgba(233, 242, 254, 0.1)')
+    expect(f1.markLine.lineStyle.color).toBe('rgba(45, 125, 252, 0.55)')
+    const f2 = seriesByName('F2')
+    expect(f2.markArea.data[0][0].itemStyle.color).toBe('rgba(253, 245, 235, 0.1)')
+    expect(f2.markLine.lineStyle.color).toBe('rgba(254, 178, 50, 0.55)')
+  })
+
+  it('uses the measured green/red/blue series colors with 2px widths in portrait', () => {
+    setMatchMedia(true)
+    render(<FormantChart />)
+    expect(lastOption().color).toEqual(['#07C188', '#EF5064', '#2D7DFC'])
+    expect(seriesByName('F0').lineStyle.color).toBe('#07C188')
     expect(seriesByName('F0').lineStyle.width).toBe(2)
-    expect(seriesByName('F1').lineStyle.color).toBe('#E84C68')
+    expect(seriesByName('F1').lineStyle.color).toBe('#EF5064')
     expect(seriesByName('F1').lineStyle.width).toBe(2)
-    expect(seriesByName('F2').lineStyle.color).toBe('#4387F5')
+    expect(seriesByName('F2').lineStyle.color).toBe('#2D7DFC')
     expect(seriesByName('F2').lineStyle.width).toBe(2)
   })
 
