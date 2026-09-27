@@ -1,13 +1,12 @@
 .card {
   background: var(--panel);
   border: 1px solid var(--color-border-default);
-  border-radius: 16px;
-  box-shadow: var(--shadow-portrait-card);
-  padding: 16px;
+  border-radius: 6px;
+  box-shadow: none;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 156px;
 }
 .header {
   display: flex;
@@ -31,7 +30,7 @@
 .title {
   font-size: 17px;
   font-weight: 800;
-  color: var(--color-text-primary);
+  color: var(--m-text);
   white-space: nowrap;
 }
 .badge {
@@ -50,18 +49,21 @@
   white-space: nowrap;
 }
 .badgeDot {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: currentColor;
+}
+.badge[data-tone="hit"] .badgeDot {
+  background: var(--m-green);
 }
 .badge[data-tone="idle"] {
   background: #F2F4F7;
   color: var(--text-mute);
 }
 .badge[data-tone="hit"] {
-  background: var(--color-success-soft);
-  color: var(--color-success);
+  background: var(--m-green-soft);
+  color: var(--m-check);
   border: 1px solid #B9E9CC;
 }
 .badge[data-tone="warn"] {
@@ -73,14 +75,14 @@
   flex-direction: column;
   align-items: center;
   gap: 0;
-  background: var(--color-chart-f0-soft);
+  background: var(--m-mint);
   border-radius: 12px;
-  padding: 10px 12px 12px;
+  padding: 8px 12px 10px;
 }
 .readoutLabel {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--color-success);
+  color: var(--m-green);
 }
 .readoutRow {
   display: inline-flex;
@@ -90,13 +92,13 @@
   font-size: 28px;
   font-weight: 700;
   line-height: 34px;
-  color: var(--color-text-primary);
+  color: var(--m-text);
   font-variant-numeric: tabular-nums;
 }
 .readoutUnit {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--m-secondary);
   margin-left: 6px;
 }
 .columns {
@@ -109,16 +111,16 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 4px;
-  border-left: 1px solid var(--border);
+  padding: 2px;
+  border-left: 1px solid var(--m-divider);
 }
 .column:first-child {
   border-left: none;
 }
 .columnKey {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 400;
-  color: var(--color-text-secondary);
+  color: var(--m-secondary);
   font-family: var(--font-sans);
 }
 .columnValueRow {
@@ -127,30 +129,30 @@
   gap: 4px;
 }
 .columnValue {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 24px;
-  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--m-text);
   font-variant-numeric: tabular-nums;
 }
 .columnUnit {
   font-size: 12px;
   font-weight: 400;
-  color: var(--color-text-tertiary);
+  color: var(--m-secondary);
 }
 .columnStatus {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
   line-height: 1;
 }
 .columnStatus[data-status="hit"] {
-  background: var(--color-success-soft);
-  color: var(--color-success);
+  background: var(--m-circle);
+  color: var(--m-check);
 }
 .columnStatus[data-status="low"],
 .columnStatus[data-status="high"] {
