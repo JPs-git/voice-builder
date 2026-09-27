@@ -18,7 +18,7 @@ const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
 const SERIES_COLORS: Record<FormantSeries, string> = {
   f0: '#13B98B',
   f1: '#E84C68',
-  f2: '#3B82F6',
+  f2: '#4387F5',
 }
 
 type ChartTab = 'f0' | 'formant'
