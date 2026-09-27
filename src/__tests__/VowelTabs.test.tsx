@@ -1,10 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
+import { it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { VowelTabs } from '../components/mobile/VowelTabs'
 
-const KEYS = ['vowel-a', 'vowel-o', 'vowel-e', 'vowel-i', 'vowel-u', 'vowel-yu'] as const
-
-function renderTabs(active = 'vowel-a' as string) {
+function renderTabs(active = 'vowel-a') {
   const onSelect = vi.fn()
   render(<VowelTabs active={active} onSelect={onSelect} />)
   return onSelect
