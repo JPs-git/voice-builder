@@ -1,12 +1,12 @@
 import { useAppStore } from '../../store/appStore'
 import { usePresetBands } from '../../hooks/usePresetBands'
 import { BandRangeRow } from '../BandRangeRow'
-import { VowelTabs } from './VowelTabs'
+import { VOWEL_PRESETS, presetShortLabel } from '../../types'
 import styles from './TrainingGoalCard.module.css'
 
 const BAND_KEYS = ['f0', 'f1', 'f2'] as const
 
-const BAND_BAR_COLORS = { f0: '#13B98B', f1: '#E84C68', f2: '#4387F5' }
+const BAND_BAR_COLORS = { f0: '#07C188', f1: '#2D7DFC', f2: '#FEB941' }
 
 export function TrainingGoalCard() {
   const activePreset = useAppStore(s => s.activePreset)
@@ -22,7 +22,20 @@ export function TrainingGoalCard() {
       </header>
 
       <div className={styles.body}>
-        <VowelTabs active={activePreset} onSelect={switchPreset} />
+        <div className={styles.vowelBox}>
+          <select
+            aria-label="选择元音预设"
+            className={styles.select}
+            value={activePreset}
+            onChange={e => switchPreset(e.target.value)}
+          >
+            {Object.keys(VOWEL_PRESETS).map(key => (
+              <option key={key} value={key}>
+                {presetShortLabel(key)}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className={styles.bands}>
           {BAND_KEYS.map(key => (
