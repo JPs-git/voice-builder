@@ -4,8 +4,8 @@
   display: flex;
 }
 .trigger {
-  width: 46px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 1px solid var(--border);

@@ -56,7 +56,7 @@
 }
 
 .toolbar[data-compact="true"] {
-  padding: 10px 16px;
+  padding: 13px 16px;   /* 38px logo + 26 = 64px header */
   gap: 10px;
   border-bottom: none;
 }
@@ -65,7 +65,7 @@
   height: 38px;
 }
 .toolbar[data-compact="true"] .subtitle { display: none; }
-.toolbar[data-compact="true"] .title { font-size: 21px; font-weight: 800; }
+.toolbar[data-compact="true"] .title { font-size: 20px; font-weight: 800; }
 .toolbar[data-compact="true"] .brand {
   min-width: 0;
   flex-shrink: 1;
