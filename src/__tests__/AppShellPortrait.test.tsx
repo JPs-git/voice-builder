@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { AppShell } from '../routes/AppShell'
 import { useAppStore } from '../store/appStore'
@@ -33,6 +33,7 @@ function renderShell() {
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<div data-testid="page" />} />
+          <Route path="practice" element={<div data-testid="practice-page" />} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -61,5 +62,14 @@ describe('AppShell toolbar density', () => {
     expect(screen.getByText('音高参考')).toBeTruthy()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('false')
     expect(document.querySelectorAll('header button[id]').length).toBe(7)
+  })
+
+  it('navigates to the practice page from the portrait overflow menu', () => {
+    setMatchMedia(true)
+    renderShell()
+    fireEvent.click(screen.getByLabelText('更多操作'))
+    fireEvent.click(screen.getByRole('menuitem', { name: '音高参考' }))
+    expect(screen.getByTestId('practice-page')).toBeTruthy()
+    expect(screen.queryByRole('menu')).toBeNull()
   })
 })

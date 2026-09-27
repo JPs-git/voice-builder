@@ -60,7 +60,11 @@ export function AppShell() {
         onToolClick={handleClickTool}
         nav={isPortrait ? undefined : { label: isPractice ? '返回分析' : '音高参考', onClick: togglePage }}
         moreMenu={isPortrait
-          ? <MobileMoreMenu items={toolItems} onSelect={handleClickTool} />
+          ? <MobileMoreMenu
+              items={toolItems}
+              onSelect={handleClickTool}
+              nav={{ label: isPractice ? '返回分析' : '音高参考', onClick: togglePage }}
+            />
           : undefined}
       />
       <Outlet context={shellContext} />

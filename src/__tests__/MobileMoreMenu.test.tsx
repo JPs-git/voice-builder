@@ -79,4 +79,28 @@ describe('MobileMoreMenu', () => {
     expect(screen.queryByRole('menu')).toBeNull()
     expect(screen.getByLabelText('更多操作').getAttribute('aria-expanded')).toBe('false')
   })
+
+  it('leads with the page-switch entry when nav is provided', () => {
+    const onNav = vi.fn()
+    render(<MobileMoreMenu items={ITEMS} onSelect={() => {}} nav={{ label: '音高参考', onClick: onNav }} />)
+    open()
+    expect(menuItemNames()[0]).toBe('音高参考')
+  })
+
+  it('fires the nav action and closes after picking it', () => {
+    const onNav = vi.fn()
+    const onSelect = vi.fn()
+    render(<MobileMoreMenu items={ITEMS} onSelect={onSelect} nav={{ label: '音高参考', onClick: onNav }} />)
+    open()
+    fireEvent.click(screen.getByRole('menuitem', { name: '音高参考' }))
+    expect(onNav).toHaveBeenCalledTimes(1)
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('omits the page-switch entry when nav is absent', () => {
+    render(<MobileMoreMenu items={ITEMS} onSelect={() => {}} />)
+    open()
+    expect(menuItemNames()).toHaveLength(6)
+  })
 })
