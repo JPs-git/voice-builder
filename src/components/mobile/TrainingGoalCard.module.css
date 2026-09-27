@@ -2,9 +2,10 @@
   position: relative;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: var(--shadow-card);
-  padding: 14px 16px;
+  border-color: var(--color-border-default);
+  border-radius: 16px;
+  box-shadow: var(--shadow-portrait-card);
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -17,13 +18,13 @@
 .targetIcon {
   font-size: 20px;
   line-height: 1;
-  color: var(--text);
+  color: var(--color-text-primary);
   font-weight: 700;
 }
 .title {
   font-size: 17px;
   font-weight: 800;
-  color: var(--text);
+  color: var(--color-text-primary);
   white-space: nowrap;
 }
 .chevron {
@@ -44,7 +45,8 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
+  border-color: var(--color-border-default);
   background: var(--panel);
   min-height: 118px;
 }
@@ -55,7 +57,7 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23475467' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 2px center;
-  color: var(--primary);
+  color: var(--color-brand-primary);
   font-family: inherit;
   font-size: 24px;
   font-weight: 800;
@@ -81,17 +83,18 @@
   gap: 6px;
   border: 1px solid var(--border);
   border-left: 4px solid var(--border-strong);
+  border-color: var(--color-border-default);
   border-radius: 8px;
   padding: 4px 8px;
   background: var(--panel);
   min-height: 32px;
 }
 .bandKey {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
   min-width: 22px;
-  font-family: var(--font-sans);
+  font-family: inherit;
 }
 .bandInput {
   flex: 1;
@@ -101,9 +104,9 @@
   background: transparent;
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-primary);
   text-align: center;
   padding: 0;
   outline: none;
@@ -115,11 +118,11 @@
 .dash {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--color-text-primary);
 }
 .unit {
   font-size: 12px;
-  color: var(--text-mute);
+  color: var(--color-text-tertiary);
   min-width: 20px;
   text-align: right;
 }
