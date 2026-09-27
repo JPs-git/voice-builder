@@ -113,6 +113,15 @@
   background: #F4F7FB;
   border-radius: 4px;
 }
+.bandInput::-webkit-outer-spin-button,
+.bandInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.bandInput[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 .dash {
   font-size: 14px;
   font-weight: 600;
