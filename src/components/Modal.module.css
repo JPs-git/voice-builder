@@ -58,3 +58,23 @@
   overflow-y: auto;
   flex: 1;
 }
+
+@media (max-width: 768px) {
+  .modalPanel {
+    border-radius: 20px;
+  }
+
+  .modalHeader h3 {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .modalClose {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .modalBody {
+    padding: 20px;
+  }
+}
