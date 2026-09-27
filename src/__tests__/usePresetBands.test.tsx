@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, act } from '@testing-library/react'
 import { usePresetBands } from '../hooks/usePresetBands'
 import { useAppStore } from '../store/appStore'
@@ -22,6 +22,10 @@ describe('usePresetBands', () => {
     useAppStore.getState().reset()
     useToastStore.setState({ toasts: [] })
     api = null
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('seeds localValues from the store bands', () => {
@@ -83,8 +87,28 @@ describe('usePresetBands', () => {
     expect(api!.localValues['f0-0']).toBe(String(vowelA.f0[0]))
   })
 
+  it('reapplies a saved override when switching away from and back to its preset', () => {
+    mount()
+    act(() => {
+      api!.onInputChange('f1', 0, '700')
+    })
+    act(() => {
+      api!.onCommit('f1', 0)
+    })
+    act(() => {
+      useAppStore.getState().switchPreset('vowel-i')
+    })
+    expect(useAppStore.getState().bands.f1.range).toEqual(VOWEL_PRESETS['vowel-i'].f1)
+    expect(api!.localValues['f1-0']).toBe(String(VOWEL_PRESETS['vowel-i'].f1[0]))
+    act(() => {
+      useAppStore.getState().switchPreset('vowel-a')
+    })
+    expect(useAppStore.getState().bands.f1.range).toEqual([700, VOWEL_PRESETS['vowel-a'].f1[1]])
+    expect(api!.localValues['f1-0']).toBe('700')
+  })
+
   it('onReset restores default presets after confirmation', () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     mount()
     act(() => {
       api!.onInputChange('f0', 0, '250')
@@ -98,7 +122,23 @@ describe('usePresetBands', () => {
     })
     expect(useAppStore.getState().presetOverrides).toHaveLength(0)
     expect(useAppStore.getState().activePreset).toBe('vowel-a')
-    confirmSpy.mockRestore()
+  })
+
+  it('onReset keeps overrides and bands when the confirmation is declined', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    mount()
+    act(() => {
+      api!.onInputChange('f1', 0, '700')
+    })
+    act(() => {
+      api!.onCommit('f1', 0)
+    })
+    act(() => {
+      api!.onReset()
+    })
+    expect(useAppStore.getState().presetOverrides).toHaveLength(1)
+    expect(useAppStore.getState().bands.f1.range).toEqual([700, VOWEL_PRESETS['vowel-a'].f1[1]])
+    expect(api!.localValues['f1-0']).toBe('700')
   })
 
   it('onInputKeyDown commits on Enter', () => {

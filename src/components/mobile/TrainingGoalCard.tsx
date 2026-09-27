@@ -1,14 +1,10 @@
-import { VOWEL_PRESETS } from '../../types'
+import { VOWEL_PRESETS, presetShortLabel } from '../../types'
 import { useAppStore } from '../../store/appStore'
-import { F0_RANGE } from '../../config/analysisRanges'
-import { usePresetBands, bandKeyToId } from '../../hooks/usePresetBands'
+import { usePresetBands } from '../../hooks/usePresetBands'
+import { BandRangeRow } from '../BandRangeRow'
 import styles from './TrainingGoalCard.module.css'
 
 const BAND_KEYS = ['f0', 'f1', 'f2'] as const
-
-export function presetShortLabel(presetName: string): string {
-  return VOWEL_PRESETS[presetName]?.label.replace('元音 ', '') ?? '—'
-}
 
 export function TrainingGoalCard() {
   const bands = useAppStore(s => s.bands)
@@ -23,9 +19,7 @@ export function TrainingGoalCard() {
       <header className={styles.header}>
         <span className={styles.title}>训练目标</span>
         <div className={styles.presetGroup}>
-          <label className={styles.selectLabel} htmlFor="goal-preset">当前元音</label>
           <select
-            id="goal-preset"
             className={styles.select}
             value={activePreset}
             aria-label="选择元音预设"
@@ -37,9 +31,6 @@ export function TrainingGoalCard() {
               </option>
             ))}
           </select>
-          <span className={styles.presetBadge} data-testid="goal-preset-label">
-            {presetShortLabel(activePreset)}
-          </span>
         </div>
         <button
           type="button"
@@ -53,37 +44,20 @@ export function TrainingGoalCard() {
 
       <div className={styles.bands}>
         {BAND_KEYS.map(key => (
-          <div key={key} className={styles.bandRow} style={{ borderLeftColor: bands[key].color }}>
-            <span className={styles.bandKey}>{key.toUpperCase()}</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={key === 'f0' ? F0_RANGE.min : 100}
-              max={key === 'f0' ? F0_RANGE.max : 3500}
-              step={key === 'f0' ? 5 : 10}
-              className={styles.bandInput}
-              value={localValues[bandKeyToId(key, 0)]}
-              onChange={e => onInputChange(key, 0, e.target.value)}
-              onBlur={() => onCommit(key, 0)}
-              onKeyDown={onInputKeyDown(key, 0)}
-              aria-label={`${key.toUpperCase()}下限`}
-            />
-            <span className={styles.dash}>—</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={key === 'f0' ? F0_RANGE.min : 100}
-              max={key === 'f0' ? F0_RANGE.max : 3500}
-              step={key === 'f0' ? 5 : 10}
-              className={styles.bandInput}
-              value={localValues[bandKeyToId(key, 1)]}
-              onChange={e => onInputChange(key, 1, e.target.value)}
-              onBlur={() => onCommit(key, 1)}
-              onKeyDown={onInputKeyDown(key, 1)}
-              aria-label={`${key.toUpperCase()}上限`}
-            />
-            <span className={styles.unit}>Hz</span>
-          </div>
+          <BandRangeRow
+            key={key}
+            bandKey={key}
+            localValues={localValues}
+            onInputChange={onInputChange}
+            onCommit={onCommit}
+            onInputKeyDown={onInputKeyDown}
+            className={styles.bandRow}
+            keyClassName={styles.bandKey}
+            inputClassName={styles.bandInput}
+            dashClassName={styles.dash}
+            unitClassName={styles.unit}
+            style={{ borderLeftColor: bands[key].color }}
+          />
         ))}
       </div>
 

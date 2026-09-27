@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { TrainingGoalCard } from '../components/mobile/TrainingGoalCard'
 import { useAppStore } from '../store/appStore'
@@ -9,6 +9,10 @@ describe('TrainingGoalCard', () => {
   beforeEach(() => {
     useAppStore.getState().reset()
     useToastStore.setState({ toasts: [] })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('renders a preset dropdown seeded with the active preset and all six vowels', () => {
@@ -29,12 +33,6 @@ describe('TrainingGoalCard', () => {
     expect(useAppStore.getState().bands.f2.range).toEqual(vowelI.f2)
   })
 
-  it('shows the active preset short label next to the dropdown', () => {
-    useAppStore.setState({ activePreset: 'vowel-u' })
-    render(<TrainingGoalCard />)
-    expect(screen.getByTestId('goal-preset-label').textContent).toBe('u')
-  })
-
   it('edits band ranges inline and persists a preset override', () => {
     render(<TrainingGoalCard />)
     const f1Lo = screen.getByLabelText('F1下限') as HTMLInputElement
@@ -53,13 +51,32 @@ describe('TrainingGoalCard', () => {
     expect(useAppStore.getState().bands.f0.range[1]).toBe(1000)
   })
 
-  it('exposes a reset control for all presets', () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('commits the edited band and blurs the input on Enter', () => {
     render(<TrainingGoalCard />)
+    const f0Lo = screen.getByLabelText('F0下限') as HTMLInputElement
+    f0Lo.focus()
+    fireEvent.change(f0Lo, { target: { value: '260' } })
+    fireEvent.keyDown(f0Lo, { key: 'Enter' })
+    expect(useAppStore.getState().bands.f0.range[0]).toBe(260)
+    expect(document.activeElement).not.toBe(f0Lo)
+  })
+
+  it('restores the default preset bands and clears overrides on reset', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<TrainingGoalCard />)
+
+    const f1Lo = screen.getByLabelText('F1下限') as HTMLInputElement
+    fireEvent.change(f1Lo, { target: { value: '700' } })
+    fireEvent.blur(f1Lo)
+    fireEvent.change(screen.getByLabelText('选择元音预设'), { target: { value: 'vowel-i' } })
+    expect(useAppStore.getState().bands.f1.range).toEqual(VOWEL_PRESETS['vowel-i'].f1)
+    expect(useAppStore.getState().presetOverrides).toHaveLength(1)
+
     fireEvent.click(screen.getByLabelText('重置所有预设'))
-    expect(useAppStore.getState().activePreset).toBe('vowel-a')
+
     expect(useAppStore.getState().presetOverrides).toHaveLength(0)
-    confirmSpy.mockRestore()
+    expect(useAppStore.getState().activePreset).toBe('vowel-a')
+    expect(useAppStore.getState().bands.f1.range).toEqual(VOWEL_PRESETS['vowel-a'].f1)
   })
 
   it('renders a decorative chevron', () => {

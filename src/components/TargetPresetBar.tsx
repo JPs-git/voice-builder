@@ -1,7 +1,7 @@
-import { VOWEL_PRESETS } from '../types'
+import { VOWEL_PRESETS, presetShortLabel } from '../types'
 import { useAppStore } from '../store/appStore'
-import { F0_RANGE } from '../config/analysisRanges'
-import { usePresetBands, bandKeyToId } from '../hooks/usePresetBands'
+import { usePresetBands } from '../hooks/usePresetBands'
+import { BandRangeRow } from './BandRangeRow'
 import styles from './TargetPresetBar.module.css'
 
 export function TargetPresetBar() {
@@ -33,41 +33,25 @@ export function TargetPresetBar() {
             data-preset={name}
             onClick={() => switchPreset(name)}
           >
-            {VOWEL_PRESETS[name].label.replace('元音 ', '')}
+            {presetShortLabel(name)}
           </button>
         ))}
       </div>
       <div className={styles.inputs}>
         {(['f0', 'f1', 'f2'] as const).map(key => (
-          <div key={key} className={styles.bandInput} data-band={key}>
-            <span className={styles.bandKey}>{key.toUpperCase()}</span>
-            <input
-              type="number"
-              min={key === 'f0' ? F0_RANGE.min : 100}
-              max={key === 'f0' ? F0_RANGE.max : 3500}
-              step={key === 'f0' ? 5 : 10}
-              className={styles.bandLo}
-              value={localValues[bandKeyToId(key, 0)]}
-              onChange={e => onInputChange(key, 0, e.target.value)}
-              onBlur={() => onCommit(key, 0)}
-              onKeyDown={onInputKeyDown(key, 0)}
-              aria-label={`${key.toUpperCase()}下限`}
-            />
-            <span className={styles.bandDash}>—</span>
-            <input
-              type="number"
-              min={key === 'f0' ? F0_RANGE.min : 100}
-              max={key === 'f0' ? F0_RANGE.max : 3500}
-              step={key === 'f0' ? 5 : 10}
-              className={styles.bandHi}
-              value={localValues[bandKeyToId(key, 1)]}
-              onChange={e => onInputChange(key, 1, e.target.value)}
-              onBlur={() => onCommit(key, 1)}
-              onKeyDown={onInputKeyDown(key, 1)}
-              aria-label={`${key.toUpperCase()}上限`}
-            />
-            <span className={styles.bandUnit}>Hz</span>
-          </div>
+          <BandRangeRow
+            key={key}
+            bandKey={key}
+            localValues={localValues}
+            onInputChange={onInputChange}
+            onCommit={onCommit}
+            onInputKeyDown={onInputKeyDown}
+            className={styles.bandInput}
+            keyClassName={styles.bandKey}
+            inputClassName={[styles.bandLo, styles.bandHi]}
+            dashClassName={styles.bandDash}
+            unitClassName={styles.bandUnit}
+          />
         ))}
       </div>
     </section>

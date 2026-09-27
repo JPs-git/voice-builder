@@ -61,6 +61,10 @@ export const VOWEL_PRESETS: Record<string, VowelPreset> = {
   'vowel-yu': { label: '元音 ü', f0: [220, 300], f1: [280, 380], f2: [1800, 2200] },
 }
 
+export function presetShortLabel(presetName: string): string {
+  return VOWEL_PRESETS[presetName]?.label.replace('元音 ', '') ?? '—'
+}
+
 export interface AppConfig {
   formantMethod: FormantMethod['value']
   formantSmoothing: boolean
