@@ -22,6 +22,8 @@ vi.mock('../hooks/useToolbar', () => ({
     handleClickTool: vi.fn(),
     hasData: true,
     cursorTime: 3,
+    isCapturing: false,
+    isRequesting: false,
     fileInputRef: { current: null },
     handleFileChange: vi.fn(),
   }),
