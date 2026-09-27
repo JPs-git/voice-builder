@@ -142,7 +142,7 @@
     margin: 8px auto;
   }
   .portraitMain {
-    padding: 12px 14px 116px;
+    padding: 16px 16px 116px;
     gap: 12px;
   }
   .portraitSlot { flex-shrink: 0; }
@@ -150,6 +150,7 @@
     flex: 0 0 auto;
     padding: 4px 12px 12px;
     gap: 10px;
+    border-radius: 16px;
   }
   .portraitTabs {
     display: flex;
@@ -158,6 +159,7 @@
     gap: 28px;
     flex-shrink: 0;
     padding: 8px 4px 0;
+    min-height: 44px;
   }
   .portraitTab {
     position: relative;
@@ -185,7 +187,7 @@
   }
   .chartPanel {
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: 12px;
     background: var(--panel);
     padding: 10px;
     display: flex;
@@ -230,8 +232,12 @@
   }
   .portraitChartsCard .chartArea {
     position: relative;
-    min-height: 220px;
-    height: 240px;
+    min-height: 300px;
+    height: 320px;
     overflow: hidden;
   }
+}
+
+@media (max-width: 359px) {
+  .portraitMain { padding: 12px 12px 116px; }
 }
