@@ -9,7 +9,7 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--border);
-  border-radius: 13px;
+  border-radius: 12px;
   background: var(--panel);
   color: var(--text);
   font-size: 20px;

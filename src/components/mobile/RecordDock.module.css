@@ -7,13 +7,15 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 16px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: var(--panel);
   border-top: 1px solid var(--border);
   border-radius: 20px 20px 0 0;
   box-shadow: var(--shadow-floating);
   font-family: var(--font-sans);
+  min-height: 76px;
+  box-sizing: border-box;
 }
 .goal {
   flex: 1;
@@ -49,8 +51,8 @@
   flex-shrink: 0;
 }
 .goalHint {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 400;
   color: var(--text-soft);
   white-space: nowrap;
   flex-shrink: 0;
@@ -73,6 +75,7 @@
 .mic {
   width: 60px;
   height: 60px;
+  position: relative;
   display: grid;
   place-items: center;
   border: none;
@@ -85,7 +88,12 @@
   box-shadow: 0 0 0 6px var(--color-brand-primary-soft), 0 4px 12px rgba(233, 66, 98, .35);
   transition: transform .1s ease;
 }
-.mic svg { display: block; }
+.mic svg { display: block; width: 24px; height: 24px; }
+.mic::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+}
 .mic:active { transform: scale(.98); }
 .mic:focus-visible {
   outline: 2px solid var(--info);
@@ -103,7 +111,8 @@
 .hint {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;

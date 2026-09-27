@@ -7,6 +7,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 156px;
 }
 .header {
   display: flex;
@@ -41,7 +42,9 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  padding: 5px 12px;
+  padding: 7px 10px;
+  min-height: 28px;
+  box-sizing: border-box;
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -85,7 +88,7 @@
 .readoutValue {
   font-size: 28px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 34px;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
 }

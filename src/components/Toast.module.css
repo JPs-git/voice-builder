@@ -72,9 +72,18 @@
 
 @media (max-width: 768px) {
   .stack {
-    top: 12px;
+    top: auto;
     right: 12px;
     left: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom) + 12px);
     max-width: none;
+  }
+  .toast {
+    min-height: 44px;
+    padding: 12px 16px;
+  }
+  .message {
+    font-size: 14px;
+    font-weight: 500;
   }
 }

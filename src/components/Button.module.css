@@ -65,6 +65,6 @@
 }
 
 @media (max-width: 768px) {
-  .btn { height: 38px; padding: 0 12px; }
+  .btn { height: 44px; padding: 0 12px; border-radius: 12px; }
   .label { display: none; }
 }
