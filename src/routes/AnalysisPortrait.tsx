@@ -99,8 +99,9 @@ export function AnalysisPortrait() {
               <F0Chart cursorTime={cursorTime} />
               <EmptyState
                 title="还没有声音数据"
-                description="🎤 点击下方红色按钮开始录音"
+                description="点击下方开始录音"
                 visible={!hasData}
+                icon="🎙"
               />
             </div>
           </div>
@@ -130,6 +131,7 @@ export function AnalysisPortrait() {
                 title="曲线待生成"
                 description="录音或导入音频后显示共振峰曲线"
                 visible={!hasData}
+                icon="🎙"
               />
             </div>
           </div>
