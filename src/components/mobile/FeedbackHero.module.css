@@ -55,7 +55,7 @@
   flex-shrink: 0;
 }
 .badge[data-tone="hit"] .badgeDot {
-  background: #12B886;
+  background: var(--v2-f0);
 }
 .badge[data-tone="idle"] {
   background: #F2F4F7;
