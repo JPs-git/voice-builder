@@ -39,8 +39,95 @@
   --c-f4: #F59E0B;
 
   /* 字体 */
-  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Noto Sans SC", Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, Menlo, monospace;
+  /* ---- ui-design-portrait v1.0（仅竖版消费，桌面不动） ---- */
+  --color-brand-primary: #E94262;
+  --color-brand-primary-hover: #D93655;
+  --color-brand-primary-soft: #FFF0F3;
+  --color-text-primary: #18304A;
+  --color-text-secondary: #6F8197;
+  --color-text-tertiary: #9AA9BA;
+  --color-surface-page: #F7F9FC;
+  --color-border-default: #E4EAF0;
+  --color-border-subtle: #EDF1F5;
+  --color-border-strong: #D4DDE7;
+  --color-success: #12A981;
+  --color-success-soft: #E8F8F3;
+  --color-warning: #F5A623;
+  --color-warning-soft: #FFF6E5;
+  --color-error: #E65368;
+  --color-info: #4387F5;
+  --color-info-soft: #EEF5FF;
+  --color-chart-f0: #13B98B;
+  --color-chart-f1: #E84C68;
+  --color-chart-f2: #4387F5;
+  --color-chart-f0-soft: #E9F8F3;
+  --color-chart-f1-soft: #FFF0F3;
+  --color-chart-f2-soft: #EEF5FF;
+  --color-chart-grid: #EDF1F5;
+  --color-chart-axis: #B8C4D1;
+  --color-chart-target-line: #AAB7C5;
+  --shadow-portrait-card: 0 2px 10px rgba(24, 48, 74, .06);
+  --shadow-floating: 0 12px 32px rgba(24, 48, 74, .12);
+  /* ---- measured-2026-09-27（仅竖版消费） ---- */
+  --m-page: #F4F9FC;
+  --m-text: #0A2344;
+  --m-secondary: #909DB3;
+  --m-axis: #7D8DA8;
+  --m-legend: #67778D;
+  --m-inactive: #A7B4C5;
+  --m-green: #07C188;
+  --m-check: #00AE7B;
+  --m-green-soft: #EFFCF8;
+  --m-circle: #E9FBF7;
+  --m-mint: #F3FBFA;
+  --m-blue: #2D7DFC;
+  --m-underline: #60A3FE;
+  --m-band-male: #E4F3FE;
+  --m-dash-male: #BEDAFD;
+  --m-label-male: #4691F5;
+  --m-orange: #FEB941;
+  --m-band-orange: #FDF5EB;
+  --m-dash-orange: #FEB232;
+  --m-pink: #EF627D;
+  --m-pink-soft: #FCEFF2;
+  --m-dash-pink: #FDCFD9;
+  --m-chev: #7687A0;
+  --m-record: #EE4264;
+  --m-record-ring: #F7E0E7;
+  --m-red: #EF5064;
+  --m-divider: #EAEAEB;
+  --m-card-border: #EBEFF8;
+  --m-grid: #F0F4F9;
+  --m-pill-border: #EAF0F8;
+  /* ---- portrait-v2（新版文档，仅竖版消费） ---- */
+  --v2-page: #F7FAFD;
+  --v2-text: #142B45;
+  --v2-secondary: #8192A8;
+  --v2-tertiary: #A5B2C2;
+  --v2-border: #E8EEF5;
+  --v2-grid: #EDF2F7;
+  --v2-brand: #E94763;
+  --v2-brand-soft: #FFF0F4;
+  --v2-f0: #12B886;
+  --v2-f0-soft: #E9FAF5;
+  --v2-f1: #F04B6A;
+  --v2-f1-soft: #FFF0F3;
+  --v2-f2: #3F83F8;
+  --v2-f2-soft: #EDF4FF;
+  --v2-warning: #F59E0B;
+  --v2-badge-bg: #E9FAF5;
+  --v2-badge-text: #0FA77D;
+  --v2-target-bg: #FFF1F5;
+  --v2-entry-bg: #F8FAFD;
+  --v2-ring: #FFE4EA;
+  --v2-male-band: rgba(63, 131, 248, 0.08);
+  --v2-male-dash: #8BB9FF;
+  --v2-female-band: rgba(233, 71, 99, 0.08);
+  --v2-female-dash: #F4A0B1;
+  --v2-f2-band: rgba(245, 158, 11, 0.08);
+  --v2-f2-dash: #F4B84A;
 }
 
 /* ---------- 基础 reset ---------- */
@@ -60,7 +147,9 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 /* ---------- ECharts 容器 (ID 选择器) ---------- */

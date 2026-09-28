@@ -137,5 +137,14 @@ export function useToolbar(
     },
   ], [isCapturing, isRequesting, isPlaying, hasData, dataSource, recorderLabel])
 
-  return { toolItems, handleClickTool, hasData, cursorTime, fileInputRef, handleFileChange }
+  return {
+    toolItems,
+    handleClickTool,
+    hasData,
+    cursorTime,
+    fileInputRef,
+    handleFileChange,
+    isCapturing,
+    isRequesting,
+  }
 }

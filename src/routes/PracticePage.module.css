@@ -61,5 +61,5 @@
 }
 
 @media (max-width: 768px) {
-  .content { padding: 14px; }
+  .content { padding: 14px 14px 116px; }
 }

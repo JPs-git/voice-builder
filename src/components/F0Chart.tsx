@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useECharts } from '../hooks/useECharts'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame } from '../types'
 
@@ -9,6 +10,21 @@ const TARGET_ZONES = [
   { label: '男声', range: [80, 150], color: '#5BCEFA' },
   { label: '女声', range: [180, 300], color: '#F5A9B8' },
 ]
+
+const TARGET_ZONES_PORTRAIT = [
+  { label: '男声', range: [160, 240], color: 'rgba(63, 131, 248, 0.08)', dash: '#8BB9FF', labelColor: '#3F83F8' },
+  { label: '女声', range: [270, 350], color: 'rgba(233, 71, 99, 0.08)', dash: '#F4A0B1', labelColor: '#E94763' },
+]
+
+type TargetZone = { label: string; range: number[]; color: string; dash?: string; labelColor?: string }
+
+const PORTRAIT_QUERY = '(max-width: 768px)'
+
+const GRID_DESKTOP = { left: 72, right: 32, top: 20, bottom: 36 }
+const GRID_PORTRAIT = { left: 42, right: 0, top: 10, bottom: 6 }
+
+const F0_COLOR_DESKTOP = '#1F2937'
+const F0_COLOR_PORTRAIT = '#3F83F8'
 
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '')
@@ -46,24 +62,27 @@ export function formatF0Tooltip(params: any, frames: AnalysisFrame[]): string {
 </div>`
 }
 
-function buildMarkAreas(zones: typeof TARGET_ZONES) {
+function buildMarkAreas(zones: TargetZone[], colorFor: (zone: TargetZone) => string, verbatim = false) {
   return zones.map(z => ([{
     yAxis: z.range[0],
-    itemStyle: { color: hexToRgba(z.color, 0.15) },
+    itemStyle: { color: verbatim ? colorFor(z) : hexToRgba(colorFor(z), 0.15) },
   }, {
     yAxis: z.range[1],
   }]))
 }
 
-function buildMarkLineData(zones: typeof TARGET_ZONES) {
+function buildMarkLineData(zones: TargetZone[], colorFor: (zone: TargetZone) => string, verbatim = false) {
   return zones.map(z => {
-    const mid = Math.round((z.range[0] + z.range[1]) / 2)
+    const mid = verbatim ? (z.label === '男声' ? 200 : 300) : Math.round((z.range[0] + z.range[1]) / 2)
+    const color = colorFor(z)
+    const lineColor = z.dash ?? color
+    const labelColor = z.labelColor ?? color
     return {
       yAxis: mid,
-      lineStyle: { color: hexToRgba(z.color, 0.4), type: 'dashed' as const, width: 1 },
+      lineStyle: { color: verbatim ? lineColor : hexToRgba(lineColor, 0.4), type: 'dashed' as const, width: 1 },
       label: {
         formatter: z.label,
-        color: z.color,
+        color: labelColor,
         fontSize: 11,
         position: 'insideEndTop',
       },
@@ -78,23 +97,24 @@ interface F0ChartProps {
 export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
   const frames = useAppStore(s => s.frames)
   const { chartRef, setOption } = useECharts()
+  const isPortrait = useMediaQuery(PORTRAIT_QUERY)
   const rafRef = useRef<number | null>(null)
   const isLiveRef = useRef(false)
 
   useEffect(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     rafRef.current = requestAnimationFrame(() => {
-      renderChart(frames, cursorTime, isLiveRef.current, false)
+      renderChart(frames, cursorTime, isLiveRef.current, false, isPortrait)
       rafRef.current = null
     })
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [frames])
+  }, [frames, isPortrait])
 
   useEffect(() => {
-    renderChart(frames, cursorTime, isLiveRef.current, false)
-  }, [cursorTime])
+    renderChart(frames, cursorTime, isLiveRef.current, false, isPortrait)
+  }, [cursorTime, isPortrait])
 
   // Detect live vs batch mode
   useEffect(() => {
@@ -106,27 +126,34 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
     cursor: number,
     isLive: boolean,
     useAnimation: boolean,
+    isPortrait: boolean,
   ) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
+    const f0Color = isPortrait ? F0_COLOR_PORTRAIT : F0_COLOR_DESKTOP
+    const zones = isPortrait ? TARGET_ZONES_PORTRAIT : TARGET_ZONES
+    const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => zone.color
+    const dots = data.filter(f => f.f0 != null && f.f0 > 0)
+    const lastDot = dots[dots.length - 1]
 
     const hasData = data.length > 0
+    const windowSize = WINDOW
     let minTime: number, maxTime: number
     if (isLive && hasData) {
       const currentTime = data[data.length - 1].time
-      minTime = currentTime - WINDOW
+      minTime = currentTime - windowSize
       maxTime = currentTime
     } else if (hasData) {
       minTime = data[0].time
-      maxTime = Math.max(data[data.length - 1].time, minTime + WINDOW)
+      maxTime = Math.max(data[data.length - 1].time, minTime + windowSize)
     } else {
       minTime = 0
-      maxTime = WINDOW
+      maxTime = windowSize
     }
 
     setOption({
       animation: useAnimation,
       backgroundColor: 'transparent',
-      grid: { left: 72, right: 32, top: 20, bottom: 36 },
+      grid: isPortrait ? GRID_PORTRAIT : GRID_DESKTOP,
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross', label: { backgroundColor: '#475467' } },
@@ -136,29 +163,39 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         type: 'value',
         min: minTime,
         max: maxTime,
-        axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { show: false },
-        splitLine: { lineStyle: { color: '#F2F4F7' } },
+        axisLine: { ...(isPortrait ? { show: true, onZero: false } : {}), lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
+        axisLabel: isPortrait
+          ? { show: false }
+          : { show: false },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
       yAxis: {
         type: 'value',
         min: 0,
         max: 500,
-        axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { color: '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
-        splitLine: { lineStyle: { color: '#F2F4F7' } },
+        ...(isPortrait ? { interval: 100 } : {}),
+        axisLine: { ...(isPortrait ? { show: true, onZero: false } : {}), lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
+        axisLabel: { color: isPortrait ? '#7D8DA8' : '#667085', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => `${v} Hz` },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
-      color: ['#1F2937'],
+      color: [f0Color],
       series: [
         {
           name: 'F0',
           type: 'line' as const,
           showSymbol: false,
           connectNulls: false,
-          lineStyle: { color: '#1F2937', width: 2 },
-          itemStyle: { color: '#1F2937' },
-          markArea: { silent: true, data: buildMarkAreas(TARGET_ZONES) },
-          markLine: { silent: true, symbol: 'none', data: buildMarkLineData(TARGET_ZONES) },
+          lineStyle: { color: f0Color, width: 2 },
+          itemStyle: { color: f0Color },
+          markArea: { silent: true, data: buildMarkAreas(zones, zoneColor, isPortrait) },
+          markLine: { silent: true, symbol: 'none', data: buildMarkLineData(zones, zoneColor, isPortrait) },
+          markPoint: isPortrait && lastDot ? {
+            silent: true,
+            symbol: 'circle',
+            symbolSize: 7,
+            itemStyle: { color: f0Color, shadowBlur: 12, shadowColor: 'rgba(63, 131, 248, 0.35)' },
+            data: [{ coord: [lastDot.time, lastDot.f0], symbolSize: 7 }],
+          } : undefined,
           data: seriesData,
         },
         {
@@ -179,8 +216,8 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
   }
 
   useEffect(() => {
-    renderChart(frames, cursorTime, isLiveRef.current, false)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    renderChart(frames, cursorTime, isLiveRef.current, false, isPortrait)
+  }, [isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="f0Chart" ref={chartRef} />
 }

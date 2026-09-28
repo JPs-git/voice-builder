@@ -1,0 +1,79 @@
+.wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+}
+.trigger {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--v2-border);
+  border-radius: 16px;
+  background: #FFFFFF;
+  box-shadow: none;
+  color: var(--v2-text);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+}
+.trigger:hover { background: #F9FAFB; color: var(--text); }
+.trigger:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
+}
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 152px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-hover);
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.item:hover { background: var(--primary-soft); }
+.item:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: -2px;
+}
+.itemIcon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.itemLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item:disabled {
+  color: var(--text-mute);
+  cursor: not-allowed;
+  background: none;
+}
+
+.trigger { width: 30px; height: 28px; border-radius: 9px; font-size: 17px; box-shadow: 0 1px 3px #23558b06; }

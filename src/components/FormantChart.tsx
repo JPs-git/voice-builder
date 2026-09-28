@@ -1,15 +1,41 @@
 import { useRef, useEffect } from 'react'
 import { useECharts } from '../hooks/useECharts'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame, TargetBands } from '../types'
 
 const WINDOW = 10
 const FREQ_MAX = 3500
 
+const PORTRAIT_QUERY = '(max-width: 768px)'
+
+const GRID_DESKTOP = { left: 72, right: 32, top: 20, bottom: 36 }
+const GRID_PORTRAIT = { left: 42, right: 0, top: 10, bottom: 6 }
+
 const COLORS = {
   f0: '#1F2937',
   f1: '#E23E57',
   f2: '#3B82F6',
+}
+
+const PORTRAIT_COLORS = {
+  f0: '#12B886',
+  f1: '#F04B6A',
+  f2: '#3F83F8',
+}
+
+const SPARSE_TICKS = [0, 1000, 2000, 3000, 3500]
+
+const PORTRAIT_MARK_AREA: Record<'f0' | 'f1' | 'f2', string> = {
+  f0: 'rgba(18, 184, 134, 0.08)',
+  f1: 'rgba(63, 131, 248, 0.08)',
+  f2: 'rgba(245, 158, 11, 0.08)',
+}
+
+const PORTRAIT_MARK_LINE = {
+  f0: '#12B886',
+  f1: '#3F83F8',
+  f2: '#F4B84A',
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -20,20 +46,20 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-function buildMarkArea(band: { range: [number, number]; color: string }) {
+function buildMarkArea(range: [number, number], color: string, verbatim = false) {
   return [[{
-    yAxis: band.range[0],
-    itemStyle: { color: hexToRgba(band.color, 0.10) },
-  }, { yAxis: band.range[1] }]]
+    yAxis: range[0],
+    itemStyle: { color: verbatim ? color : hexToRgba(color, 0.10) },
+  }, { yAxis: range[1] }]]
 }
 
-function buildMarkLine(band: { range: [number, number]; color: string }, name: string) {
-  const mid = Math.round((band.range[0] + band.range[1]) / 2)
+function buildMarkLine(range: [number, number], name: string, color: string, verbatim = false, position: 'insideEndTop' | 'insideEndBottom' = 'insideEndTop') {
+  const mid = Math.round((range[0] + range[1]) / 2)
   return {
     silent: true,
     symbol: 'none',
-    lineStyle: { color: hexToRgba(band.color, 0.55), type: 'dashed' as const, width: 1 },
-    label: { formatter: name, color: band.color, fontSize: 11, position: 'insideEndTop' },
+    lineStyle: { color: verbatim ? color : hexToRgba(color, 0.55), type: 'dashed' as const, width: 1 },
+    label: { formatter: name, color, fontSize: 11, position },
     data: [{ yAxis: mid }],
   }
 }
@@ -48,6 +74,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   const bands = useAppStore(s => s.bands)
   const formantVisible = useAppStore(s => s.formantVisible)
   const { chartRef, setOption, getInstance } = useECharts()
+  const isPortrait = useMediaQuery(PORTRAIT_QUERY)
   const rafRef = useRef<number | null>(null)
   const isLiveRef = useRef(false)
   const seriesVisibleRef = useRef({ f0: true, f1: true, f2: true })
@@ -55,17 +82,17 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   useEffect(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     rafRef.current = requestAnimationFrame(() => {
-      renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+      renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
       rafRef.current = null
     })
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [frames])
+  }, [frames, isPortrait])
 
   useEffect(() => {
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
-  }, [cursorTime, bands])
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
+  }, [cursorTime, bands, isPortrait])
 
   useEffect(() => {
     isLiveRef.current = frames.length > 1
@@ -73,9 +100,9 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
 
   useEffect(() => {
     seriesVisibleRef.current = formantVisible
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formantVisible])
+  }, [formantVisible, isPortrait])
 
   // Chart click → find nearest frame
   useEffect(() => {
@@ -103,26 +130,35 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     currentBands: TargetBands,
     isLive: boolean,
     useAnimation: boolean,
+    isPortrait: boolean,
   ) {
     const visible = seriesVisibleRef.current
     const keys = ['f0', 'f1', 'f2'] as const
+    const palette = isPortrait ? PORTRAIT_COLORS : COLORS
+    const areaColor = (k: keyof TargetBands) => isPortrait
+      ? (PORTRAIT_MARK_AREA as Record<string, string>)[k]
+      : currentBands[k].color
+    const lineColor = (k: keyof TargetBands) => isPortrait
+      ? PORTRAIT_MARK_LINE[k]
+      : currentBands[k].color
     const seriesData: Record<string, any[]> = {}
     for (const k of keys) {
       seriesData[k] = visible[k] ? data.map(f => [f.time, f[k] ?? null]) : []
     }
 
     const hasData = data.length > 0
+    const windowSize = WINDOW
     let minTime: number, maxTime: number
     if (isLive && hasData) {
       const currentTime = data[data.length - 1].time
-      minTime = currentTime - WINDOW
+      minTime = currentTime - windowSize
       maxTime = currentTime
     } else if (hasData) {
       minTime = data[0].time
-      maxTime = Math.max(data[data.length - 1].time, minTime + WINDOW)
+      maxTime = Math.max(data[data.length - 1].time, minTime + windowSize)
     } else {
       minTime = 0
-      maxTime = WINDOW
+      maxTime = windowSize
     }
 
     const tooltipKeys = ['f2', 'f1', 'f0']
@@ -130,7 +166,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     setOption({
       animation: useAnimation,
       backgroundColor: 'transparent',
-      grid: { left: 72, right: 32, top: 20, bottom: 36 },
+      grid: isPortrait ? GRID_PORTRAIT : GRID_DESKTOP,
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross', label: { backgroundColor: '#475467' } },
@@ -143,7 +179,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
           for (const k of tooltipKeys) {
             const name = k.toUpperCase()
             const p = byName[name]
-            const color = COLORS[k as keyof typeof COLORS]
+            const color = palette[k as keyof typeof palette]
             const raw = p?.value?.[1]
             const v = (raw != null && raw > 0) ? Math.round(raw) : null
             const text = v == null ? '--' : `${v} Hz`
@@ -160,30 +196,43 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         type: 'value',
         min: minTime,
         max: maxTime,
-        axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { show: false },
-        splitLine: { lineStyle: { color: '#F2F4F7' } },
+        axisLine: { ...(isPortrait ? { show: true, onZero: false } : {}), lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
+        axisLabel: isPortrait
+          ? { show: false }
+          : { show: false },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
-      yAxis: {
+      yAxis: isPortrait ? {
+        type: 'value',
+        min: 0,
+        max: FREQ_MAX,
+        interval: 500,
+        axisLine: { show: true, onZero: false, lineStyle: { color: '#B8C4D1' } },
+        axisLabel: { color: '#7D8DA8', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => SPARSE_TICKS.some(t => Math.abs(v - t) < 1) ? `${Math.round(v)} Hz` : '' },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: '#EDF2F7' } },
+      } : {
         type: 'value',
         min: 0,
         max: FREQ_MAX,
         axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { color: '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
+        axisLabel: { color: '#667085', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => `${v} Hz` },
         splitLine: { lineStyle: { color: '#F2F4F7' } },
       },
-      color: keys.map(k => COLORS[k]),
+      color: keys.map(k => palette[k]),
       series: [
         ...keys.map(k => ({
           name: k.toUpperCase(),
           type: 'line' as const,
-          showSymbol: false,
+          showSymbol: isPortrait,
+          symbol: 'circle',
+          symbolSize: 2,
           connectNulls: false,
-          color: COLORS[k],
-          lineStyle: { color: COLORS[k], width: k === 'f0' ? 2 : 1.5 },
-          itemStyle: { color: COLORS[k] },
-          markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k]) } : undefined,
-          markLine: visible[k] ? buildMarkLine(currentBands[k], `${k.toUpperCase()} 目标`) : undefined,
+          color: palette[k],
+          lineStyle: { color: palette[k], width: isPortrait ? 0 : (k === 'f0' ? 2 : 1.5) },
+          itemStyle: { color: palette[k] },
+          markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, areaColor(k), isPortrait) } : undefined,
+          markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, lineColor(k), isPortrait, k === 'f1' ? 'insideEndBottom' : 'insideEndTop') : undefined,
           data: seriesData[k],
         })),
         {
@@ -204,8 +253,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   }
 
   useEffect(() => {
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
+  }, [isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="formantChart" ref={chartRef} />
 }

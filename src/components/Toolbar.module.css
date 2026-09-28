@@ -54,3 +54,31 @@
 @media (max-width: 540px) {
   .actions { justify-content: flex-end; }
 }
+
+.toolbar[data-compact="true"] {
+  height: 72px;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  gap: 10px;
+  border-bottom: none;
+}
+.toolbar[data-compact="true"] .logo {
+  width: 48px;
+  height: 48px;
+}
+.toolbar[data-compact="true"] .subtitle { display: none; }
+.toolbar[data-compact="true"] .title { font-size: 24px; font-weight: 700; line-height: 32px; color: var(--v2-text); }
+.toolbar[data-compact="true"] .brand {
+  min-width: 0;
+  flex-shrink: 1;
+}
+@media (max-width: 768px) and (max-height: 800px) {
+  .toolbar[data-compact="true"] {
+    height: 64px;
+    padding: 8px 16px;
+  }
+}
+
+.toolbar[data-compact="true"] { height: 50px; padding: 9px 16px; background: #f4faff; }
+.toolbar[data-compact="true"] .logo { width: 32px; height: 32px; }
+.toolbar[data-compact="true"] .title { font-size: 18px; line-height: 26px; color: #0a2344; letter-spacing: .6px; }

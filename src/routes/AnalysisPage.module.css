@@ -112,15 +112,18 @@
 @media (max-width: 768px) {
   .page {
     flex: 1;
+    height: auto;
     min-height: 0;
+    overflow: hidden;
   }
   .content {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 14px;
+    gap: 8px;
+    padding: 8px 16px 0;
+    background: var(--v2-page);
   }
   .sidePanel {
     position: static;
@@ -140,4 +143,125 @@
     min-height: 0;
     margin: 8px auto;
   }
+  .portraitMain {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--v2-page);
+    padding: 8px 16px calc(76px + env(safe-area-inset-bottom) + 10px);
+    gap: 8px;
+  }
+  .portraitSlot { flex-shrink: 0; }
+  .chartStack { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+  .chartArea {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+  }
+  .chartPanel {
+    border: none;
+    border-radius: 16px;
+    background: #FFFFFF;
+    box-shadow: none;
+    padding: 14px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+  }
+  .chartPanelHeader {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    min-height: 0;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .f0Suffix { font-size: 16px; font-weight: 700; color: var(--v2-f0); }
+  .f0Legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .f0LegendItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--v2-secondary);
+    white-space: nowrap;
+  }
+  .f0LegendLine {
+    width: 18px;
+    height: 3px;
+    border-radius: 2px;
+    background: #3F83F8;
+  }
+  .f0LegendZone {
+    width: 16px;
+    height: 12px;
+    border-radius: 3px;
+    background: rgba(233, 71, 99, 0.15);
+  }
+  .f0LegendTarget {
+    width: 18px;
+    height: 0;
+    border-top: 2px dashed #8BB9FF;
+  }
+  .legendItem {
+    min-width: 48px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 15px;
+    min-height: 0;
+    box-sizing: border-box;
+    border-color: var(--m-pill-border);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--m-text);
+  }
+  .legendItem i {
+    width: 5px;
+    height: 5px;
+  }
+  .portraitChartsCard .cardTitle { font-size: 17px; font-weight: 700; color: var(--v2-text); }
+}
+@media (max-width: 768px) and (max-height: 800px) {
+  .chartStack {
+    gap: 8px;
+  }
+  .chartPanelHeader {
+    height: 28px;
+  }
+  .legendItem {
+    height: 28px;
+  }
+}
+
+/* Reference composition: 390 × 844, with device chrome handled by the browser. */
+@media (max-width: 768px) {
+  .page { background: #f4faff; }
+  .portraitMain { padding: 8px 16px calc(90px + env(safe-area-inset-bottom)); gap: 10px; background: transparent; overflow-y: auto; }
+  .chartStack { gap: 10px; min-height: 420px; }
+  .chartPanel { padding: 10px 10px 12px; border-radius: 9px; background: rgba(255,255,255,.88); box-shadow: 0 2px 10px #23558b06; gap: 6px; }
+  .chartPanel:first-child { flex: 1.16; }
+  .chartPanelHeader { height: 28px; flex-shrink: 0; gap: 4px; }
+  .cardTitle { display: flex; align-items: center; gap: 7px; font-size: 14px; color: #0a2344; }
+  .chartGlyph { color: #354c6a; width: 20px; height: 20px; flex-shrink: 0; margin-right: 2px; }
+  .f0Suffix { font-size: 13px; font-weight: 600; color: #00b990; }
+  .f0Legend { gap: 12px; }
+  .f0LegendItem { gap: 6px; font-size: 8px; color: #788faf; }
+  .f0LegendLine { width: 13px; height: 3px; background: #297dff; }
+  .f0LegendZone { width: 14px; height: 14px; background: #ffedf4; }
+  .f0LegendTarget { width: 13px; border-top-width: 1px; }
+  .cardLegend { gap: 4px; flex-wrap: nowrap; }
+  .legendItem { min-width: 34px; height: 21px; padding: 0 7px; gap: 5px; font-size: 9px; color: #6b83a4; background: transparent; }
+  .legendItem i { width: 6px; height: 6px; }
+}
+@media (max-width: 360px) {
+  .f0Legend { gap: 5px; }
+  .portraitMain { padding-left: 10px; padding-right: 10px; }
 }

@@ -73,3 +73,28 @@
 
 .drawerBody ul { margin: 0; padding-left: 18px; }
 .drawerBody li { margin: 2px 0; }
+
+@media (max-width: 768px) {
+  .drawerPanel {
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
+
+  .drawerHeader {
+    min-height: 56px;
+  }
+
+  .drawerHeader h3 {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .drawerClose {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .drawerBody {
+    padding: 16px;
+  }
+}

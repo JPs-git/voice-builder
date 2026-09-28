@@ -108,6 +108,7 @@
 
 @media (max-width: 768px) {
   .widget {
+    display: none;
     bottom: 12px;
     right: 12px;
   }

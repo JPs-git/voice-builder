@@ -11,8 +11,15 @@ export function useECharts() {
     instanceRef.current = echarts.init(chartRef.current, null, { renderer: 'canvas' })
     const onResize = () => instanceRef.current?.resize()
     window.addEventListener('resize', onResize)
+    // 容器初次挂载时可能还没有布局尺寸（0×0），监听容器尺寸变化后重绘
+    const ro = new ResizeObserver(() => {
+      const el = chartRef.current
+      if (el && el.clientWidth > 0 && el.clientHeight > 0) onResize()
+    })
+    ro.observe(chartRef.current)
     return () => {
       window.removeEventListener('resize', onResize)
+      ro.disconnect()
       instanceRef.current?.dispose()
       instanceRef.current = null
     }
