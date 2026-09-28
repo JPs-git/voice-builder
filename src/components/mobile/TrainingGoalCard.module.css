@@ -5,14 +5,16 @@
   border: 1px solid var(--v2-border);
   border-radius: 16px;
   box-shadow: none;
-  padding: 14px 16px;
+  padding: 10px 16px;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
 }
 .header {
-  display: contents;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .targetIcon {
   font-size: 16px;
@@ -20,16 +22,22 @@
   flex: none;
 }
 .title {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
-  line-height: 24px;
+  line-height: 20px;
   color: var(--v2-text);
   white-space: nowrap;
   flex: none;
 }
+.bottomRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+}
 .vowelBox {
   flex: 0 0 104px;
-  height: 40px;
+  height: 36px;
   background: var(--v2-target-bg);
   border-radius: 12px;
   display: flex;
@@ -60,16 +68,16 @@
   min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 8px;
+  gap: 4px 10px;
   align-content: center;
 }
 .bandRow {
   box-sizing: border-box;
   display: inline-flex;
   align-items: baseline;
-  gap: 4px;
-  flex: 1 1 140px;
-  min-width: 0;
+  gap: 3px;
+  flex: 0 0 auto;
+  min-width: fit-content;
   white-space: nowrap;
   height: auto;
   min-height: 0;
@@ -79,7 +87,7 @@
   background: transparent;
 }
 .bandKey {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
 }
@@ -93,14 +101,14 @@
   color: #3F83F8;
 }
 .bandInput {
-  flex: 1 1 0;
-  min-width: 0;
-  width: auto;
+  flex: 0 0 auto;
+  width: 30px;
+  min-width: 30px;
   border: none;
   background: transparent;
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--v2-text);
   text-align: center;
@@ -121,12 +129,12 @@
   appearance: textfield;
 }
 .dash {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--v2-secondary);
 }
 .unit {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--v2-secondary);
 }

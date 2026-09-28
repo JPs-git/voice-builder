@@ -5,11 +5,12 @@
   box-shadow: none;
   min-height: 58px;
   box-sizing: border-box;
-  padding: 0 16px;
+  padding: 0 14px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 .heroIcon {
   display: inline-flex;
@@ -27,7 +28,7 @@
 .heroIcon i:nth-child(2) { height: 18px; }
 .heroIcon i:nth-child(3) { height: 13px; }
 .title {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--v2-text);
   white-space: nowrap;
@@ -37,11 +38,11 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 0 10px;
-  height: 32px;
+  padding: 0 6px;
+  height: 28px;
   box-sizing: border-box;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -73,15 +74,15 @@
 .value {
   display: inline-flex;
   align-items: baseline;
-  gap: 4px;
-  font-size: 15px;
+  gap: 3px;
+  font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   flex-shrink: 0;
 }
 .valueKey {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 }
 @media (max-width: 768px) and (max-height: 800px) {

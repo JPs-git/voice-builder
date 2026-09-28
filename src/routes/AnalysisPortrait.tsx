@@ -47,9 +47,8 @@ export function AnalysisPortrait() {
           <FeedbackHero />
         </div>
 
-        <section className={`${styles.card} ${styles.portraitChartsCard}`}>
-          <div className={styles.chartStack}>
-          <div className={styles.chartPanel}>
+        <div className={styles.chartStack}>
+          <section className={`${styles.card} ${styles.chartPanel}`}>
             <div className={styles.chartPanelHeader}>
               <h2 className={styles.cardTitle}><span aria-hidden="true">▂▅</span> 基频 <span className={styles.f0Suffix}>F0</span></h2>
               <div className={styles.f0Legend} data-testid="f0-legend" aria-label="图例">
@@ -76,9 +75,9 @@ export function AnalysisPortrait() {
                 icon="🎙"
               />
             </div>
-          </div>
+          </section>
 
-          <div className={styles.chartPanel}>
+          <section className={`${styles.card} ${styles.chartPanel}`}>
             <div className={styles.chartPanelHeader}>
               <h2 className={styles.cardTitle}>共振峰</h2>
               <div className={styles.cardLegend} data-testid="formant-legend" aria-label="图例">
@@ -106,9 +105,8 @@ export function AnalysisPortrait() {
                 icon="🎙"
               />
             </div>
-          </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </main>
 
       <RecordDock

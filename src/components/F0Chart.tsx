@@ -5,6 +5,7 @@ import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame } from '../types'
 
 const WINDOW = 10
+const PORTRAIT_WINDOW = 30
 
 const TARGET_ZONES = [
   { label: '男声', range: [80, 150], color: '#5BCEFA' },
@@ -136,17 +137,18 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
     const lastDot = dots[dots.length - 1]
 
     const hasData = data.length > 0
+    const windowSize = isPortrait ? PORTRAIT_WINDOW : WINDOW
     let minTime: number, maxTime: number
     if (isLive && hasData) {
       const currentTime = data[data.length - 1].time
-      minTime = currentTime - WINDOW
+      minTime = currentTime - windowSize
       maxTime = currentTime
     } else if (hasData) {
       minTime = data[0].time
-      maxTime = Math.max(data[data.length - 1].time, minTime + WINDOW)
+      maxTime = Math.max(data[data.length - 1].time, minTime + windowSize)
     } else {
       minTime = 0
-      maxTime = WINDOW
+      maxTime = windowSize
     }
 
     setOption({

@@ -5,6 +5,7 @@ import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame, TargetBands } from '../types'
 
 const WINDOW = 10
+const PORTRAIT_WINDOW = 30
 const FREQ_MAX = 3500
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
@@ -51,13 +52,13 @@ function buildMarkArea(range: [number, number], color: string, verbatim = false)
   }, { yAxis: range[1] }]]
 }
 
-function buildMarkLine(range: [number, number], name: string, color: string, verbatim = false) {
+function buildMarkLine(range: [number, number], name: string, color: string, verbatim = false, position: 'insideEndTop' | 'insideEndBottom' = 'insideEndTop') {
   const mid = Math.round((range[0] + range[1]) / 2)
   return {
     silent: true,
     symbol: 'none',
     lineStyle: { color: verbatim ? color : hexToRgba(color, 0.55), type: 'dashed' as const, width: 1 },
-    label: { formatter: name, color, fontSize: 11, position: 'insideEndTop' },
+    label: { formatter: name, color, fontSize: 11, position },
     data: [{ yAxis: mid }],
   }
 }
@@ -145,17 +146,18 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     }
 
     const hasData = data.length > 0
+    const windowSize = isPortrait ? PORTRAIT_WINDOW : WINDOW
     let minTime: number, maxTime: number
     if (isLive && hasData) {
       const currentTime = data[data.length - 1].time
-      minTime = currentTime - WINDOW
+      minTime = currentTime - windowSize
       maxTime = currentTime
     } else if (hasData) {
       minTime = data[0].time
-      maxTime = Math.max(data[data.length - 1].time, minTime + WINDOW)
+      maxTime = Math.max(data[data.length - 1].time, minTime + windowSize)
     } else {
       minTime = 0
-      maxTime = WINDOW
+      maxTime = windowSize
     }
 
     const tooltipKeys = ['f2', 'f1', 'f0']
@@ -227,7 +229,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
           lineStyle: { color: palette[k], width: isPortrait ? 2 : (k === 'f0' ? 2 : 1.5) },
           itemStyle: { color: palette[k] },
           markArea: visible[k] && (isPortrait ? k === 'f2' : true) && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, areaColor(k), isPortrait) } : undefined,
-          markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, lineColor(k), isPortrait) : undefined,
+          markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, lineColor(k), isPortrait, k === 'f1' ? 'insideEndBottom' : 'insideEndTop') : undefined,
           data: seriesData[k],
         })),
         {
