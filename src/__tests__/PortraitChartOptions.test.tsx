@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, act } from '@testing-library/react'
+import { render, act, waitFor } from '@testing-library/react'
 import { F0Chart } from '../components/F0Chart'
 import { FormantChart } from '../components/FormantChart'
 import { useAppStore } from '../store/appStore'
@@ -207,15 +207,11 @@ describe('portrait chart options', () => {
     expect(lines[1].label.color).toBe('#F5A9B8')
   })
 
-  it('shows the F0 x axis labels with token colors in portrait', () => {
+  it('hides the F0 x axis labels with reference grid colors in portrait', () => {
     setMatchMedia(true)
     render(<F0Chart />)
     const option = lastOption()
-    expect(option.xAxis.axisLabel.show).toBe(true)
-    expect(option.xAxis.axisLabel.formatter(5)).toBe('5s')
-    expect(option.xAxis.axisLabel.hideOverlap).toBe(true)
-    expect(option.xAxis.axisLabel.color).toBe('#7D8DA8')
-    expect(option.xAxis.axisLabel.fontSize).toBe(11)
+    expect(option.xAxis.axisLabel.show).toBe(false)
     expect(option.xAxis.splitLine.lineStyle.color).toBe('#EDF2F7')
     expect(option.xAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
     expect(option.yAxis.axisLabel.color).toBe('#7D8DA8')
@@ -226,7 +222,7 @@ describe('portrait chart options', () => {
   it('tightens the F0 grid in portrait', () => {
     setMatchMedia(true)
     render(<F0Chart />)
-    expect(lastOption().grid).toEqual({ left: 48, right: 12, top: 16, bottom: 28 })
+    expect(lastOption().grid).toEqual({ left: 42, right: 0, top: 10, bottom: 6 })
   })
 
   it('draws the F0 line in new blue with flat zones in portrait', () => {
@@ -236,14 +232,14 @@ describe('portrait chart options', () => {
     expect(series.lineStyle.color).toBe('#3F83F8')
     expect(series.itemStyle.color).toBe('#3F83F8')
     expect(lastOption().color).toEqual(['#3F83F8'])
-    expect(series.markArea.data[0][0].yAxis).toBe(180)
-    expect(series.markArea.data[0][1].yAxis).toBe(250)
-    expect(series.markArea.data[1][0].yAxis).toBe(280)
+    expect(series.markArea.data[0][0].yAxis).toBe(160)
+    expect(series.markArea.data[0][1].yAxis).toBe(240)
+    expect(series.markArea.data[1][0].yAxis).toBe(270)
     expect(series.markArea.data[1][1].yAxis).toBe(350)
     expect(series.markArea.data[0][0].itemStyle.color).toBe('rgba(63, 131, 248, 0.08)')
     expect(series.markArea.data[1][0].itemStyle.color).toBe('rgba(233, 71, 99, 0.08)')
-    expect(series.markLine.data[0].yAxis).toBe(215)
-    expect(series.markLine.data[1].yAxis).toBe(315)
+    expect(series.markLine.data[0].yAxis).toBe(200)
+    expect(series.markLine.data[1].yAxis).toBe(300)
     expect(series.markLine.data[0].lineStyle.color).toBe('#8BB9FF')
     expect(series.markLine.data[0].lineStyle.type).toBe('dashed')
     expect(series.markLine.data[1].lineStyle.color).toBe('#F4A0B1')
@@ -278,21 +274,17 @@ describe('portrait chart options', () => {
     expect(formantMarkSummary('f2')).toEqual(LANDSCAPE_FORMANT_MARK_F2)
   })
 
-  it('shows the formant x axis labels and tightens the grid in portrait', () => {
+  it('hides the formant x axis labels and tightens the grid in portrait', () => {
     setMatchMedia(true)
     render(<FormantChart />)
     const option = lastOption()
-    expect(option.xAxis.axisLabel.show).toBe(true)
-    expect(option.xAxis.axisLabel.formatter(5)).toBe('5s')
-    expect(option.xAxis.axisLabel.hideOverlap).toBe(true)
-    expect(option.xAxis.axisLabel.color).toBe('#7D8DA8')
-    expect(option.xAxis.axisLabel.fontSize).toBe(11)
+    expect(option.xAxis.axisLabel.show).toBe(false)
     expect(option.xAxis.splitLine.lineStyle.color).toBe('#EDF2F7')
     expect(option.xAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
     expect(option.yAxis.axisLabel.color).toBe('#7D8DA8')
     expect(option.yAxis.splitLine.lineStyle.color).toBe('#EDF2F7')
     expect(option.yAxis.axisLine.lineStyle.color).toBe('#B8C4D1')
-    expect(option.grid).toEqual({ left: 48, right: 12, top: 16, bottom: 28 })
+    expect(option.grid).toEqual({ left: 42, right: 0, top: 10, bottom: 6 })
   })
 
   it('uses measured formant portrait yAxis ticks with sparse labels', () => {
@@ -307,16 +299,16 @@ describe('portrait chart options', () => {
     expect(yAxis.axisLabel.formatter(3500)).toBe('3500 Hz')
   })
 
-  it('paints only the F2 mark area in portrait with flat colors', () => {
+  it('paints all three target areas in portrait with flat colors', () => {
     setMatchMedia(true)
     render(<FormantChart />)
     const f0 = seriesByName('F0')
-    expect(f0.markArea).toBe(undefined)
+    expect(f0.markArea.data[0][0].itemStyle.color).toBe('rgba(18, 184, 134, 0.08)')
     expect(f0.markLine.lineStyle.color).toBe('#12B886')
     expect(f0.markLine.lineStyle.type).toBe('dashed')
     const f1 = seriesByName('F1')
-    expect(f1.markArea).toBe(undefined)
-    expect(f1.markLine.lineStyle.color).toBe('#F04B6A')
+    expect(f1.markArea.data[0][0].itemStyle.color).toBe('rgba(63, 131, 248, 0.08)')
+    expect(f1.markLine.lineStyle.color).toBe('#3F83F8')
     expect(f1.markLine.lineStyle.type).toBe('dashed')
     const f2 = seriesByName('F2')
     expect(f2.markArea.data[0][0].itemStyle.color).toBe('rgba(245, 158, 11, 0.08)')
@@ -324,16 +316,16 @@ describe('portrait chart options', () => {
     expect(f2.markLine.lineStyle.type).toBe('dashed')
   })
 
-  it('uses the new green/red/blue series colors with 2px widths in portrait', () => {
+  it('uses the new green/red/blue series colors as dots in portrait', () => {
     setMatchMedia(true)
     render(<FormantChart />)
     expect(lastOption().color).toEqual(['#12B886', '#F04B6A', '#3F83F8'])
     expect(seriesByName('F0').lineStyle.color).toBe('#12B886')
-    expect(seriesByName('F0').lineStyle.width).toBe(2)
+    expect(seriesByName('F0').lineStyle.width).toBe(0)
     expect(seriesByName('F1').lineStyle.color).toBe('#F04B6A')
-    expect(seriesByName('F1').lineStyle.width).toBe(2)
+    expect(seriesByName('F1').lineStyle.width).toBe(0)
     expect(seriesByName('F2').lineStyle.color).toBe('#3F83F8')
-    expect(seriesByName('F2').lineStyle.width).toBe(2)
+    expect(seriesByName('F2').lineStyle.width).toBe(0)
   })
 
   it('re-renders with portrait options when the viewport crosses the breakpoint', () => {
@@ -343,8 +335,8 @@ describe('portrait chart options', () => {
     expect(lastOption().xAxis.axisLabel.show).toBe(false)
 
     resize(true)
-    expect(lastOption().grid.left).toBe(48)
-    expect(lastOption().xAxis.axisLabel.show).toBe(true)
+    expect(lastOption().grid.left).toBe(42)
+    expect(lastOption().xAxis.axisLabel.show).toBe(false)
   })
 
   it('re-renders the formant chart when the viewport crosses the breakpoint', () => {
@@ -353,8 +345,8 @@ describe('portrait chart options', () => {
     expect(lastOption().grid.left).toBe(72)
 
     resize(true)
-    expect(lastOption().grid.left).toBe(48)
-    expect(lastOption().xAxis.axisLabel.show).toBe(true)
+    expect(lastOption().grid.left).toBe(42)
+    expect(lastOption().xAxis.axisLabel.show).toBe(false)
   })
 
   it('marks the latest F0 sample with a 6-8px dot', () => {
@@ -370,5 +362,31 @@ describe('portrait chart options', () => {
     expect(mp.data[0].symbolSize).toBeLessThanOrEqual(8)
     expect(mp.itemStyle.shadowBlur).toBe(12)
     expect(mp.itemStyle.shadowColor).toBe('rgba(63, 131, 248, 0.35)')
+  })
+})
+
+
+describe.each([['F0', F0Chart], ['formants', FormantChart]] as const)('%s recording window', (_name, Chart) => {
+  it.each([true, false])('keeps only the latest 10 seconds (portrait=%s)', async (portrait) => {
+    useAppStore.getState().reset()
+    setOptionMock.mockClear()
+    setMatchMedia(portrait)
+    render(<Chart />)
+    act(() => {
+      for (let time = 0; time <= 35; time++) {
+        useAppStore.getState().appendFrame({ time, f0: 220, f1: 850, f2: 1250 })
+      }
+    })
+    await waitFor(() => {
+      expect(lastOption().xAxis.max).toBe(35)
+      expect(lastOption().xAxis.min).toBe(25)
+    })
+    act(() => {
+      useAppStore.getState().appendFrame({ time: 36, f0: 225, f1: 860, f2: 1260 })
+    })
+    await waitFor(() => {
+      expect(lastOption().xAxis.max).toBe(36)
+      expect(lastOption().xAxis.min).toBe(26)
+    })
   })
 })

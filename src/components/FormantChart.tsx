@@ -5,13 +5,12 @@ import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame, TargetBands } from '../types'
 
 const WINDOW = 10
-const PORTRAIT_WINDOW = 30
 const FREQ_MAX = 3500
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
 const GRID_DESKTOP = { left: 72, right: 32, top: 20, bottom: 36 }
-const GRID_PORTRAIT = { left: 48, right: 12, top: 16, bottom: 28 }
+const GRID_PORTRAIT = { left: 42, right: 0, top: 10, bottom: 6 }
 
 const COLORS = {
   f0: '#1F2937',
@@ -27,13 +26,15 @@ const PORTRAIT_COLORS = {
 
 const SPARSE_TICKS = [0, 1000, 2000, 3000, 3500]
 
-const PORTRAIT_MARK_AREA: Partial<Record<'f2', string>> = {
+const PORTRAIT_MARK_AREA: Record<'f0' | 'f1' | 'f2', string> = {
+  f0: 'rgba(18, 184, 134, 0.08)',
+  f1: 'rgba(63, 131, 248, 0.08)',
   f2: 'rgba(245, 158, 11, 0.08)',
 }
 
 const PORTRAIT_MARK_LINE = {
   f0: '#12B886',
-  f1: '#F04B6A',
+  f1: '#3F83F8',
   f2: '#F4B84A',
 }
 
@@ -146,7 +147,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     }
 
     const hasData = data.length > 0
-    const windowSize = isPortrait ? PORTRAIT_WINDOW : WINDOW
+    const windowSize = WINDOW
     let minTime: number, maxTime: number
     if (isLive && hasData) {
       const currentTime = data[data.length - 1].time
@@ -195,9 +196,9 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         type: 'value',
         min: minTime,
         max: maxTime,
-        axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
+        axisLine: { ...(isPortrait ? { show: true, onZero: false } : {}), lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: isPortrait
-          ? { show: true, color: '#7D8DA8', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
+          ? { show: false }
           : { show: false },
         splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
@@ -206,8 +207,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         min: 0,
         max: FREQ_MAX,
         interval: 500,
-        axisLine: { lineStyle: { color: '#B8C4D1' } },
-        axisLabel: { color: '#7D8DA8', fontSize: 11, formatter: (v: number) => SPARSE_TICKS.some(t => Math.abs(v - t) < 1) ? `${Math.round(v)} Hz` : '' },
+        axisLine: { show: true, onZero: false, lineStyle: { color: '#B8C4D1' } },
+        axisLabel: { color: '#7D8DA8', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => SPARSE_TICKS.some(t => Math.abs(v - t) < 1) ? `${Math.round(v)} Hz` : '' },
         axisTick: { show: false },
         splitLine: { lineStyle: { color: '#EDF2F7' } },
       } : {
@@ -215,7 +216,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         min: 0,
         max: FREQ_MAX,
         axisLine: { lineStyle: { color: '#D0D5DD' } },
-        axisLabel: { color: '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
+        axisLabel: { color: '#667085', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => `${v} Hz` },
         splitLine: { lineStyle: { color: '#F2F4F7' } },
       },
       color: keys.map(k => palette[k]),
@@ -223,12 +224,14 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         ...keys.map(k => ({
           name: k.toUpperCase(),
           type: 'line' as const,
-          showSymbol: false,
+          showSymbol: isPortrait,
+          symbol: 'circle',
+          symbolSize: 2,
           connectNulls: false,
           color: palette[k],
-          lineStyle: { color: palette[k], width: isPortrait ? 2 : (k === 'f0' ? 2 : 1.5) },
+          lineStyle: { color: palette[k], width: isPortrait ? 0 : (k === 'f0' ? 2 : 1.5) },
           itemStyle: { color: palette[k] },
-          markArea: visible[k] && (isPortrait ? k === 'f2' : true) && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, areaColor(k), isPortrait) } : undefined,
+          markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, areaColor(k), isPortrait) } : undefined,
           markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, lineColor(k), isPortrait, k === 'f1' ? 'insideEndBottom' : 'insideEndTop') : undefined,
           data: seriesData[k],
         })),

@@ -90,3 +90,18 @@
     min-height: 52px;
   }
 }
+
+.card { min-height: 50px; padding: 0 10px; gap: 6px; border: 0; border-radius: 9px; box-shadow: 0 2px 10px #23558b06; background: rgba(255,255,255,.88); }
+.heroIcon { height: 15px; gap: 2px; }
+.heroIcon i { width: 1.5px; background: #354c6a; }
+.heroIcon i:nth-child(1) { height: 8px; }
+.heroIcon i:nth-child(2) { height: 15px; }
+.heroIcon i:nth-child(3) { height: 11px; }
+.title { font-size: 11px; color: #0a2344; }
+.badge { height: 23px; font-size: 9px; padding: 0 6px; gap: 4px; }
+.badge[data-tone="hit"] { border: 0; background: #e8fbf6; color: #00b58d; }
+.value { flex: 1; min-width: 0; gap: 2px; padding-left: 5px; border-left: 1px solid #e0e8f3; font-size: 9px; font-weight: 500; }
+.valueKey { font-size: 9px; padding: 3px 2px; border-radius: 5px; background: color-mix(in srgb, currentColor 5%, transparent); }
+.number { color: #0a2344; }
+.unit { color: #7288a6; font-size: 8px; }
+@media (max-width: 360px) { .card { gap: 4px; padding: 0 6px; } .heroIcon { display: none; } .title { font-size: 10px; } }

@@ -5,7 +5,6 @@ import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame } from '../types'
 
 const WINDOW = 10
-const PORTRAIT_WINDOW = 30
 
 const TARGET_ZONES = [
   { label: '男声', range: [80, 150], color: '#5BCEFA' },
@@ -13,8 +12,8 @@ const TARGET_ZONES = [
 ]
 
 const TARGET_ZONES_PORTRAIT = [
-  { label: '男声', range: [180, 250], color: 'rgba(63, 131, 248, 0.08)', dash: '#8BB9FF', labelColor: '#3F83F8' },
-  { label: '女声', range: [280, 350], color: 'rgba(233, 71, 99, 0.08)', dash: '#F4A0B1', labelColor: '#E94763' },
+  { label: '男声', range: [160, 240], color: 'rgba(63, 131, 248, 0.08)', dash: '#8BB9FF', labelColor: '#3F83F8' },
+  { label: '女声', range: [270, 350], color: 'rgba(233, 71, 99, 0.08)', dash: '#F4A0B1', labelColor: '#E94763' },
 ]
 
 type TargetZone = { label: string; range: number[]; color: string; dash?: string; labelColor?: string }
@@ -22,7 +21,7 @@ type TargetZone = { label: string; range: number[]; color: string; dash?: string
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
 const GRID_DESKTOP = { left: 72, right: 32, top: 20, bottom: 36 }
-const GRID_PORTRAIT = { left: 48, right: 12, top: 16, bottom: 28 }
+const GRID_PORTRAIT = { left: 42, right: 0, top: 10, bottom: 6 }
 
 const F0_COLOR_DESKTOP = '#1F2937'
 const F0_COLOR_PORTRAIT = '#3F83F8'
@@ -74,7 +73,7 @@ function buildMarkAreas(zones: TargetZone[], colorFor: (zone: TargetZone) => str
 
 function buildMarkLineData(zones: TargetZone[], colorFor: (zone: TargetZone) => string, verbatim = false) {
   return zones.map(z => {
-    const mid = Math.round((z.range[0] + z.range[1]) / 2)
+    const mid = verbatim ? (z.label === '男声' ? 200 : 300) : Math.round((z.range[0] + z.range[1]) / 2)
     const color = colorFor(z)
     const lineColor = z.dash ?? color
     const labelColor = z.labelColor ?? color
@@ -137,7 +136,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
     const lastDot = dots[dots.length - 1]
 
     const hasData = data.length > 0
-    const windowSize = isPortrait ? PORTRAIT_WINDOW : WINDOW
+    const windowSize = WINDOW
     let minTime: number, maxTime: number
     if (isLive && hasData) {
       const currentTime = data[data.length - 1].time
@@ -164,9 +163,9 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         type: 'value',
         min: minTime,
         max: maxTime,
-        axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
+        axisLine: { ...(isPortrait ? { show: true, onZero: false } : {}), lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: isPortrait
-          ? { show: true, color: '#7D8DA8', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
+          ? { show: false }
           : { show: false },
         splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
@@ -175,8 +174,8 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         min: 0,
         max: 500,
         ...(isPortrait ? { interval: 100 } : {}),
-        axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
-        axisLabel: { color: isPortrait ? '#7D8DA8' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
+        axisLine: { ...(isPortrait ? { show: true, onZero: false } : {}), lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
+        axisLabel: { color: isPortrait ? '#7D8DA8' : '#667085', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => `${v} Hz` },
         splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
       color: [f0Color],

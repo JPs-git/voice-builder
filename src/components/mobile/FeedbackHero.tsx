@@ -72,9 +72,9 @@ export function FeedbackHero() {
           style={{ color: VAL_COLORS[key] }}
         >
           <span className={styles.valueKey}>{key.toUpperCase()}</span>
-          <span data-testid={key === 'f0' ? 'hero-f0' : undefined}>
+          <span className={styles.number} data-testid={key === 'f0' ? 'hero-f0' : undefined}>
             {formatValue(latestFrame?.[key])}
-          </span>
+          </span><span className={styles.unit}>Hz</span>
         </span>
       ))}
     </section>

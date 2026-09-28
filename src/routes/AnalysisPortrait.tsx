@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useAppStore } from '../store/appStore'
 import type { ShellContext } from './AppShell'
@@ -8,7 +8,7 @@ import { RecordDock } from '../components/mobile/RecordDock'
 import { F0Chart } from '../components/F0Chart'
 import { FormantChart } from '../components/FormantChart'
 import { EmptyState } from '../components/EmptyState'
-import { TipWidget } from '../components/TipWidget'
+import { Drawer } from '../components/Drawer'
 import { presetShortLabel } from '../types'
 import type { FormantSeries } from '../types'
 import styles from './AnalysisPage.module.css'
@@ -22,27 +22,20 @@ const SERIES_COLORS: Record<FormantSeries, string> = {
 }
 
 export function AnalysisPortrait() {
-  const { cursorTime, hasData, isCapturing, isRequesting, onRecord } =
+  const { cursorTime, hasData, isCapturing, isRequesting, onRecord, onClear, onPlayback, isPlaying } =
     useOutletContext<ShellContext>()
 
   const formantVisible = useAppStore(s => s.formantVisible)
   const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
   const activePreset = useAppStore(s => s.activePreset)
 
-  const goalRef = useRef<HTMLDivElement>(null)
-  const scrollToGoal = useCallback(() => {
-    goalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [])
+  const [goalOpen, setGoalOpen] = useState(false)
 
   const goalLabel = presetShortLabel(activePreset)
 
   return (
     <div className={styles.page} data-layout="portrait">
       <main className={`${styles.content} ${styles.portraitMain}`}>
-        <div ref={goalRef} data-testid="training-goal-card" className={styles.portraitSlot}>
-          <TrainingGoalCard />
-        </div>
-
         <div data-testid="feedback-hero" className={styles.portraitSlot}>
           <FeedbackHero />
         </div>
@@ -50,7 +43,7 @@ export function AnalysisPortrait() {
         <div className={styles.chartStack}>
           <section className={`${styles.card} ${styles.chartPanel}`}>
             <div className={styles.chartPanelHeader}>
-              <h2 className={styles.cardTitle}><span aria-hidden="true">▂▅</span> 基频 <span className={styles.f0Suffix}>F0</span></h2>
+              <h2 className={styles.cardTitle}><svg className={styles.chartGlyph} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M3 12v1m4-5v9m5-15v20m5-14v9m4-5v1" /></svg> 基频 <span className={styles.f0Suffix}>F0</span></h2>
               <div className={styles.f0Legend} data-testid="f0-legend" aria-label="图例">
                 <span className={styles.f0LegendItem}>
                   <i className={styles.f0LegendLine} aria-hidden="true" />
@@ -79,7 +72,7 @@ export function AnalysisPortrait() {
 
           <section className={`${styles.card} ${styles.chartPanel}`}>
             <div className={styles.chartPanelHeader}>
-              <h2 className={styles.cardTitle}>共振峰</h2>
+              <h2 className={styles.cardTitle}><svg className={styles.chartGlyph} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M3 15v6M9 7v14M15 2v19M21 10v11" /></svg> 共振峰</h2>
               <div className={styles.cardLegend} data-testid="formant-legend" aria-label="图例">
                 {LEGEND_KEYS.map(key => (
                   <button
@@ -114,10 +107,16 @@ export function AnalysisPortrait() {
         isCapturing={isCapturing}
         isRequesting={isRequesting}
         goalLabel={goalLabel}
-        onGoalClick={scrollToGoal}
+        onGoalClick={() => setGoalOpen(true)}
+        onClear={onClear}
+        onPlayback={onPlayback}
+        hasData={hasData}
+        isPlaying={isPlaying}
       />
 
-      <TipWidget />
+      <Drawer open={goalOpen} title="训练目标" onClose={() => setGoalOpen(false)}>
+        <div data-testid="training-goal-card"><TrainingGoalCard /></div>
+      </Drawer>
     </div>
   )
 }

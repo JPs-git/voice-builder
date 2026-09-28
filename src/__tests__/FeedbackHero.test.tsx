@@ -103,10 +103,10 @@ describe('FeedbackHero', () => {
     expect(screen.getByTestId('hero-col-f1')).toBeTruthy()
   })
 
-  it('shows no Hz units in the single row', () => {
+  it('shows Hz units for each frequency in the single row', () => {
     setFrame(245, 920, 1250)
     render(<FeedbackHero />)
-    expect(screen.queryByText('Hz')).toBeNull()
+    expect(screen.getAllByText('Hz')).toHaveLength(3)
   })
 
   it('shows no status circles in the single row', () => {

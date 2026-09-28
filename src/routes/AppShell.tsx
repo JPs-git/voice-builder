@@ -16,6 +16,9 @@ export interface ShellContext {
   hasData: boolean
   isCapturing: boolean
   isRequesting: boolean
+  onClear?: () => void
+  onPlayback?: () => void
+  isPlaying?: boolean
   onRecord: () => void
 }
 
@@ -51,6 +54,9 @@ export function AppShell() {
     isCapturing,
     isRequesting,
     onRecord: () => handleClickTool('record'),
+    onClear: () => handleClickTool('clear'),
+    onPlayback: () => handleClickTool('playback'),
+    isPlaying: toolItems.find(item => item.id === 'playback')?.label === '停止',
   }
 
   return (

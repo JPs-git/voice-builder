@@ -125,10 +125,28 @@ describe('portrait analysis structure', () => {
     renderWithContext(<AnalysisPage />, SHELL_CONTEXT)
     const page = document.querySelector('[data-layout="portrait"]')
     expect(page).toBeTruthy()
-    expect(page?.querySelector('[data-testid="training-goal-card"]')).toBeTruthy()
+    expect(page?.querySelector('[data-testid="training-goal-card"]')).toBeNull()
     expect(page?.querySelector('[data-testid="feedback-hero"]')).toBeTruthy()
     expect(page?.querySelector('#f0Chart')).toBeTruthy()
     expect(page?.querySelector('#formantChart')).toBeTruthy()
+  })
+
+  it('opens target settings from the dock and closes them', () => {
+    renderWithContext(<AnalysisPage />, SHELL_CONTEXT)
+    fireEvent.click(screen.getByTestId('dock-goal'))
+    expect(screen.getByLabelText('选择元音预设')).toBeTruthy()
+    fireEvent.click(screen.getByLabelText('关闭'))
+    expect(screen.queryByLabelText('选择元音预设')).toBeNull()
+  })
+
+  it('routes clear and playback through shell callbacks', () => {
+    const onClear = vi.fn()
+    const onPlayback = vi.fn()
+    renderWithContext(<AnalysisPage />, { ...SHELL_CONTEXT, onClear, onPlayback })
+    fireEvent.click(screen.getByRole('button', { name: '清除图谱' }))
+    fireEvent.click(screen.getByRole('button', { name: '回放' }))
+    expect(onClear).toHaveBeenCalledTimes(1)
+    expect(onPlayback).toHaveBeenCalledTimes(1)
   })
 
   it('mounts the record dock with the active preset label', () => {

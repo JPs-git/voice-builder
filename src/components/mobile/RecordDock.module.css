@@ -128,3 +128,18 @@
 @media (prefers-reduced-motion: reduce) {
   .mic[data-recording="true"] { animation: none; }
 }
+
+.dock[data-actions="true"] { min-height: calc(80px + env(safe-area-inset-bottom)); padding: 8px 20px calc(16px + env(safe-area-inset-bottom)); gap: 8px; border-radius: 34px 34px 0 0; justify-content: space-between; }
+.dock[data-actions="true"] .goal { flex: 0 1 auto; margin-right: auto; min-width: 0; height: 26px; gap: 6px; padding: 0 8px 0 0; border-radius: 18px; background: #f4f7fc; }
+.dock[data-actions="true"] .goalLabel { min-width: 27px; height: 26px; border-radius: 50%; font-size: 17px; }
+.dock[data-actions="true"] .goalHint { font-size: 10px; color: #6c83a4; }
+.dock[data-actions="true"] .goalChevron { font-size: 20px; }
+.dock[data-actions="true"] .micHalo { width: 62px; height: 62px; margin: -8px 0 0; position: absolute; left: 50%; transform: translateX(-50%); background: #ffebf2; }
+.dock[data-actions="true"] .mic { width: 50px; height: 50px; box-shadow: none; background: linear-gradient(130deg,#ff3364,#ee3d70); }
+.dock[data-actions="true"] .mic svg { width: 25px; height: 25px; }
+.dock[data-actions="true"] .hint { display: none; }
+.action { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 27px; padding: 0 8px; border: 1px solid #e4ebf5; border-radius: 18px; background: #ffffffa8; font: 10px var(--font-sans); color: #6d83a4; white-space: nowrap; cursor: pointer; }
+.action svg { width: 14px; height: 14px; color: #294566; }
+.action:disabled { opacity: .45; cursor: not-allowed; }
+.dock[data-actions="true"] .timer { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); font-size: 10px; }
+@media (max-width: 384px) { .dock[data-actions="true"] { padding-left: 10px; padding-right: 10px; gap: 4px; } .action { padding: 0 5px; } }

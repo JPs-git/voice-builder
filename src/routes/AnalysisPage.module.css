@@ -240,3 +240,28 @@
     height: 28px;
   }
 }
+
+/* Reference composition: 390 × 844, with device chrome handled by the browser. */
+@media (max-width: 768px) {
+  .page { background: #f4faff; }
+  .portraitMain { padding: 8px 16px calc(90px + env(safe-area-inset-bottom)); gap: 10px; background: transparent; overflow-y: auto; }
+  .chartStack { gap: 10px; min-height: 420px; }
+  .chartPanel { padding: 10px 10px 12px; border-radius: 9px; background: rgba(255,255,255,.88); box-shadow: 0 2px 10px #23558b06; gap: 6px; }
+  .chartPanel:first-child { flex: 1.16; }
+  .chartPanelHeader { height: 28px; flex-shrink: 0; gap: 4px; }
+  .cardTitle { display: flex; align-items: center; gap: 7px; font-size: 14px; color: #0a2344; }
+  .chartGlyph { color: #354c6a; width: 20px; height: 20px; flex-shrink: 0; margin-right: 2px; }
+  .f0Suffix { font-size: 13px; font-weight: 600; color: #00b990; }
+  .f0Legend { gap: 12px; }
+  .f0LegendItem { gap: 6px; font-size: 8px; color: #788faf; }
+  .f0LegendLine { width: 13px; height: 3px; background: #297dff; }
+  .f0LegendZone { width: 14px; height: 14px; background: #ffedf4; }
+  .f0LegendTarget { width: 13px; border-top-width: 1px; }
+  .cardLegend { gap: 4px; flex-wrap: nowrap; }
+  .legendItem { min-width: 34px; height: 21px; padding: 0 7px; gap: 5px; font-size: 9px; color: #6b83a4; background: transparent; }
+  .legendItem i { width: 6px; height: 6px; }
+}
+@media (max-width: 360px) {
+  .f0Legend { gap: 5px; }
+  .portraitMain { padding-left: 10px; padding-right: 10px; }
+}

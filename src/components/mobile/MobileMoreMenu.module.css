@@ -75,3 +75,5 @@
   cursor: not-allowed;
   background: none;
 }
+
+.trigger { width: 30px; height: 28px; border-radius: 9px; font-size: 17px; box-shadow: 0 1px 3px #23558b06; }
