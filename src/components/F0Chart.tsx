@@ -12,11 +12,11 @@ const TARGET_ZONES = [
 ]
 
 const TARGET_ZONES_PORTRAIT = [
-  { label: '男声', range: [80, 150], color: '#E4F3FE', dash: '#BEDAFD', labelColor: '#4691F5' },
-  { label: '女声', range: [180, 300], color: '#FCEFF2', dash: '#FDCFD9', labelColor: '#EF627D' },
+  { label: '男声', range: [180, 250], color: 'rgba(63, 131, 248, 0.08)', area: 'rgba(63, 131, 248, 0.08)', dash: '#8BB9FF', labelColor: '#3F83F8' },
+  { label: '女声', range: [280, 350], color: 'rgba(233, 71, 99, 0.08)', area: 'rgba(233, 71, 99, 0.08)', dash: '#F4A0B1', labelColor: '#E94763' },
 ]
 
-type TargetZone = { label: string; range: number[]; color: string; dash?: string; labelColor?: string }
+type TargetZone = { label: string; range: number[]; color: string; area?: string; dash?: string; labelColor?: string }
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -24,7 +24,7 @@ const GRID_DESKTOP = { left: 72, right: 32, top: 20, bottom: 36 }
 const GRID_PORTRAIT = { left: 48, right: 12, top: 16, bottom: 28 }
 
 const F0_COLOR_DESKTOP = '#1F2937'
-const F0_COLOR_PORTRAIT = '#2D7DFC'
+const F0_COLOR_PORTRAIT = '#3F83F8'
 
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '')
@@ -62,16 +62,16 @@ export function formatF0Tooltip(params: any, frames: AnalysisFrame[]): string {
 </div>`
 }
 
-function buildMarkAreas(zones: TargetZone[], colorFor: (zone: TargetZone) => string) {
+function buildMarkAreas(zones: TargetZone[], colorFor: (zone: TargetZone) => string, verbatim = false) {
   return zones.map(z => ([{
     yAxis: z.range[0],
-    itemStyle: { color: hexToRgba(colorFor(z), 0.15) },
+    itemStyle: { color: verbatim ? colorFor(z) : hexToRgba(colorFor(z), 0.15) },
   }, {
     yAxis: z.range[1],
   }]))
 }
 
-function buildMarkLineData(zones: TargetZone[], colorFor: (zone: TargetZone) => string) {
+function buildMarkLineData(zones: TargetZone[], colorFor: (zone: TargetZone) => string, verbatim = false) {
   return zones.map(z => {
     const mid = Math.round((z.range[0] + z.range[1]) / 2)
     const color = colorFor(z)
@@ -79,7 +79,7 @@ function buildMarkLineData(zones: TargetZone[], colorFor: (zone: TargetZone) => 
     const labelColor = z.labelColor ?? color
     return {
       yAxis: mid,
-      lineStyle: { color: hexToRgba(lineColor, 0.4), type: 'dashed' as const, width: 1 },
+      lineStyle: { color: verbatim ? lineColor : hexToRgba(lineColor, 0.4), type: 'dashed' as const, width: 1 },
       label: {
         formatter: z.label,
         color: labelColor,
@@ -131,7 +131,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
     const f0Color = isPortrait ? F0_COLOR_PORTRAIT : F0_COLOR_DESKTOP
     const zones = isPortrait ? TARGET_ZONES_PORTRAIT : TARGET_ZONES
-    const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => zone.color
+    const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => isPortrait ? (zone.area ?? zone.color) : zone.color
     const dots = data.filter(f => f.f0 != null && f.f0 > 0)
     const lastDot = dots[dots.length - 1]
 
@@ -166,7 +166,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         axisLabel: isPortrait
           ? { show: true, color: '#7D8DA8', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
           : { show: false },
-        splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
       yAxis: {
         type: 'value',
@@ -175,7 +175,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
         ...(isPortrait ? { interval: 100 } : {}),
         axisLine: { lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: { color: isPortrait ? '#7D8DA8' : '#667085', fontSize: 11, formatter: (v: number) => `${v} Hz` },
-        splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
       color: [f0Color],
       series: [
@@ -186,13 +186,13 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
           connectNulls: false,
           lineStyle: { color: f0Color, width: 2 },
           itemStyle: { color: f0Color },
-          markArea: { silent: true, data: buildMarkAreas(zones, zoneColor) },
-          markLine: { silent: true, symbol: 'none', data: buildMarkLineData(zones, zoneColor) },
+          markArea: { silent: true, data: buildMarkAreas(zones, zoneColor, isPortrait) },
+          markLine: { silent: true, symbol: 'none', data: buildMarkLineData(zones, zoneColor, isPortrait) },
           markPoint: isPortrait && lastDot ? {
             silent: true,
             symbol: 'circle',
             symbolSize: 7,
-            itemStyle: { color: f0Color },
+            itemStyle: { color: f0Color, shadowBlur: 12, shadowColor: 'rgba(63, 131, 248, 0.35)' },
             data: [{ coord: [lastDot.time, lastDot.f0], symbolSize: 7 }],
           } : undefined,
           data: seriesData,

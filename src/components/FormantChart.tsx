@@ -19,22 +19,21 @@ const COLORS = {
 }
 
 const PORTRAIT_COLORS = {
-  f0: '#07C188',
-  f1: '#EF5064',
-  f2: '#2D7DFC',
+  f0: '#12B886',
+  f1: '#F04B6A',
+  f2: '#3F83F8',
 }
 
 const SPARSE_TICKS = [0, 1000, 2000, 3000, 3500]
 
-const PORTRAIT_MARK_AREA: Partial<Record<'f1' | 'f2', string>> = {
-  f1: '#E9F2FE',
-  f2: '#FDF5EB',
+const PORTRAIT_MARK_AREA: Partial<Record<'f2', string>> = {
+  f2: 'rgba(245, 158, 11, 0.08)',
 }
 
 const PORTRAIT_MARK_LINE = {
-  f0: '#07C188',
-  f1: '#2D7DFC',
-  f2: '#FEB232',
+  f0: '#12B886',
+  f1: '#F04B6A',
+  f2: '#F4B84A',
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -45,19 +44,19 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-function buildMarkArea(range: [number, number], color: string) {
+function buildMarkArea(range: [number, number], color: string, verbatim = false) {
   return [[{
     yAxis: range[0],
-    itemStyle: { color: hexToRgba(color, 0.10) },
+    itemStyle: { color: verbatim ? color : hexToRgba(color, 0.10) },
   }, { yAxis: range[1] }]]
 }
 
-function buildMarkLine(range: [number, number], name: string, color: string) {
+function buildMarkLine(range: [number, number], name: string, color: string, verbatim = false) {
   const mid = Math.round((range[0] + range[1]) / 2)
   return {
     silent: true,
     symbol: 'none',
-    lineStyle: { color: hexToRgba(color, 0.55), type: 'dashed' as const, width: 1 },
+    lineStyle: { color: verbatim ? color : hexToRgba(color, 0.55), type: 'dashed' as const, width: 1 },
     label: { formatter: name, color, fontSize: 11, position: 'insideEndTop' },
     data: [{ yAxis: mid }],
   }
@@ -198,7 +197,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         axisLabel: isPortrait
           ? { show: true, color: '#7D8DA8', fontSize: 11, hideOverlap: true, formatter: (v: number) => `${v}s` }
           : { show: false },
-        splitLine: { lineStyle: { color: isPortrait ? '#EDF1F5' : '#F2F4F7' } },
+        splitLine: { lineStyle: { color: isPortrait ? '#EDF2F7' : '#F2F4F7' } },
       },
       yAxis: isPortrait ? {
         type: 'value',
@@ -208,7 +207,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         axisLine: { lineStyle: { color: '#B8C4D1' } },
         axisLabel: { color: '#7D8DA8', fontSize: 11, formatter: (v: number) => SPARSE_TICKS.some(t => Math.abs(v - t) < 1) ? `${Math.round(v)} Hz` : '' },
         axisTick: { show: false },
-        splitLine: { lineStyle: { color: '#EDF1F5' } },
+        splitLine: { lineStyle: { color: '#EDF2F7' } },
       } : {
         type: 'value',
         min: 0,
@@ -227,8 +226,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
           color: palette[k],
           lineStyle: { color: palette[k], width: isPortrait ? 2 : (k === 'f0' ? 2 : 1.5) },
           itemStyle: { color: palette[k] },
-          markArea: visible[k] && !(isPortrait && k === 'f0') && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, areaColor(k)) } : undefined,
-          markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, lineColor(k)) : undefined,
+          markArea: visible[k] && (isPortrait ? k === 'f2' : true) && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, areaColor(k), isPortrait) } : undefined,
+          markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, lineColor(k), isPortrait) : undefined,
           data: seriesData[k],
         })),
         {

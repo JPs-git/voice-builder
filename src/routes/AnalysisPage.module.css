@@ -178,7 +178,7 @@
     border: 1px solid var(--m-card-border);
     border-radius: 6px;
     background: var(--panel);
-    padding: 10px;
+    padding: 14px 16px 12px;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -186,10 +186,12 @@
   .chartPanelHeader {
     display: flex;
     align-items: center;
-    min-height: 40px;
+    height: 32px;
+    min-height: 0;
     justify-content: space-between;
     gap: 8px;
   }
+  .f0Suffix { font-size: 16px; font-weight: 700; color: var(--v2-f0); }
   .f0Legend {
     display: flex;
     align-items: center;
@@ -199,8 +201,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
-    color: var(--m-legend);
+    font-size: 12px;
+    color: var(--v2-secondary);
     white-space: nowrap;
   }
   .f0LegendLine {
@@ -221,7 +223,10 @@
     border-top: 2px dashed #2D7DFC;
   }
   .legendItem {
-    padding: 2px 8px;
+    min-width: 48px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 15px;
     min-height: 0;
     box-sizing: border-box;
     border-color: var(--m-pill-border);
@@ -233,5 +238,5 @@
     width: 5px;
     height: 5px;
   }
-  .portraitChartsCard .cardTitle { font-size: 14px; font-weight: 700; color: var(--m-text); }
+  .portraitChartsCard .cardTitle { font-size: 17px; font-weight: 700; color: var(--v2-text); }
 }

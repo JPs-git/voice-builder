@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useAppStore } from '../store/appStore'
 import type { ShellContext } from './AppShell'
@@ -16,12 +16,10 @@ import styles from './AnalysisPage.module.css'
 const LEGEND_KEYS = ['f0', 'f1', 'f2'] as const
 
 const SERIES_COLORS: Record<FormantSeries, string> = {
-  f0: '#07C188',
-  f1: '#EF5064',
-  f2: '#2D7DFC',
+  f0: '#12B886',
+  f1: '#F04B6A',
+  f2: '#3F83F8',
 }
-
-type ChartTab = 'f0' | 'formant'
 
 export function AnalysisPortrait() {
   const { cursorTime, hasData, isCapturing, isRequesting, onRecord } =
@@ -31,17 +29,9 @@ export function AnalysisPortrait() {
   const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
   const activePreset = useAppStore(s => s.activePreset)
 
-  const [activeTab, setActiveTab] = useState<ChartTab>('f0')
-
   const goalRef = useRef<HTMLDivElement>(null)
   const scrollToGoal = useCallback(() => {
     goalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [])
-
-  const scrollToChart = useCallback((tab: ChartTab) => {
-    setActiveTab(tab)
-    document.getElementById(tab === 'f0' ? 'f0Chart' : 'formantChart')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [])
 
   const goalLabel = presetShortLabel(activePreset)
@@ -58,28 +48,10 @@ export function AnalysisPortrait() {
         </div>
 
         <section className={`${styles.card} ${styles.portraitChartsCard}`}>
-          <nav className={styles.portraitTabs} aria-label="图表导航">
-            <button
-              type="button"
-              className={styles.portraitTab}
-              data-active={String(activeTab === 'f0')}
-              onClick={() => scrollToChart('f0')}
-            >
-              基频
-            </button>
-            <button
-              type="button"
-              className={styles.portraitTab}
-              data-active={String(activeTab === 'formant')}
-              onClick={() => scrollToChart('formant')}
-            >
-              共振峰
-            </button>
-          </nav>
-
+          <div className={styles.chartStack}>
           <div className={styles.chartPanel}>
             <div className={styles.chartPanelHeader}>
-              <h2 className={styles.cardTitle}>基频</h2>
+              <h2 className={styles.cardTitle}><span aria-hidden="true">▂▅</span> 基频 <span className={styles.f0Suffix}>F0</span></h2>
               <div className={styles.f0Legend} data-testid="f0-legend" aria-label="图例">
                 <span className={styles.f0LegendItem}>
                   <i className={styles.f0LegendLine} aria-hidden="true" />
@@ -95,7 +67,7 @@ export function AnalysisPortrait() {
                 </span>
               </div>
             </div>
-            <div className={`${styles.chartArea} ${styles.f0Area}`}>
+            <div className={styles.chartArea}>
               <F0Chart cursorTime={cursorTime} />
               <EmptyState
                 title="还没有声音数据"
@@ -125,7 +97,7 @@ export function AnalysisPortrait() {
                 ))}
               </div>
             </div>
-            <div className={`${styles.chartArea} ${styles.formantArea}`}>
+            <div className={styles.chartArea}>
               <FormantChart cursorTime={cursorTime} />
               <EmptyState
                 title="曲线待生成"
@@ -134,6 +106,7 @@ export function AnalysisPortrait() {
                 icon="🎙"
               />
             </div>
+          </div>
           </div>
         </section>
       </main>
