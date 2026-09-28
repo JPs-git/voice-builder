@@ -108,7 +108,6 @@
   border-radius: 50%;
   display: inline-block;
 }
-.portraitTabs { display: none; }
 
 @media (max-width: 768px) {
   .page {
@@ -215,12 +214,12 @@
     width: 16px;
     height: 12px;
     border-radius: 3px;
-    background: #FCEFF2;
+    background: rgba(233, 71, 99, 0.15);
   }
   .f0LegendTarget {
     width: 18px;
     height: 0;
-    border-top: 2px dashed #2D7DFC;
+    border-top: 2px dashed #8BB9FF;
   }
   .legendItem {
     min-width: 48px;

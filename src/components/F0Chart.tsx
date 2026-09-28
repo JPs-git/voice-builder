@@ -12,11 +12,11 @@ const TARGET_ZONES = [
 ]
 
 const TARGET_ZONES_PORTRAIT = [
-  { label: '男声', range: [180, 250], color: 'rgba(63, 131, 248, 0.08)', area: 'rgba(63, 131, 248, 0.08)', dash: '#8BB9FF', labelColor: '#3F83F8' },
-  { label: '女声', range: [280, 350], color: 'rgba(233, 71, 99, 0.08)', area: 'rgba(233, 71, 99, 0.08)', dash: '#F4A0B1', labelColor: '#E94763' },
+  { label: '男声', range: [180, 250], color: 'rgba(63, 131, 248, 0.08)', dash: '#8BB9FF', labelColor: '#3F83F8' },
+  { label: '女声', range: [280, 350], color: 'rgba(233, 71, 99, 0.08)', dash: '#F4A0B1', labelColor: '#E94763' },
 ]
 
-type TargetZone = { label: string; range: number[]; color: string; area?: string; dash?: string; labelColor?: string }
+type TargetZone = { label: string; range: number[]; color: string; dash?: string; labelColor?: string }
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -131,7 +131,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
     const f0Color = isPortrait ? F0_COLOR_PORTRAIT : F0_COLOR_DESKTOP
     const zones = isPortrait ? TARGET_ZONES_PORTRAIT : TARGET_ZONES
-    const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => isPortrait ? (zone.area ?? zone.color) : zone.color
+    const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => zone.color
     const dots = data.filter(f => f.f0 != null && f.f0 > 0)
     const lastDot = dots[dots.length - 1]
 
