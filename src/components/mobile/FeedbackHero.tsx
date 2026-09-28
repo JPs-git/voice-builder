@@ -7,9 +7,9 @@ import styles from './FeedbackHero.module.css'
 const KEYS: FormantSeries[] = ['f0', 'f1', 'f2']
 
 const VAL_COLORS: Record<FormantSeries, string> = {
-  f0: '#12B886',
-  f1: '#F04B6A',
-  f2: '#3F83F8',
+  f0: 'var(--v2-f0)',
+  f1: 'var(--v2-f1)',
+  f2: 'var(--v2-f2)',
 }
 
 export interface Badge {
@@ -44,11 +44,8 @@ export function FeedbackHero() {
   const formantVisible = useAppStore(s => s.formantVisible)
 
   const visibleKeys = KEYS.filter(key => formantVisible[key])
-  const columns = visibleKeys.map(key => ({
-    key,
-    status: getFormantStatus(latestFrame?.[key], bands[key].range),
-  }))
-  const badge = resolveBadge(columns.map(column => column.status))
+  const statuses = visibleKeys.map(key => getFormantStatus(latestFrame?.[key], bands[key].range))
+  const badge = resolveBadge(statuses)
 
   return (
     <section className={styles.card} aria-label="实时反馈">
