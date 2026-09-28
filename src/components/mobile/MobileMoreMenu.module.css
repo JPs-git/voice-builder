@@ -6,7 +6,6 @@
 .trigger {
   width: 48px;
   height: 48px;
-  position: relative;
   display: grid;
   place-items: center;
   border: 1px solid var(--v2-border);
