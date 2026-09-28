@@ -152,9 +152,6 @@ describe('portrait analysis structure', () => {
   it('encloses both charts in one card with tab anchors and design legends', () => {
     renderWithContext(<AnalysisPage />, SHELL_CONTEXT)
     const page = document.querySelector('[data-layout="portrait"]')
-    const tabs = page?.querySelector('[aria-label="图表导航"]')
-    expect(tabs?.textContent).toContain('基频')
-    expect(tabs?.textContent).toContain('共振峰')
     expect(page?.querySelector('[data-testid="f0-legend"]')?.textContent).toContain('当前值')
     expect(page?.querySelector('[data-testid="f0-legend"]')?.textContent).toContain('目标区间')
     expect(page?.querySelector('[data-testid="f0-legend"]')?.textContent).toContain('目标线')

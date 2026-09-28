@@ -113,15 +113,18 @@
 @media (max-width: 768px) {
   .page {
     flex: 1;
-    min-height: 0;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
   }
   .content {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 14px;
+    gap: 8px;
+    padding: 8px 16px 0;
+    background: var(--v2-page);
   }
   .sidePanel {
     position: static;
@@ -142,53 +145,32 @@
     margin: 8px auto;
   }
   .portraitMain {
-    background: var(--m-page);
-    padding: 12px 16px 116px;
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--v2-page);
+    padding: 8px 16px 0;
+    gap: 8px;
   }
   .portraitSlot { flex-shrink: 0; }
+  .chartStack { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; padding-bottom: calc(76px + env(safe-area-inset-bottom) + 10px); }
   .portraitChartsCard {
-    flex: 0 0 auto;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     padding: 4px 12px 12px;
     gap: 10px;
-    border-radius: 6px;
+    border-radius: 16px;
     background: #FFFFFF;
     box-shadow: none;
-    min-height: 340px;
   }
-  .portraitTabs {
-    display: flex;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: 28px;
-    flex-shrink: 0;
-    padding: 8px 4px 0;
-    min-height: 44px;
-  }
-  .portraitTab {
+  .chartArea {
     position: relative;
-    background: none;
-    border: none;
-    padding: 6px 2px 10px;
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-mute);
-    cursor: pointer;
-  }
-  .portraitTab[data-active="true"] {
-    color: var(--text);
-  }
-  .portraitTab[data-active="true"]::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: auto;
-    width: 62px;
-    bottom: 0;
-    height: 2px;
-    border-radius: 2px;
-    background: var(--m-underline);
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
   }
   .chartPanel {
     border: 1px solid var(--m-card-border);
@@ -236,18 +218,6 @@
     height: 0;
     border-top: 2px dashed #2D7DFC;
   }
-  .f0Area {
-    position: relative;
-    height: 140px;
-    min-height: 140px;
-    overflow: hidden;
-  }
-  .formantArea {
-    position: relative;
-    height: 120px;
-    min-height: 120px;
-    overflow: hidden;
-  }
   .legendItem {
     padding: 2px 8px;
     min-height: 0;
@@ -262,14 +232,4 @@
     height: 5px;
   }
   .portraitChartsCard .cardTitle { font-size: 14px; font-weight: 700; color: var(--m-text); }
-}
-
-@media (max-width: 359px) {
-  .portraitMain { padding: 12px 12px 116px; }
-  .f0Area { height: 120px; min-height: 120px; }
-  .formantArea { height: 105px; min-height: 105px; }
-}
-
-@media (min-width: 431px) and (max-width: 767px) {
-  .portraitMain { padding: 16px 20px 116px; }
 }

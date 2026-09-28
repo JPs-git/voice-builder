@@ -39,7 +39,7 @@
   --c-f4: #F59E0B;
 
   /* 字体 */
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Noto Sans SC", Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, Menlo, monospace;
   /* ---- ui-design-portrait v1.0（仅竖版消费，桌面不动） ---- */
   --color-brand-primary: #E94262;
@@ -101,6 +101,33 @@
   --m-card-border: #EBEFF8;
   --m-grid: #F0F4F9;
   --m-pill-border: #EAF0F8;
+  /* ---- portrait-v2（新版文档，仅竖版消费） ---- */
+  --v2-page: #F7FAFD;
+  --v2-text: #142B45;
+  --v2-secondary: #8192A8;
+  --v2-tertiary: #A5B2C2;
+  --v2-border: #E8EEF5;
+  --v2-grid: #EDF2F7;
+  --v2-brand: #E94763;
+  --v2-brand-soft: #FFF0F4;
+  --v2-f0: #12B886;
+  --v2-f0-soft: #E9FAF5;
+  --v2-f1: #F04B6A;
+  --v2-f1-soft: #FFF0F3;
+  --v2-f2: #3F83F8;
+  --v2-f2-soft: #EDF4FF;
+  --v2-warning: #F59E0B;
+  --v2-badge-bg: #E9FAF5;
+  --v2-badge-text: #0FA77D;
+  --v2-target-bg: #FFF1F5;
+  --v2-entry-bg: #F8FAFD;
+  --v2-ring: #FFE4EA;
+  --v2-male-band: rgba(63, 131, 248, 0.08);
+  --v2-male-dash: #8BB9FF;
+  --v2-female-band: rgba(233, 71, 99, 0.08);
+  --v2-female-dash: #F4A0B1;
+  --v2-f2-band: rgba(245, 158, 11, 0.08);
+  --v2-f2-dash: #F4B84A;
 }
 
 /* ---------- 基础 reset ---------- */
