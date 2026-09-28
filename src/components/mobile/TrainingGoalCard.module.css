@@ -1,11 +1,11 @@
 .card {
   box-sizing: border-box;
-  height: 70px;
+  min-height: 70px;
   background: #FFFFFF;
   border: 1px solid var(--v2-border);
   border-radius: 16px;
   box-shadow: none;
-  padding: 15px 16px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -68,6 +68,8 @@
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
+  flex: 1 1 140px;
+  min-width: 0;
   white-space: nowrap;
   height: auto;
   min-height: 0;
@@ -91,8 +93,9 @@
   color: #3F83F8;
 }
 .bandInput {
-  flex: none;
-  width: 44px;
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
   border: none;
   background: transparent;
   font-family: var(--font-sans);

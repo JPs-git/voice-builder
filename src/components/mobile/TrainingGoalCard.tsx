@@ -6,8 +6,6 @@ import styles from './TrainingGoalCard.module.css'
 
 const BAND_KEYS = ['f0', 'f1', 'f2'] as const
 
-const BAND_BAR_COLORS = { f0: '#12B886', f1: '#F04B6A', f2: '#3F83F8' }
-
 export function TrainingGoalCard() {
   const activePreset = useAppStore(s => s.activePreset)
   const switchPreset = useAppStore(s => s.switchPreset)
@@ -49,7 +47,6 @@ export function TrainingGoalCard() {
             inputClassName={styles.bandInput}
             dashClassName={styles.dash}
             unitClassName={styles.unit}
-            style={{ borderLeftColor: BAND_BAR_COLORS[key] }}
           />
         ))}
       </div>
