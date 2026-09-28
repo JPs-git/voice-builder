@@ -84,3 +84,8 @@
   font-size: 15px;
   font-weight: 600;
 }
+@media (max-width: 768px) and (max-height: 800px) {
+  .card {
+    min-height: 52px;
+  }
+}

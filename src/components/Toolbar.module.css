@@ -72,3 +72,9 @@
   min-width: 0;
   flex-shrink: 1;
 }
+@media (max-width: 768px) and (max-height: 800px) {
+  .toolbar[data-compact="true"] {
+    height: 64px;
+    padding: 8px 16px;
+  }
+}

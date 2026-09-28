@@ -239,3 +239,14 @@
   }
   .portraitChartsCard .cardTitle { font-size: 17px; font-weight: 700; color: var(--v2-text); }
 }
+@media (max-width: 768px) and (max-height: 800px) {
+  .chartStack {
+    gap: 8px;
+  }
+  .chartPanelHeader {
+    height: 28px;
+  }
+  .legendItem {
+    height: 28px;
+  }
+}
