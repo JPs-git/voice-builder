@@ -4,27 +4,22 @@
   display: flex;
 }
 .trigger {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   position: relative;
   display: grid;
   place-items: center;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
+  border: 1px solid var(--v2-border);
+  border-radius: 16px;
+  background: #FFFFFF;
   box-shadow: none;
-  color: var(--m-text);
+  color: var(--v2-text);
   font-size: 20px;
   font-weight: 800;
   letter-spacing: 1px;
   line-height: 1;
   font-family: inherit;
   cursor: pointer;
-}
-.trigger::after {
-  content: "";
-  position: absolute;
-  inset: -6px;
 }
 .trigger:hover { background: #F9FAFB; color: var(--text); }
 .trigger:focus-visible {
