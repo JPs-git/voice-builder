@@ -114,6 +114,38 @@ describe('layout shell selection', () => {
   })
 })
 
+describe('portrait practice dock', () => {
+  beforeEach(() => {
+    useAppStore.getState().reset()
+    setOptionMock.mockClear()
+    setMatchMedia(true)
+  })
+
+  it('mounts the record dock with the active preset label', () => {
+    renderWithContext(<PracticePage />, SHELL_CONTEXT)
+    expect(pageLayout()).toBe('portrait')
+    expect(document.querySelector('[data-portrait-dock="true"]')).toBeTruthy()
+    expect(screen.getByTestId('dock-goal-label').textContent).toBe('a')
+  })
+
+  it('drives the dock mic from the shell context record action', () => {
+    const onRecord = vi.fn()
+    renderWithContext(<PracticePage />, { ...SHELL_CONTEXT, onRecord })
+    fireEvent.click(screen.getByLabelText('开始录音'))
+    expect(onRecord).toHaveBeenCalledTimes(1)
+  })
+
+  it('routes clear and playback through shell callbacks', () => {
+    const onClear = vi.fn()
+    const onPlayback = vi.fn()
+    renderWithContext(<PracticePage />, { ...SHELL_CONTEXT, onClear, onPlayback })
+    fireEvent.click(screen.getByRole('button', { name: '清除图谱' }))
+    fireEvent.click(screen.getByRole('button', { name: '回放' }))
+    expect(onClear).toHaveBeenCalledTimes(1)
+    expect(onPlayback).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('portrait analysis structure', () => {
   beforeEach(() => {
     useAppStore.getState().reset()
