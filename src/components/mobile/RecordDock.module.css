@@ -68,6 +68,7 @@
   place-items: center;
   width: 76px;
   height: 76px;
+  margin-top: -12px;
   border-radius: 50%;
   background: var(--v2-ring);
 }
