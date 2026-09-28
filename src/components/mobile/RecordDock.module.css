@@ -8,25 +8,25 @@
   align-items: center;
   gap: 12px;
   padding: 6px 16px;
-  padding-bottom: calc(6px + env(safe-area-inset-bottom));
-  background: var(--panel);
-  border-top: 1px solid var(--border);
-  border-radius: 10px 10px 0 0;
-  box-shadow: var(--shadow-floating);
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 38px 38px 0 0;
+  box-shadow: 0 -4px 20px rgba(44, 75, 105, 0.06);
   font-family: var(--font-sans);
-  min-height: 70px;
+  min-height: 76px;
   box-sizing: border-box;
 }
 .goal {
   flex: 1;
-  min-width: 0;
-  min-height: 44px;
+  min-width: 112px;
+  height: 44px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: none;
+  background: var(--v2-entry-bg);
   border: none;
+  border-radius: 12px;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
@@ -39,21 +39,20 @@
   display: grid;
   place-items: center;
   min-width: 22px;
-  height: 21px;
-  padding: 0 4px;
+  padding: 2px 6px;
   border-radius: 5px;
-  background: var(--m-pink-soft);
-  font-size: 12px;
+  background: var(--v2-brand-soft);
+  font-size: 20px;
   font-weight: 700;
-  color: var(--m-pink);
+  color: var(--v2-brand);
   white-space: nowrap;
   overflow: hidden;
   flex-shrink: 0;
 }
 .goalHint {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--m-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--v2-secondary);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -67,27 +66,27 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 58px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
-  background: var(--m-record-ring);
+  background: var(--v2-ring);
 }
 .mic {
-  width: 46px;
-  height: 46px;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
   border: none;
   border-radius: 50%;
-  background: var(--m-record);
+  background: var(--v2-brand);
   color: #fff;
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 0 0 5px var(--m-record-ring), 0 4px 12px rgba(238, 66, 100, .35);
+  box-shadow: 0 0 0 6px var(--v2-ring), 0 4px 12px rgba(233, 71, 99, 0.35);
   transition: transform .1s ease;
 }
-.mic svg { display: block; width: 15px; height: 20px; }
+.mic svg { display: block; width: 28px; height: 28px; }
 .mic:active { transform: scale(.98); }
 .mic:focus-visible {
   outline: 2px solid var(--info);
@@ -105,9 +104,9 @@
 .hint {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--m-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--v2-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
