@@ -1,49 +1,37 @@
 .card {
-  position: relative;
-  background: var(--panel);
-  border: 1px solid var(--color-border-default);
-  border-radius: 6px;
+  box-sizing: border-box;
+  height: 70px;
+  background: #FFFFFF;
+  border: 1px solid var(--v2-border);
+  border-radius: 16px;
   box-shadow: none;
-  padding: 12px 14px;
+  padding: 15px 16px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 12px;
 }
 .header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: contents;
 }
 .targetIcon {
-  font-size: 12px;
+  font-size: 16px;
   line-height: 1;
-  color: var(--color-text-primary);
-  font-weight: 700;
+  flex: none;
 }
 .title {
   font-size: 17px;
   font-weight: 700;
   line-height: 24px;
-  color: var(--m-text);
+  color: var(--v2-text);
   white-space: nowrap;
-}
-.chevron {
-  margin-left: auto;
-  font-size: 20px;
-  line-height: 1;
-  color: var(--text-mute);
-  pointer-events: none;
-}
-.body {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  align-items: stretch;
+  flex: none;
 }
 .vowelBox {
-  flex: 0 0 76px;
-  border: 1px solid var(--m-card-border);
-  border-radius: 6px;
+  flex: 0 0 104px;
+  height: 40px;
+  background: var(--v2-target-bg);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,60 +39,67 @@
 .select {
   appearance: none;
   border: none;
-  background-color: var(--m-pink-soft);
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237687A0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-color: transparent;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A5B2C2' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 6px center;
-  border-radius: 6px;
-  color: var(--m-pink);
+  border-radius: 12px;
+  color: var(--v2-brand);
   font-family: inherit;
-  font-size: 15px;
+  font-size: 22px;
   font-weight: 700;
-  padding: 6px 20px 6px 10px;
-  min-height: 27px;
-  min-width: 62px;
+  width: 100%;
+  height: 100%;
+  padding: 0 18px 0 8px;
   text-align: center;
   cursor: pointer;
+  outline: none;
 }
 .bands {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-content: center;
 }
 .bandRow {
-  flex: 0 0 auto;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--m-card-border);
-  border-left: 2px solid var(--border-strong);
-  border-radius: 6px;
-  padding: 2px 8px;
-  background: var(--panel);
-  height: 24px;
-  min-height: 24px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+  height: auto;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
 }
 .bandKey {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--m-text);
-  min-width: 22px;
+  font-size: 14px;
+  font-weight: 600;
   font-family: inherit;
 }
+.bandKey_f0 {
+  color: #12B886;
+}
+.bandKey_f1 {
+  color: #F04B6A;
+}
+.bandKey_f2 {
+  color: #3F83F8;
+}
 .bandInput {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
+  flex: none;
+  width: 44px;
   border: none;
   background: transparent;
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  color: var(--m-text);
+  color: var(--v2-text);
   text-align: center;
   padding: 0;
   outline: none;
@@ -124,12 +119,11 @@
 }
 .dash {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--m-secondary);
+  font-weight: 500;
+  color: var(--v2-secondary);
 }
 .unit {
-  font-size: 11px;
-  color: var(--m-secondary);
-  min-width: 20px;
-  text-align: right;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--v2-secondary);
 }

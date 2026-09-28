@@ -60,10 +60,19 @@ describe('TrainingGoalCard', () => {
     expect(document.activeElement).not.toBe(f0Lo)
   })
 
-  it('renders the design header with target icon, title and chevron', () => {
+  it('renders the design header with target icon and title', () => {
     render(<TrainingGoalCard />)
     expect(screen.getByText('训练目标')).toBeTruthy()
-    expect(screen.getByLabelText('训练目标图标')).toBeTruthy()
+    expect(screen.getByLabelText('训练目标图标').textContent).toBe('🎯')
+  })
+
+  it('offers all six vowel presets in the dropdown', () => {
+    render(<TrainingGoalCard />)
+    const select = screen.getByLabelText('选择元音预设') as HTMLSelectElement
+    expect(select.options.length).toBe(6)
+    for (const key of ['vowel-a', 'vowel-o', 'vowel-e', 'vowel-i', 'vowel-u', 'vowel-yu']) {
+      expect(select.querySelector(`option[value="${key}"]`)).toBeTruthy()
+    }
   })
 
   it('omits the reset control to match the 390px design', () => {
@@ -71,9 +80,8 @@ describe('TrainingGoalCard', () => {
     expect(screen.queryByLabelText('重置所有预设')).toBeNull()
   })
 
-  it('renders a decorative chevron', () => {
+  it('has no decorative chevron in the 70px single-row card', () => {
     render(<TrainingGoalCard />)
-    const chevron = screen.getByText('›')
-    expect(chevron.getAttribute('aria-hidden')).toBe('true')
+    expect(screen.queryByText('›')).toBeNull()
   })
 })
