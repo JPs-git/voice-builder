@@ -85,32 +85,36 @@ describe('FeedbackHero', () => {
     expect(badge.getAttribute('data-tone')).toBe('warn')
   })
 
-  it('renders one column per visible band with its status glyph', () => {
+  it('renders F0/F1/F2 values inline in one row', () => {
+    setFrame(245, 920, 1250)
+    render(<FeedbackHero />)
+    for (const key of ['f0', 'f1', 'f2'] as const) {
+      const cell = screen.getByTestId(`hero-col-${key}`)
+      expect(cell.textContent).toMatch(/\d+/)
+      expect(cell.textContent).toContain(key.toUpperCase())
+    }
+  })
+
+  it('hides bands toggled invisible', () => {
     useAppStore.getState().toggleFormantVisible('f2')
     setFrame(240, 900, 1200)
     render(<FeedbackHero />)
     expect(screen.queryByTestId('hero-col-f2')).toBeNull()
     expect(screen.getByTestId('hero-col-f1')).toBeTruthy()
-    expect(screen.getByTestId('hero-col-f1-status').textContent).toBe('✓')
   })
 
-  it('marks each column with its data-status', () => {
-    const { bands } = useAppStore.getState()
-    setFrame(240, bands.f1.range[0] - 50, bands.f2.range[1] + 100)
-    render(<FeedbackHero />)
-    expect(screen.getByTestId('hero-col-f0').getAttribute('data-status')).toBe('hit')
-    expect(screen.getByTestId('hero-col-f1').getAttribute('data-status')).toBe('low')
-    expect(screen.getByTestId('hero-col-f2').getAttribute('data-status')).toBe('high')
-    expect(screen.getByTestId('hero-col-f1-status').textContent).toBe('↓')
-    expect(screen.getByTestId('hero-col-f2-status').textContent).toBe('↑')
-  })
-
-  it('renders the design header and readout panel', () => {
+  it('shows no Hz units in the single row', () => {
     setFrame(245, 920, 1250)
     render(<FeedbackHero />)
-    expect(screen.getByText('实时反馈')).toBeTruthy()
-    expect(screen.getByTestId('hero-f0').textContent).toBe('245')
-    expect(screen.getByTestId('hero-badge').textContent).toBe('目标范围内')
+    expect(screen.queryByText('Hz')).toBeNull()
+  })
+
+  it('shows no status circles in the single row', () => {
+    setFrame(245, 920, 1250)
+    render(<FeedbackHero />)
+    expect(screen.queryByTestId('hero-col-f0-status')).toBeNull()
+    expect(screen.queryByTestId('hero-col-f1-status')).toBeNull()
+    expect(screen.queryByTestId('hero-col-f2-status')).toBeNull()
   })
 
   it('omits the register row to match the 390px design', () => {

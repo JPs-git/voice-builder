@@ -6,6 +6,12 @@ import styles from './FeedbackHero.module.css'
 
 const KEYS: FormantSeries[] = ['f0', 'f1', 'f2']
 
+const VAL_COLORS: Record<FormantSeries, string> = {
+  f0: '#12B886',
+  f1: '#F04B6A',
+  f2: '#3F83F8',
+}
+
 export interface Badge {
   tone: 'idle' | 'hit' | 'warn'
   text: string
@@ -46,56 +52,34 @@ export function FeedbackHero() {
 
   return (
     <section className={styles.card} aria-label="实时反馈">
-      <header className={styles.header}>
-        <span className={styles.heroIcon} aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
-        <span className={styles.title}>实时反馈</span>
+      <span className={styles.heroIcon} aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+      <span className={styles.title}>实时反馈</span>
+      <span
+        className={styles.badge}
+        data-tone={badge.tone}
+        data-testid="hero-badge"
+      >
+        <span className={styles.badgeDot} aria-hidden="true" />
+        {badge.text}
+      </span>
+
+      {visibleKeys.map(key => (
         <span
-          className={styles.badge}
-          data-tone={badge.tone}
-          data-testid="hero-badge"
+          key={key}
+          className={styles.value}
+          data-testid={`hero-col-${key}`}
+          style={{ color: VAL_COLORS[key] }}
         >
-          <span className={styles.badgeDot} aria-hidden="true" />
-          {badge.text}
-        </span>
-      </header>
-
-      <div className={styles.readout}>
-        <span className={styles.readoutLabel}>F0</span>
-        <span className={styles.readoutRow}>
-          <span className={styles.readoutValue} data-testid="hero-f0">
-            {formatValue(latestFrame?.f0)}
+          <span className={styles.valueKey}>{key.toUpperCase()}</span>
+          <span data-testid={key === 'f0' ? 'hero-f0' : undefined}>
+            {formatValue(latestFrame?.[key])}
           </span>
-          <span className={styles.readoutUnit}>Hz</span>
         </span>
-      </div>
-
-      <div className={styles.columns}>
-        {columns.map(({ key, status }) => (
-          <div
-            key={key}
-            className={styles.column}
-            data-testid={`hero-col-${key}`}
-            data-status={status}
-          >
-            <span className={styles.columnKey}>{key.toUpperCase()}</span>
-            <span className={styles.columnValueRow}>
-              <span className={styles.columnValue}>{formatValue(latestFrame?.[key])}</span>
-              <span className={styles.columnUnit}>Hz</span>
-            </span>
-            <span
-              className={styles.columnStatus}
-              data-status={status}
-              data-testid={`hero-col-${key}-status`}
-            >
-              {statusGlyph(status)}
-            </span>
-          </div>
-        ))}
-      </div>
+      ))}
     </section>
   )
 }
