@@ -146,4 +146,16 @@ describe('useAnalysis record/pause latestFrame', () => {
     expect(after.latestFrame).toBe(lastComplete)
     expect(after.frames.length).toBeGreaterThan(beforePause.frames.length)
   })
+
+  it('publishes all frames of an audio chunk in one store notification', async () => {
+    const { result } = renderHook(() => useAnalysis())
+    await act(async () => { await result.current.onRecord() })
+    const listener = vi.fn()
+    const unsubscribe = useAppStore.subscribe(listener)
+    try {
+      act(() => { captureCallback!(new Float32Array(2048), 16000) })
+      expect(useAppStore.getState().frames).toHaveLength(8)
+      expect(listener).toHaveBeenCalledTimes(1)
+    } finally { unsubscribe() }
+  })
 })

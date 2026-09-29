@@ -20,7 +20,7 @@ export function useToolbar(
   onHelp: () => void,
   onAbout: () => void,
 ) {
-  const frameCount = useAppStore(s => s.frames.length)
+  const hasFrames = useAppStore(s => s.frames.length > 0)
   const {
     onRecord: analysisRecord,
     onImport: analysisImport,
@@ -33,7 +33,7 @@ export function useToolbar(
   } = useAnalysis()
   const { play, stop, isPlaying, cursorTime } = usePlayback()
 
-  const hasData = isCapturing || frameCount > 0
+  const hasData = isCapturing || hasFrames
 
   // ── Constrained callbacks (纯操作) ──
 

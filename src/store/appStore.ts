@@ -24,6 +24,7 @@ interface AppActions {
   savePresetOverride: (key: string, f0: [number, number], f1: [number, number], f2: [number, number]) => void
   resetPresets: () => void
   appendFrame: (frame: AnalysisFrame) => void
+  appendFrames: (frames: AnalysisFrame[]) => void
   setFrames: (frames: AnalysisFrame[]) => void
   setLatestFrame: (frame: AnalysisFrame | null) => void
   clearFrames: () => void
@@ -63,6 +64,8 @@ function loadStoredOverrides(): PresetOverride[] {
 }
 
 const storedOverrides = loadStoredOverrides()
+const jsonStorage = createJSONStorage<{ presetOverrides: PresetOverride[] }>(() => localStorage)
+let persistedOverrides = storedOverrides
 
 const initialState: AppState = {
   config: DEFAULT_CONFIG,
@@ -77,7 +80,7 @@ const initialState: AppState = {
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
 
       setConfig: (config) => set((state) => ({
@@ -117,12 +120,18 @@ export const useAppStore = create<AppStore>()(
         bands: DEFAULT_BANDS,
       }),
 
-      appendFrame: (frame) => set((state) => {
-        const frames = state.frames.length >= WINDOW_FRAMES
-          ? [...state.frames.slice(1), frame]
-          : [...state.frames, frame]
-        return { frames, latestFrame: frame }
-      }),
+      appendFrame: (frame) => get().appendFrames([frame]),
+
+      appendFrames: (batch) => {
+        if (batch.length === 0) return
+        set((state) => {
+          const keep = Math.max(0, WINDOW_FRAMES - batch.length)
+          const frames = batch.length >= WINDOW_FRAMES
+            ? batch.slice(-WINDOW_FRAMES)
+            : state.frames.slice(-keep).concat(batch)
+          return { frames, latestFrame: batch[batch.length - 1] }
+        })
+      },
 
       setFrames: (frames) => set({
         frames,
@@ -154,13 +163,24 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'voicebuilder-presets',
-      storage: createJSONStorage(() => localStorage),
+      storage: jsonStorage && {
+        ...jsonStorage,
+        setItem: (name, value) => {
+          const next = value.state.presetOverrides
+          if (next === persistedOverrides) return
+          // Compare before serialization on the hot path. Presets are immutable.
+          const result = jsonStorage.setItem(name, value)
+          persistedOverrides = next
+          return result
+        },
+      },
       partialize: (state) => ({
         presetOverrides: state.presetOverrides,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           const { activePreset, presetOverrides } = state
+          persistedOverrides = presetOverrides
           useAppStore.setState({ bands: resolveBands(activePreset, presetOverrides) })
         }
       },

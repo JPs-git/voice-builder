@@ -35,6 +35,7 @@ function importErrorMessage(err: unknown): string {
 
 export function useAnalysis() {
   const pipelineRef = useRef<InstanceType<typeof AnalysisPipeline> | null>(null)
+  const pendingFramesRef = useRef<AnalysisFrame[]>([])
   const frameOffsetRef = useRef(0)
   const dataSourceRef = useRef<'mic' | 'file'>('mic')
   const [dataSource, setDataSource] = useState<'mic' | 'file'>('mic')
@@ -52,12 +53,15 @@ export function useAnalysis() {
         const store = useAppStore.getState()
         const lastComplete = store.latestFrame
         pipeline.flush()
+        store.appendFrames(pendingFramesRef.current)
+        pendingFramesRef.current = []
         frameOffsetRef.current += pipeline.frameCount
         store.setLatestFrame(lastComplete)
       }
       pipeline.reset()
       pipelineRef.current = null
     }
+    pendingFramesRef.current = []
     getAudioEngine().stopCapture()
     setIsCapturing(false)
     setIsRequesting(false)
@@ -79,6 +83,10 @@ export function useAnalysis() {
     const start = recordingMetrics.enabled ? performance.now() : 0
     pipelineRef.current?.pushChunk(chunk, rate)
     if (recordingMetrics.enabled) recordingMetrics.record('analysis', performance.now() - start)
+    const publishStart = recordingMetrics.enabled ? performance.now() : 0
+    useAppStore.getState().appendFrames(pendingFramesRef.current)
+    pendingFramesRef.current = []
+    if (recordingMetrics.enabled) recordingMetrics.record('publish', performance.now() - publishStart)
   }, [])
 
   // ── Import commit (shared by WAV & decoded paths) ──
@@ -129,7 +137,7 @@ export function useAnalysis() {
       // Only create pipeline AFTER capture succeeds
       pipelineRef.current = new AnalysisPipeline({
         onFrame: (frame: AnalysisFrame) => {
-          useAppStore.getState().appendFrame(frame)
+          pendingFramesRef.current.push(frame)
         },
         formantMethod: config.formantMethod,
         formantSmoothing: config.formantSmoothing,

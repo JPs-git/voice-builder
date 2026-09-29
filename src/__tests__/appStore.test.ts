@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useAppStore } from '../store/appStore'
 import { VOWEL_PRESETS } from '../types'
 
@@ -57,6 +57,35 @@ describe('appStore', () => {
   })
 
   describe('frames', () => {
+    it('does not write presets while appending live frames', () => {
+      const write = vi.spyOn(Storage.prototype, 'setItem')
+      try {
+        for (let i = 0; i < 100; i++) useAppStore.getState().appendFrame(makeFrame({ time: i / 100 }))
+        expect(write).not.toHaveBeenCalled()
+        useAppStore.getState().savePresetOverride('vowel-a', [100, 200], [500, 700], [1000, 1400])
+        expect(write).toHaveBeenCalledTimes(1)
+        expect(JSON.parse(localStorage.getItem('voicebuilder-presets')!).state.presetOverrides[0].f0).toEqual([100, 200])
+        useAppStore.setState({ presetOverrides: [] })
+        localStorage.setItem('voicebuilder-presets', JSON.stringify({ state: { presetOverrides: [{ key: 'vowel-a', f0: [100, 200], f1: [500, 700], f2: [1000, 1400] }] }, version: 0 }))
+        useAppStore.persist.rehydrate()
+        expect(useAppStore.getState().bands.f0.range).toEqual([100, 200])
+      } finally { write.mockRestore() }
+    })
+
+    it('publishes a batch once, skips empty batches and retains the newest 1000 frames', () => {
+      const listener = vi.fn()
+      const unsubscribe = useAppStore.subscribe(listener)
+      try {
+        useAppStore.getState().appendFrames([])
+        expect(listener).not.toHaveBeenCalled()
+        const frames = Array.from({ length: 1007 }, (_, i) => makeFrame({ time: i / 100 }))
+        useAppStore.getState().appendFrames(frames)
+        expect(listener).toHaveBeenCalledTimes(1)
+        expect(useAppStore.getState().frames).toHaveLength(1000)
+        expect(useAppStore.getState().frames[0].time).toBe(.07)
+        expect(useAppStore.getState().latestFrame).toBe(frames[1006])
+      } finally { unsubscribe() }
+    })
     it('starts empty', () => {
       expect(useAppStore.getState().frames).toEqual([])
       expect(useAppStore.getState().latestFrame).toBeNull()
