@@ -27,7 +27,6 @@ export interface ShellContext {
   onPlayback?: () => void
   isPlaying?: boolean
   onRecord: () => void
-  onGoalClick?: () => void
   pianoRangeStart?: number
   setPianoRangeStart?: (startMidi: number) => void
 }
@@ -70,7 +69,6 @@ export function AppShell() {
     onClear: () => handleClickTool('clear'),
     onPlayback: () => handleClickTool('playback'),
     isPlaying: toolItems.find(item => item.id === 'playback')?.label === '停止',
-    onGoalClick: () => setGoalOpen(true),
     pianoRangeStart,
     setPianoRangeStart,
   }
@@ -98,6 +96,7 @@ export function AppShell() {
             isRequesting={isRequesting}
             goalLabel={presetShortLabel(activePreset)}
             onGoalClick={() => setGoalOpen(true)}
+            showGoal={!isPractice}
             onClear={() => handleClickTool('clear')}
             onPlayback={() => handleClickTool('playback')}
             hasData={hasData}

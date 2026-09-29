@@ -130,6 +130,7 @@
 }
 
 .dock[data-actions="true"] { min-height: calc(80px + env(safe-area-inset-bottom)); padding: 8px 20px calc(16px + env(safe-area-inset-bottom)); gap: 8px; border-radius: 34px 34px 0 0; justify-content: space-between; }
+.dock[data-actions="true"][data-goal-entry="false"] { justify-content: flex-end; }
 .dock[data-actions="true"] .goal { flex: 0 1 auto; margin-right: auto; min-width: 0; height: 26px; gap: 6px; padding: 0 8px 0 0; border-radius: 18px; background: #f4f7fc; }
 .dock[data-actions="true"] .goalLabel { min-width: 27px; height: 26px; border-radius: 50%; font-size: 17px; }
 .dock[data-actions="true"] .goalHint { font-size: 10px; color: #6c83a4; }

@@ -121,7 +121,7 @@ export function PitchChart({ cursorTime = -1, layout = 'landscape' }: PitchChart
       animation: false,
       backgroundColor: 'transparent',
       grid: compact
-        ? { left: 44, right: 12, top: 16, bottom: 20 }
+        ? { left: 24, right: 12, top: 16, bottom: 20 }
         : { left: 60, right: 32, top: 20, bottom: 36 },
       tooltip: {
         trigger: 'axis',

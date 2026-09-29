@@ -7,6 +7,7 @@ export interface RecordDockProps {
   isRequesting: boolean
   goalLabel: string
   onGoalClick: () => void
+  showGoal?: boolean
   onClear?: () => void
   onPlayback?: () => void
   hasData?: boolean
@@ -27,7 +28,7 @@ function MicGlyph() {
   )
 }
 
-export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, onClear, onPlayback, hasData, isPlaying }: RecordDockProps) {
+export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying }: RecordDockProps) {
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
     if (!isCapturing) { setElapsed(0); return }
@@ -37,13 +38,20 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
   const timer = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
   const micLabel = isRequesting ? '麦克风授权中' : isCapturing ? '停止录音' : '开始录音'
   return (
-    <div className={styles.dock} data-portrait-dock="true" data-actions={Boolean(onClear || onPlayback)}>
-      <button type="button" className={styles.goal} onClick={onGoalClick}
-        data-testid="dock-goal" aria-label="回到训练目标">
-        <span className={styles.goalLabel} data-testid="dock-goal-label">{goalLabel}</span>
-        <span className={styles.goalHint}>当前目标</span>
-        <span className={styles.goalChevron} aria-hidden="true">›</span>
-      </button>
+    <div
+      className={styles.dock}
+      data-portrait-dock="true"
+      data-actions={Boolean(onClear || onPlayback)}
+      data-goal-entry={showGoal}
+    >
+      {showGoal && (
+        <button type="button" className={styles.goal} onClick={onGoalClick}
+          data-testid="dock-goal" aria-label="回到训练目标">
+          <span className={styles.goalLabel} data-testid="dock-goal-label">{goalLabel}</span>
+          <span className={styles.goalHint}>当前目标</span>
+          <span className={styles.goalChevron} aria-hidden="true">›</span>
+        </button>
+      )}
       <span className={styles.micHalo} data-testid="dock-mic-halo">
         <button type="button" className={styles.mic} data-recording={isCapturing}
           onClick={onRecord} disabled={isRequesting} aria-label={micLabel}>

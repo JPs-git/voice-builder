@@ -150,7 +150,7 @@
   .rangeArrowRight { right: -34px; }
   .rangeArrow:disabled { opacity: .4; cursor: not-allowed; }
   .portraitPitchCard {
-    flex: 0 0 min(42vh, 380px);
+    flex: 1 1 0;
     min-height: 300px;
     padding: 0;
     border: 0;

@@ -4,7 +4,6 @@ import type { ShellContext } from './AppShell'
 import { Piano } from '../components/Piano'
 import { PitchChart } from '../components/PitchChart'
 import { EmptyState } from '../components/EmptyState'
-import { FeedbackHero } from '../components/mobile/FeedbackHero'
 import { getPianoSynth } from '../audio/PianoSynth'
 import { useCurrentMidi } from '../hooks/useCurrentMidi'
 import { MIDI_C2, MIDI_C3, MIDI_C4, MIDI_C6 } from '../utils/pitch'
@@ -27,8 +26,6 @@ export function PracticePortrait() {
   return (
     <div className={styles.page} data-layout="portrait">
       <main className={`${styles.content} ${styles.portraitContent}`}>
-        <FeedbackHero />
-
         <section className={`${styles.card} ${styles.portraitPianoCard}`}>
           <header className={styles.pianoHeader}>
             <h2 className={styles.pianoTitle}>

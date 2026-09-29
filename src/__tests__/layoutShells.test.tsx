@@ -96,12 +96,13 @@ function renderWithContext(element: ReactElement, context: ShellContext) {
   )
 }
 
-function renderInsideShell(element: ReactElement) {
+function renderInsideShell(element: ReactElement, initialEntry = '/') {
   return render(
-    <MemoryRouter initialEntries={['/']}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={element} />
+          <Route path="practice" element={element} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -147,21 +148,22 @@ describe('shared portrait dock', () => {
     setMatchMedia(true)
   })
 
-  it('mounts the record dock with the active preset label', () => {
-    renderInsideShell(<PracticePage />)
+  it('omits the feedback card and goal entry on the practice page', () => {
+    renderInsideShell(<PracticePage />, '/practice')
     expect(pageLayout()).toBe('portrait')
     expect(document.querySelector('[data-portrait-dock="true"]')).toBeTruthy()
-    expect(screen.getByTestId('dock-goal-label').textContent).toBe('a')
+    expect(screen.queryByRole('region', { name: '实时反馈' })).toBeNull()
+    expect(screen.queryByTestId('dock-goal')).toBeNull()
   })
 
   it('drives the dock mic from the shell context record action', () => {
-    renderInsideShell(<PracticePage />)
+    renderInsideShell(<PracticePage />, '/practice')
     fireEvent.click(screen.getByLabelText('开始录音'))
     expect(handleClickToolMock).toHaveBeenCalledWith('record')
   })
 
   it('routes clear and playback through shell callbacks', () => {
-    renderInsideShell(<PracticePage />)
+    renderInsideShell(<PracticePage />, '/practice')
     fireEvent.click(screen.getByRole('button', { name: '清除图谱' }))
     fireEvent.click(screen.getByRole('button', { name: '回放' }))
     expect(handleClickToolMock).toHaveBeenNthCalledWith(1, 'clear')
