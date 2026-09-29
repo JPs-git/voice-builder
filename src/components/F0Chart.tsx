@@ -2,7 +2,6 @@ import { useRef, useEffect } from 'react'
 import { useDisplayAnalysis } from '../hooks/useDisplayAnalysis'
 import { useECharts } from '../hooks/useECharts'
 import { useMediaQuery } from '../hooks/useMediaQuery'
-import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame } from '../types'
 
 const WINDOW = 10

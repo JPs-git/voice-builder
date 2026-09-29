@@ -11,6 +11,7 @@ export class LiveChartScheduler {
   private listeners = new Set<() => void>()
   private raf: number | null = null
   private visible = true
+  private active = false
   private dirty = false
   private deadline = 0
   private lastDraw: number | null = null
@@ -41,7 +42,7 @@ export class LiveChartScheduler {
   }
 
   invalidate(): void {
-    if (!this.dirty && this.clock.now() - this.deadline > 1000 / this.rate) {
+    if (!this.active && !this.dirty && this.clock.now() - this.deadline > 1000 / this.rate) {
       // No data arrived during this gap: it is idle, not missed rendering.
       this.deadline = this.clock.now()
       this.lastDraw = null
@@ -52,6 +53,14 @@ export class LiveChartScheduler {
 
   recordDrawCost(ms: number): void {
     if (Number.isFinite(ms) && ms >= 0) this.cost += ms
+  }
+
+  setActive(active: boolean): void {
+    if (active === this.active) return
+    this.active = active
+    this.resetWindow()
+    this.deadline = this.clock.now()
+    this.lastDraw = null
   }
 
   setVisible(visible: boolean): void {
@@ -118,12 +127,14 @@ export class LiveChartScheduler {
     if (this.draws > 0) this.costs.push(this.cost)
     this.cost = 0
     if (now - this.windowStart < 5000) return
-    const enough = this.draws >= 20
+    // Severe recording stalls may yield fewer than 20 draws in five seconds.
+    // They still need to trigger a downgrade; recovery requires a fuller window.
+    const enough = this.draws >= 5
     const sorted = this.costs.sort((a, b) => a - b)
     const p95 = sorted[Math.ceil(sorted.length * .95) - 1] ?? 0
     const lateRatio = this.draws ? this.late / this.draws : 0
     this.badWindows = enough && (lateRatio > .1 || p95 > 20) ? this.badWindows + 1 : 0
-    this.goodWindows = enough && lateRatio < .02 && p95 < 10 ? this.goodWindows + 1 : 0
+    this.goodWindows = this.draws >= 20 && lateRatio < .02 && p95 < 10 ? this.goodWindows + 1 : 0
     if (this.rate === 15 && this.badWindows >= 2) {
       this.rate = 10
       if (this.recovering) this.cooldownUntil = now + 60000

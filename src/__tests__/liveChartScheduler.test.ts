@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { LiveChartScheduler } from '../charts/liveChartScheduler'
+import { recordingMetrics } from '../performance/recordingMetrics'
 
 function clock() {
   let now = 0
@@ -19,6 +20,29 @@ function clock() {
 }
 
 describe('live chart cadence', () => {
+  it('counts stalls before invalidation during recording instead of classifying them as idle', () => {
+    const c = clock()
+    recordingMetrics.enabled = true
+    recordingMetrics.clear()
+    try {
+      c.scheduler.setActive(true)
+      c.scheduler.subscribe(() => {})
+      c.scheduler.invalidate()
+      c.tick(0)
+      for (let t = 300; t <= 12000; t += 300) {
+        c.tick(t) // Main thread was blocked before it could deliver new audio.
+        c.scheduler.invalidate()
+        c.tick(t)
+      }
+      expect(recordingMetrics.snapshot().displayInterval?.max).toBe(300)
+      expect(c.scheduler.fps).toBe(10)
+    } finally {
+      c.scheduler.dispose()
+      recordingMetrics.enabled = false
+      recordingMetrics.clear()
+    }
+  })
+
   it('merges updates, shows latest data and does not catch up after a stall', () => {
     const c = clock()
     let value = 0

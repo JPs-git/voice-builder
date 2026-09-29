@@ -8,6 +8,7 @@ import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuratio
 import type { AnalysisFrame } from '../types'
 import { recordingMetrics } from '../performance/recordingMetrics'
 import { flushDisplayAnalysis } from './useDisplayAnalysis'
+import { liveChartScheduler } from '../charts/liveChartScheduler'
 
 const STEREO_NOTICE = '该音频为双声道，仅使用第 0 声道进行分析'
 
@@ -65,6 +66,7 @@ export function useAnalysis() {
     pendingFramesRef.current = []
     getAudioEngine().stopCapture()
     flushDisplayAnalysis()
+    liveChartScheduler.setActive(false)
     setIsCapturing(false)
     setIsRequesting(false)
   }, [])
@@ -75,6 +77,7 @@ export function useAnalysis() {
       pipelineRef.current?.reset()
       pipelineRef.current = null
       getAudioEngine().stopCapture()
+      liveChartScheduler.setActive(false)
     }
   }, [])
 
@@ -148,6 +151,7 @@ export function useAnalysis() {
       })
 
       dataSourceRef.current = 'mic'
+      liveChartScheduler.setActive(true)
       setDataSource('mic')
       setIsCapturing(true)
       setIsRequesting(false)
