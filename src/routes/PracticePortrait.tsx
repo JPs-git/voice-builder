@@ -80,7 +80,7 @@ export function PracticePortrait() {
               </h2>
             </div>
             <div className={styles.chartArea}>
-              <PitchChart cursorTime={cursorTime} displayMode="frequency" />
+              <PitchChart cursorTime={cursorTime} layout="portrait" />
               <EmptyState
                 title="还没有声音数据"
                 description="点击下方开始录音"

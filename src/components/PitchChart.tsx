@@ -9,7 +9,6 @@ import {
   MIDI_C2,
   MIDI_C4,
   MIDI_B5,
-  midiToFreq,
   MIDI_G2,
   MIDI_E5,
 } from '../utils/pitch'
@@ -45,24 +44,24 @@ function findFrameAtTime(frames: AnalysisFrame[], time: number): AnalysisFrame |
   return bestDist <= 0.005 ? best : null
 }
 
-export function formatPitchTooltip(params: any, frames: AnalysisFrame[], displayMode: 'notes' | 'frequency' = 'notes'): string {
+export function formatPitchTooltip(params: any, frames: AnalysisFrame[], layout: 'landscape' | 'portrait' = 'landscape'): string {
   if (!params || params.length === 0) return ''
   const p = params[0]
   const time = p.value?.[0]
   const frame = typeof time === 'number' ? findFrameAtTime(frames, time) : null
   let pitchText = '--'
-  const tooltipColor = displayMode === 'frequency' ? '#297DFF' : '#E23E57'
+  const compact = layout === 'portrait'
   if (frame && frame.f0 != null && frame.f0 > 0) {
     pitchText = midiToName(freqToMidi(frame.f0))
   } else if (!frame) {
     const value = p.value?.[1]
     if (value != null && Number.isFinite(value)) {
-      pitchText = midiToName(displayMode === 'frequency' ? freqToMidi(value) : value)
+      pitchText = midiToName(value)
     }
   }
-  return `<div style="font-size:11px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>
-<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1F2937;line-height:1.8;">
-  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${tooltipColor};"></span>
+  return `<div style="font-size:${compact ? 10 : 11}px;color:#667085;margin-bottom:4px;">时间 ${Number(time).toFixed(2)} s</div>
+<div style="display:flex;align-items:center;gap:6px;font-size:${compact ? 11 : 12}px;color:#1F2937;line-height:${compact ? 1.6 : 1.8};">
+  <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E23E57;"></span>
   <span style="flex:0 0 auto;color:#475467;">音高</span>
   <span style="margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;">♬ ${pitchText}</span>
 </div>`
@@ -70,10 +69,10 @@ export function formatPitchTooltip(params: any, frames: AnalysisFrame[], display
 
 interface PitchChartProps {
   cursorTime?: number
-  displayMode?: 'notes' | 'frequency'
+  layout?: 'landscape' | 'portrait'
 }
 
-export function PitchChart({ cursorTime = -1, displayMode = 'notes' }: PitchChartProps) {
+export function PitchChart({ cursorTime = -1, layout = 'landscape' }: PitchChartProps) {
   const frames = useAppStore(s => s.frames)
   const { chartRef, setOption } = useECharts()
   const rafRef = useRef<number | null>(null)
@@ -88,11 +87,11 @@ export function PitchChart({ cursorTime = -1, displayMode = 'notes' }: PitchChar
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [frames]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [frames, layout]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     renderChart(frames, cursorTime, isLiveRef.current)
-  }, [cursorTime]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cursorTime, layout]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     isLiveRef.current = frames.length > 1
@@ -100,8 +99,9 @@ export function PitchChart({ cursorTime = -1, displayMode = 'notes' }: PitchChar
 
   function renderChart(data: AnalysisFrame[], cursor: number, isLive: boolean) {
     const seriesData = data.map(f => f.f0 && f.f0 > 0
-      ? [f.time, displayMode === 'frequency' ? f.f0 : freqToMidi(f.f0)]
+      ? [f.time, freqToMidi(f.f0)]
       : [f.time, null])
+    const compact = layout === 'portrait'
 
     const hasData = data.length > 0
     let minTime: number, maxTime: number
@@ -120,13 +120,13 @@ export function PitchChart({ cursorTime = -1, displayMode = 'notes' }: PitchChar
     setOption({
       animation: false,
       backgroundColor: 'transparent',
-      grid: displayMode === 'frequency'
-        ? { left: 58, right: 16, top: 24, bottom: 24 }
+      grid: compact
+        ? { left: 44, right: 12, top: 16, bottom: 20 }
         : { left: 60, right: 32, top: 20, bottom: 36 },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross', label: { backgroundColor: '#475467' } },
-        formatter: (params: any) => formatPitchTooltip(params, data, displayMode),
+        formatter: (params: any) => formatPitchTooltip(params, data, layout),
       },
       xAxis: {
         type: 'value',
@@ -138,50 +138,36 @@ export function PitchChart({ cursorTime = -1, displayMode = 'notes' }: PitchChar
       },
       yAxis: {
         type: 'value',
-        min: displayMode === 'frequency' ? 0 : MIDI_G2,
-        max: displayMode === 'frequency' ? 500 : MIDI_E5,
-        interval: displayMode === 'frequency' ? 100 : undefined,
-        minInterval: displayMode === 'frequency' ? undefined : 1,
-        maxInterval: displayMode === 'frequency' ? undefined : 1,
+        min: MIDI_G2,
+        max: MIDI_E5,
+        minInterval: 1,
+        maxInterval: 1,
         axisLine: { lineStyle: { color: '#D0D5DD' } },
         axisTick: { show: false },
         axisLabel: {
           color: '#667085',
-          fontSize: 11,
-          formatter: (v: number) => displayMode === 'frequency'
-            ? `${Math.round(v)} Hz`
-            : (isNaturalMidi(v) ? midiToName(v) : ''),
+          fontSize: compact ? 10 : 11,
+          formatter: (v: number) => isNaturalMidi(v) ? midiToName(v) : '',
         },
-        splitLine: displayMode === 'frequency'
-          ? { lineStyle: { color: '#EDF2F7', width: 1 } }
-          : { show: false },
+        splitLine: { show: false },
       },
-      color: [displayMode === 'frequency' ? '#297DFF' : '#E23E57'],
+      color: ['#E23E57'],
       series: [
         {
           name: 'PITCH',
           type: 'line' as const,
           showSymbol: false,
           connectNulls: false,
-          lineStyle: { color: displayMode === 'frequency' ? '#297DFF' : '#E23E57', width: 2 },
-          itemStyle: { color: displayMode === 'frequency' ? '#297DFF' : '#E23E57' },
-          areaStyle: displayMode === 'frequency' ? { color: 'rgba(41, 125, 255, .08)' } : undefined,
-          markArea: displayMode === 'notes' ? {
+          lineStyle: { color: '#E23E57', width: 2 },
+          itemStyle: { color: '#E23E57' },
+          markArea: {
             silent: true,
             data: [[{
               yAxis: MIDI_C2,
               itemStyle: { color: hexToRgba('#3B82F6', 0.05) },
             }, { yAxis: MIDI_B5 }]],
-          } : undefined,
-          markLine: displayMode === 'frequency' ? {
-            silent: true,
-            symbol: 'none',
-            data: [{
-              yAxis: midiToFreq(MIDI_C4),
-              lineStyle: { color: '#78B4FF', type: 'dashed' as const, width: 1 },
-              label: { formatter: `C4 ${midiToFreq(MIDI_C4).toFixed(1)} Hz`, color: '#297DFF', fontSize: 11, position: 'insideEndTop' as const },
-            }],
-          } : {
+          },
+          markLine: {
             silent: true,
             symbol: 'none',
             data: [
@@ -193,7 +179,7 @@ export function PitchChart({ cursorTime = -1, displayMode = 'notes' }: PitchChar
               {
                 yAxis: MIDI_C4,
                 lineStyle: { color: hexToRgba('#3B82F6', 0.45), type: 'dashed' as const, width: 1 },
-                label: { formatter: 'C4', color: '#667085', fontSize: 11, position: 'insideEndTop' },
+                label: { formatter: 'C4', color: '#667085', fontSize: compact ? 10 : 11, position: 'insideEndTop' },
               },
             ],
           },
@@ -218,7 +204,7 @@ export function PitchChart({ cursorTime = -1, displayMode = 'notes' }: PitchChar
 
   useEffect(() => {
     renderChart(frames, cursorTime, isLiveRef.current)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [layout]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="pitchChart" ref={chartRef} />
 }
