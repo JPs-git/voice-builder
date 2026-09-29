@@ -4,10 +4,12 @@ export const A4_MIDI = 69
 export const A4_FREQ = 440
 
 export const MIDI_C2 = 36
+export const MIDI_C1 = 24
 export const MIDI_C3 = 48
 export const MIDI_C4 = 60
 export const MIDI_C5 = 72
 export const MIDI_B5 = 83
+export const MIDI_B6 = 95
 export const MIDI_C6 = 84
 export const MIDI_G2 = 43
 export const MIDI_E5 = 76

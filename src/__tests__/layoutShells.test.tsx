@@ -8,13 +8,38 @@ import { AppShell } from '../routes/AppShell'
 import type { ShellContext } from '../routes/AppShell'
 import { useAppStore } from '../store/appStore'
 
-const { setOptionMock } = vi.hoisted(() => ({ setOptionMock: vi.fn() }))
+const { setOptionMock, handleClickToolMock, handleFileChangeMock } = vi.hoisted(() => ({
+  setOptionMock: vi.fn(),
+  handleClickToolMock: vi.fn(),
+  handleFileChangeMock: vi.fn(),
+}))
 
 vi.mock('../hooks/useECharts', () => ({
   useECharts: () => ({
     chartRef: { current: document.createElement('div') },
     setOption: setOptionMock,
     getInstance: () => null,
+  }),
+}))
+
+vi.mock('../hooks/useToolbar', () => ({
+  useToolbar: () => ({
+    toolItems: [
+      { id: 'record', variant: 'primary', icon: '●', label: '开始录音' },
+      { id: 'import', variant: 'ghost', icon: '📁', label: '导入音频' },
+      { id: 'playback', variant: 'ghost', icon: '♫', label: '回放' },
+      { id: 'clear', variant: 'ghost', icon: '↺', label: '清空' },
+      { id: 'config', variant: 'ghost', icon: '⚙', label: '配置' },
+      { id: 'help', variant: 'ghost', icon: '?', label: '帮助' },
+      { id: 'about', variant: 'ghost', icon: 'ⓘ', label: '关于' },
+    ],
+    handleClickTool: handleClickToolMock,
+    hasData: true,
+    cursorTime: -1,
+    fileInputRef: { current: null },
+    handleFileChange: handleFileChangeMock,
+    isCapturing: false,
+    isRequesting: false,
   }),
 }))
 
@@ -71,12 +96,13 @@ function renderWithContext(element: ReactElement, context: ShellContext) {
   )
 }
 
-function renderInsideShell(element: ReactElement) {
+function renderInsideShell(element: ReactElement, initialEntry = '/') {
   return render(
-    <MemoryRouter initialEntries={['/']}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={element} />
+          <Route path="practice" element={element} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -114,35 +140,34 @@ describe('layout shell selection', () => {
   })
 })
 
-describe('portrait practice dock', () => {
+describe('shared portrait dock', () => {
   beforeEach(() => {
     useAppStore.getState().reset()
     setOptionMock.mockClear()
+    handleClickToolMock.mockClear()
     setMatchMedia(true)
   })
 
-  it('mounts the record dock with the active preset label', () => {
-    renderWithContext(<PracticePage />, SHELL_CONTEXT)
+  it('omits the feedback card and goal entry on the practice page', () => {
+    renderInsideShell(<PracticePage />, '/practice')
     expect(pageLayout()).toBe('portrait')
     expect(document.querySelector('[data-portrait-dock="true"]')).toBeTruthy()
-    expect(screen.getByTestId('dock-goal-label').textContent).toBe('a')
+    expect(screen.queryByRole('region', { name: '实时反馈' })).toBeNull()
+    expect(screen.queryByTestId('dock-goal')).toBeNull()
   })
 
   it('drives the dock mic from the shell context record action', () => {
-    const onRecord = vi.fn()
-    renderWithContext(<PracticePage />, { ...SHELL_CONTEXT, onRecord })
+    renderInsideShell(<PracticePage />, '/practice')
     fireEvent.click(screen.getByLabelText('开始录音'))
-    expect(onRecord).toHaveBeenCalledTimes(1)
+    expect(handleClickToolMock).toHaveBeenCalledWith('record')
   })
 
   it('routes clear and playback through shell callbacks', () => {
-    const onClear = vi.fn()
-    const onPlayback = vi.fn()
-    renderWithContext(<PracticePage />, { ...SHELL_CONTEXT, onClear, onPlayback })
+    renderInsideShell(<PracticePage />, '/practice')
     fireEvent.click(screen.getByRole('button', { name: '清除图谱' }))
     fireEvent.click(screen.getByRole('button', { name: '回放' }))
-    expect(onClear).toHaveBeenCalledTimes(1)
-    expect(onPlayback).toHaveBeenCalledTimes(1)
+    expect(handleClickToolMock).toHaveBeenNthCalledWith(1, 'clear')
+    expect(handleClickToolMock).toHaveBeenNthCalledWith(2, 'playback')
   })
 })
 
@@ -164,7 +189,7 @@ describe('portrait analysis structure', () => {
   })
 
   it('opens target settings from the dock and closes them', () => {
-    renderWithContext(<AnalysisPage />, SHELL_CONTEXT)
+    renderInsideShell(<AnalysisPage />)
     fireEvent.click(screen.getByTestId('dock-goal'))
     expect(screen.getByLabelText('选择元音预设')).toBeTruthy()
     fireEvent.click(screen.getByLabelText('关闭'))
@@ -172,31 +197,28 @@ describe('portrait analysis structure', () => {
   })
 
   it('routes clear and playback through shell callbacks', () => {
-    const onClear = vi.fn()
-    const onPlayback = vi.fn()
-    renderWithContext(<AnalysisPage />, { ...SHELL_CONTEXT, onClear, onPlayback })
+    renderInsideShell(<AnalysisPage />)
     fireEvent.click(screen.getByRole('button', { name: '清除图谱' }))
     fireEvent.click(screen.getByRole('button', { name: '回放' }))
-    expect(onClear).toHaveBeenCalledTimes(1)
-    expect(onPlayback).toHaveBeenCalledTimes(1)
+    expect(handleClickToolMock).toHaveBeenNthCalledWith(1, 'clear')
+    expect(handleClickToolMock).toHaveBeenNthCalledWith(2, 'playback')
   })
 
   it('mounts the record dock with the active preset label', () => {
-    renderWithContext(<AnalysisPage />, SHELL_CONTEXT)
+    renderInsideShell(<AnalysisPage />)
     expect(document.querySelector('[data-portrait-dock="true"]')).toBeTruthy()
     expect(screen.getByTestId('dock-goal-label').textContent).toBe('a')
   })
 
   it('exposes the idle record affordance on the dock mic', () => {
-    renderWithContext(<AnalysisPage />, SHELL_CONTEXT)
+    renderInsideShell(<AnalysisPage />)
     expect(screen.getByLabelText('开始录音')).toBeTruthy()
   })
 
   it('drives the dock mic from the shell context record action', () => {
-    const onRecord = vi.fn()
-    renderWithContext(<AnalysisPage />, { ...SHELL_CONTEXT, onRecord })
+    renderInsideShell(<AnalysisPage />)
     fireEvent.click(screen.getByLabelText('开始录音'))
-    expect(onRecord).toHaveBeenCalledTimes(1)
+    expect(handleClickToolMock).toHaveBeenCalledWith('record')
   })
 
   it('encloses both charts in one card with tab anchors and design legends', () => {

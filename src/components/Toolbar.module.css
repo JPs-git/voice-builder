@@ -45,6 +45,12 @@
   justify-content: center;
   min-width: 0;
 }
+.pageTabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
 
 @media (max-width: 768px) {
   .toolbar { padding: 10px 16px; gap: 12px; }
@@ -79,6 +85,13 @@
   }
 }
 
-.toolbar[data-compact="true"] { height: 50px; padding: 9px 16px; background: #f4faff; }
+.toolbar[data-compact="true"] { height: 64px; padding: 8px 16px; gap: 8px; background: #f4faff; }
 .toolbar[data-compact="true"] .logo { width: 32px; height: 32px; }
-.toolbar[data-compact="true"] .title { font-size: 18px; line-height: 26px; color: #0a2344; letter-spacing: .6px; }
+.toolbar[data-compact="true"] .title { font-size: 18px; line-height: 26px; color: #0a2344; letter-spacing: .6px; white-space: nowrap; }
+.toolbar[data-compact="true"] .brand { gap: 6px; }
+.toolbar[data-compact="true"] .pageTabs { max-width: 330px; }
+@media (max-width: 390px) {
+  .toolbar[data-compact="true"] { padding: 8px 10px; gap: 6px; }
+  .toolbar[data-compact="true"] .logo { width: 28px; height: 28px; }
+  .toolbar[data-compact="true"] .title { font-size: 15px; letter-spacing: 0; }
+}

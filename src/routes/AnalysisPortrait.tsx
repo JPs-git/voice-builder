@@ -1,15 +1,10 @@
-import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useAppStore } from '../store/appStore'
 import type { ShellContext } from './AppShell'
-import { TrainingGoalCard } from '../components/mobile/TrainingGoalCard'
 import { FeedbackHero } from '../components/mobile/FeedbackHero'
-import { RecordDock } from '../components/mobile/RecordDock'
 import { F0Chart } from '../components/F0Chart'
 import { FormantChart } from '../components/FormantChart'
 import { EmptyState } from '../components/EmptyState'
-import { Drawer } from '../components/Drawer'
-import { presetShortLabel } from '../types'
 import type { FormantSeries } from '../types'
 import styles from './AnalysisPage.module.css'
 
@@ -22,17 +17,10 @@ const SERIES_COLORS: Record<FormantSeries, string> = {
 }
 
 export function AnalysisPortrait() {
-  const { cursorTime, hasData, isCapturing, isRequesting, onRecord, onClear, onPlayback, isPlaying } =
-    useOutletContext<ShellContext>()
+  const { cursorTime, hasData } = useOutletContext<ShellContext>()
 
   const formantVisible = useAppStore(s => s.formantVisible)
   const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
-  const activePreset = useAppStore(s => s.activePreset)
-
-  const [goalOpen, setGoalOpen] = useState(false)
-
-  const goalLabel = presetShortLabel(activePreset)
-
   return (
     <div className={styles.page} data-layout="portrait">
       <main className={`${styles.content} ${styles.portraitMain}`}>
@@ -102,21 +90,6 @@ export function AnalysisPortrait() {
         </div>
       </main>
 
-      <RecordDock
-        onRecord={onRecord}
-        isCapturing={isCapturing}
-        isRequesting={isRequesting}
-        goalLabel={goalLabel}
-        onGoalClick={() => setGoalOpen(true)}
-        onClear={onClear}
-        onPlayback={onPlayback}
-        hasData={hasData}
-        isPlaying={isPlaying}
-      />
-
-      <Drawer open={goalOpen} title="训练目标" onClose={() => setGoalOpen(false)}>
-        <div data-testid="training-goal-card"><TrainingGoalCard /></div>
-      </Drawer>
     </div>
   )
 }
