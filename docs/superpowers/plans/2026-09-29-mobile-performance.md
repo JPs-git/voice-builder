@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. 本轮仅制定计划，未开始实现。
 
+**执行记录（2026-09-29）：** 已实现诊断、批量发布、按需持久化、共享自适应显示节奏、静态/动态图表更新拆分及 resize 去重；53 个测试文件、381 个测试及构建/类型检查通过。真机验收未完成，Worker、DPR、抽稀维持条件待办。详见 `docs/performance/mobile-recording.md`；下方复选框保留为完整计划，未勾选不代表对应子项均未实施。
+
 **Goal:** 在中低端手机上降低录音期间随机长停顿，优先稳定的刷新间隔和有界延迟，允许低于 60fps。
 
 **Architecture:** 先消除实时存储写入、逐帧状态发布及不必要绘图，再以单一调度器发布最新显示快照。若真机证据表明 DSP 阻塞主线程，增加独立 Worker；音频分析保持连续，显示可跳过过期快照。
