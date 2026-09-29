@@ -1,9 +1,9 @@
 import { useAppStore } from '../store/appStore'
 import { nearestMidi, MIDI_C2, MIDI_B5 } from '../utils/pitch'
 
-export function useCurrentMidi(): number | null {
+export function useCurrentMidi(minMidi = MIDI_C2, maxMidi = MIDI_B5): number | null {
   const f0 = useAppStore(s => s.latestFrame?.f0 ?? null)
   if (!f0 || f0 <= 0) return null
   const midi = nearestMidi(f0)
-  return midi >= MIDI_C2 && midi <= MIDI_B5 ? midi : null
+  return midi >= minMidi && midi <= maxMidi ? midi : null
 }

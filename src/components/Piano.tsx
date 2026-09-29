@@ -1,35 +1,36 @@
 import styles from './Piano.module.css'
-import { MIDI_C2, MIDI_C3, MIDI_C4, MIDI_C5, MIDI_B5, midiToName } from '../utils/pitch'
+import { MIDI_C2, MIDI_B5, midiToName } from '../utils/pitch'
 
 const BLACK_MIDI_RESIDUES = new Set([1, 3, 6, 8, 10])
-
-const OCTAVE_MARKERS = new Set([MIDI_C2, MIDI_C3, MIDI_C4, MIDI_C5])
 
 function isWhite(midi: number): boolean {
   return !BLACK_MIDI_RESIDUES.has(midi % 12)
 }
 
-const WHITE_NOTES: number[] = (() => {
+function getWhiteNotes(startMidi: number, endMidi: number): number[] {
   const out: number[] = []
-  for (let m = MIDI_C2; m <= MIDI_B5; m++) {
+  for (let m = startMidi; m <= endMidi; m++) {
     if (isWhite(m)) out.push(m)
   }
   return out
-})()
+}
 
-function hasBlackAfter(white: number): boolean {
-  return white + 1 <= MIDI_B5 && BLACK_MIDI_RESIDUES.has((white + 1) % 12)
+function hasBlackAfter(white: number, endMidi: number): boolean {
+  return white + 1 <= endMidi && BLACK_MIDI_RESIDUES.has((white + 1) % 12)
 }
 
 interface PianoProps {
   currentMidi?: number | null
   onKeyPress: (midi: number) => void
+  startMidi?: number
+  endMidi?: number
 }
 
-export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
+export function Piano({ currentMidi = null, onKeyPress, startMidi = MIDI_C2, endMidi = MIDI_B5 }: PianoProps) {
+  const whiteNotes = getWhiteNotes(startMidi, endMidi)
   return (
-    <div className={styles.piano} role="group" aria-label="钢琴 C2-B5">
-      {WHITE_NOTES.map(white => (
+    <div className={styles.piano} role="group" aria-label={`钢琴 ${midiToName(startMidi)}-${midiToName(endMidi)}`}>
+      {whiteNotes.map(white => (
         <div key={white} className={styles.whiteWrap}>
           <button
             type="button"
@@ -41,13 +42,13 @@ export function Piano({ currentMidi = null, onKeyPress }: PianoProps) {
           >
             <span
               className={styles.noteLabel}
-              data-octave-marker={OCTAVE_MARKERS.has(white) ? 'true' : 'false'}
+              data-octave-marker={white % 12 === 0 ? 'true' : 'false'}
               data-active={currentMidi === white ? 'true' : 'false'}
             >
               {midiToName(white)}
             </span>
           </button>
-          {hasBlackAfter(white) && (
+          {hasBlackAfter(white, endMidi) && (
             <button
               type="button"
               className={styles.black}

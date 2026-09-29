@@ -8,10 +8,11 @@ interface ToolbarProps {
   toolItems: ToolItem[]
   onToolClick: (toolId: string) => void
   nav?: { label: string; onClick: () => void }
+  pageTabs?: ReactNode
   moreMenu?: ReactNode
 }
 
-export function Toolbar({ toolItems, onToolClick, nav, moreMenu }: ToolbarProps) {
+export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu }: ToolbarProps) {
   return (
     <header className={styles.toolbar} data-compact={moreMenu ? 'true' : 'false'}>
       <div className={styles.brand}>
@@ -20,7 +21,9 @@ export function Toolbar({ toolItems, onToolClick, nav, moreMenu }: ToolbarProps)
         <span className={styles.subtitle}>「看见自己的声音」</span>
       </div>
 
-      {nav && (
+      {pageTabs && <div className={styles.pageTabs}>{pageTabs}</div>}
+
+      {!pageTabs && nav && (
         <div className={styles.nav}>
           <Button icon="⇄" label={nav.label} onClick={nav.onClick} />
         </div>

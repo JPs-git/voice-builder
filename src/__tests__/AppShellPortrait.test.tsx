@@ -50,7 +50,9 @@ describe('AppShell toolbar density', () => {
     renderShell()
     expect(screen.getByLabelText('更多操作')).toBeTruthy()
     expect(screen.queryByText('导入音频')).toBeNull()
-    expect(screen.queryByText('音高参考')).toBeNull()
+    expect(screen.getByRole('navigation', { name: '页面切换' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '音高参考' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '声音分析' })).toBeTruthy()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('true')
   })
 
@@ -64,11 +66,10 @@ describe('AppShell toolbar density', () => {
     expect(document.querySelectorAll('header button[id]').length).toBe(7)
   })
 
-  it('navigates to the practice page from the portrait overflow menu', () => {
+  it('navigates to the practice page from the portrait tabs', () => {
     setMatchMedia(true)
     renderShell()
-    fireEvent.click(screen.getByLabelText('更多操作'))
-    fireEvent.click(screen.getByRole('menuitem', { name: '音高参考' }))
+    fireEvent.click(screen.getByRole('link', { name: '音高参考' }))
     expect(screen.getByTestId('practice-page')).toBeTruthy()
     expect(screen.queryByRole('menu')).toBeNull()
   })
