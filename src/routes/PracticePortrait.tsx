@@ -7,16 +7,16 @@ import { EmptyState } from '../components/EmptyState'
 import { FeedbackHero } from '../components/mobile/FeedbackHero'
 import { getPianoSynth } from '../audio/PianoSynth'
 import { useCurrentMidi } from '../hooks/useCurrentMidi'
-import { MIDI_B6, MIDI_C1, MIDI_C2, MIDI_C3 } from '../utils/pitch'
+import { MIDI_C2, MIDI_C3, MIDI_C4, MIDI_C6 } from '../utils/pitch'
 import styles from './PracticePage.module.css'
 
-const PIANO_RANGE_STARTS = [MIDI_C1, MIDI_C2, MIDI_C3] as const
-const PIANO_RANGE_SEMITONES = 36
+const PIANO_RANGE_STARTS = [MIDI_C2, MIDI_C3, MIDI_C4] as const
+const PIANO_RANGE_SEMITONES = 24
 
 export function PracticePortrait() {
   const { cursorTime, hasData, pianoRangeStart, setPianoRangeStart } = useOutletContext<ShellContext>()
   const rangeStart = pianoRangeStart ?? MIDI_C2
-  const currentMidi = useCurrentMidi(MIDI_C1, MIDI_B6)
+  const currentMidi = useCurrentMidi(MIDI_C2, MIDI_C6)
 
   useEffect(() => () => getPianoSynth().stopAll(), [])
 
@@ -37,24 +37,13 @@ export function PracticePortrait() {
                 <path d="M7 3v11m3-11v11m4-11v11m3-11v11M7 14h10" />
               </svg>
               钢琴键盘
-              <button type="button" className={styles.infoButton} aria-label="钢琴键盘说明" title="点击琴键可播放对应音高">i</button>
             </h2>
-            <select
-              className={styles.rangeSelect}
-              aria-label="选择钢琴音域"
-              value={rangeStart}
-              onChange={event => setPianoRangeStart?.(Number(event.target.value))}
-            >
-              {PIANO_RANGE_STARTS.map(start => (
-                <option key={start} value={start}>{`C${Math.floor(start / 12) - 1} - C${Math.floor(start / 12) + 2}`}</option>
-              ))}
-            </select>
           </header>
           <div className={styles.pianoViewport}>
             <button
               type="button"
               className={`${styles.rangeArrow} ${styles.rangeArrowLeft}`}
-              aria-label="降低一个八度"
+              aria-label="向左翻页一个八度"
               disabled={rangeIndex <= 0}
               onClick={() => setPianoRangeStart?.(PIANO_RANGE_STARTS[Math.max(0, rangeIndex - 1)])}
             >
@@ -71,7 +60,7 @@ export function PracticePortrait() {
             <button
               type="button"
               className={`${styles.rangeArrow} ${styles.rangeArrowRight}`}
-              aria-label="提高一个八度"
+              aria-label="向右翻页一个八度"
               disabled={rangeIndex >= PIANO_RANGE_STARTS.length - 1}
               onClick={() => setPianoRangeStart?.(PIANO_RANGE_STARTS[Math.min(PIANO_RANGE_STARTS.length - 1, rangeIndex + 1)])}
             >
@@ -88,7 +77,6 @@ export function PracticePortrait() {
                   <path d="M3 13v-2m4 6V7m5 12V5m5 10V9m4 4v-2" />
                 </svg>
                 音高图
-                <button type="button" className={styles.infoButton} aria-label="音高图说明" title="显示录音中的基频变化">i</button>
               </h2>
             </div>
             <div className={styles.chartArea}>
