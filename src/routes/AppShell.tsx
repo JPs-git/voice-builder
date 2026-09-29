@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Outlet, useMatch, useNavigate } from 'react-router-dom'
 import { useToolbar } from '../hooks/useToolbar'
 import { useMediaQuery } from '../hooks/useMediaQuery'
@@ -14,7 +14,6 @@ import { AboutModal } from '../components/AboutModal'
 import { Toast } from '../components/Toast'
 import { useAppStore } from '../store/appStore'
 import { presetShortLabel } from '../types'
-import { MIDI_C2 } from '../utils/pitch'
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -27,8 +26,8 @@ export interface ShellContext {
   onPlayback?: () => void
   isPlaying?: boolean
   onRecord: () => void
-  pianoRangeStart?: number
-  setPianoRangeStart?: (startMidi: number) => void
+  pianoScrollProgress?: number
+  setPianoScrollProgress?: (progress: number) => void
 }
 
 export function AppShell() {
@@ -36,7 +35,7 @@ export function AppShell() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [goalOpen, setGoalOpen] = useState(false)
-  const [pianoRangeStart, setPianoRangeStart] = useState(MIDI_C2)
+  const pianoScrollProgressRef = useRef(0)
 
   const navigate = useNavigate()
   const isPractice = useMatch('/practice') != null
@@ -69,8 +68,10 @@ export function AppShell() {
     onClear: () => handleClickTool('clear'),
     onPlayback: () => handleClickTool('playback'),
     isPlaying: toolItems.find(item => item.id === 'playback')?.label === '停止',
-    pianoRangeStart,
-    setPianoRangeStart,
+    pianoScrollProgress: pianoScrollProgressRef.current,
+    setPianoScrollProgress: (progress: number) => {
+      pianoScrollProgressRef.current = progress
+    },
   }
 
   return (

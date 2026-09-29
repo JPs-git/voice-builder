@@ -24,9 +24,10 @@ interface PianoProps {
   onKeyPress: (midi: number) => void
   startMidi?: number
   endMidi?: number
+  deferKeyPress?: boolean
 }
 
-export function Piano({ currentMidi = null, onKeyPress, startMidi = MIDI_C2, endMidi = MIDI_B5 }: PianoProps) {
+export function Piano({ currentMidi = null, onKeyPress, startMidi = MIDI_C2, endMidi = MIDI_B5, deferKeyPress = false }: PianoProps) {
   const whiteNotes = getWhiteNotes(startMidi, endMidi)
   return (
     <div className={styles.piano} role="group" aria-label={`钢琴 ${midiToName(startMidi)}-${midiToName(endMidi)}`}>
@@ -38,7 +39,7 @@ export function Piano({ currentMidi = null, onKeyPress, startMidi = MIDI_C2, end
             data-active={currentMidi === white}
             aria-label={midiToName(white)}
             aria-pressed={currentMidi === white}
-            onPointerDown={() => onKeyPress(white)}
+            {...(deferKeyPress ? { onClick: () => onKeyPress(white) } : { onPointerDown: () => onKeyPress(white) })}
           >
             <span
               className={styles.noteLabel}
@@ -55,7 +56,7 @@ export function Piano({ currentMidi = null, onKeyPress, startMidi = MIDI_C2, end
               data-active={currentMidi === white + 1}
               aria-label={midiToName(white + 1)}
               aria-pressed={currentMidi === white + 1}
-              onPointerDown={() => onKeyPress(white + 1)}
+              {...(deferKeyPress ? { onClick: () => onKeyPress(white + 1) } : { onPointerDown: () => onKeyPress(white + 1) })}
             >
               <span className={styles.noteLabel} data-octave-marker="false" data-active={currentMidi === white + 1 ? 'true' : 'false'}>
                 {midiToName(white + 1)}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import type { ShellContext } from './AppShell'
 import { Piano } from '../components/Piano'
@@ -6,22 +6,31 @@ import { PitchChart } from '../components/PitchChart'
 import { EmptyState } from '../components/EmptyState'
 import { getPianoSynth } from '../audio/PianoSynth'
 import { useCurrentMidi } from '../hooks/useCurrentMidi'
-import { MIDI_C2, MIDI_C3, MIDI_C4, MIDI_C6 } from '../utils/pitch'
+import { MIDI_C2, MIDI_C6 } from '../utils/pitch'
 import styles from './PracticePage.module.css'
 
-const PIANO_RANGE_STARTS = [MIDI_C2, MIDI_C3, MIDI_C4] as const
-const PIANO_RANGE_SEMITONES = 24
+const BLACK_KEY_LABEL_CLEARANCE_PX = 20
 
 export function PracticePortrait() {
-  const { cursorTime, hasData, pianoRangeStart, setPianoRangeStart } = useOutletContext<ShellContext>()
-  const rangeStart = pianoRangeStart ?? MIDI_C2
+  const { cursorTime, hasData, pianoScrollProgress = 0, setPianoScrollProgress } = useOutletContext<ShellContext>()
+  const pianoViewportRef = useRef<HTMLDivElement>(null)
   const currentMidi = useCurrentMidi(MIDI_C2, MIDI_C6)
 
   useEffect(() => () => getPianoSynth().stopAll(), [])
 
   const playNote = (midi: number) => getPianoSynth().play(midi)
-  const rangeEnd = rangeStart + PIANO_RANGE_SEMITONES
-  const rangeIndex = PIANO_RANGE_STARTS.indexOf(rangeStart as typeof PIANO_RANGE_STARTS[number])
+  useEffect(() => {
+    const viewport = pianoViewportRef.current
+    if (!viewport) return
+    viewport.scrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth) * pianoScrollProgress
+  }, [pianoScrollProgress])
+
+  const rememberPianoPosition = () => {
+    const viewport = pianoViewportRef.current
+    if (!viewport) return
+    const maxScroll = viewport.scrollWidth - viewport.clientWidth
+    setPianoScrollProgress?.(maxScroll > 0 ? viewport.scrollLeft / maxScroll : 0)
+  }
 
   return (
     <div className={styles.page} data-layout="portrait">
@@ -36,33 +45,23 @@ export function PracticePortrait() {
               钢琴键盘
             </h2>
           </header>
-          <div className={styles.pianoViewport}>
-            <button
-              type="button"
-              className={`${styles.rangeArrow} ${styles.rangeArrowLeft}`}
-              aria-label="向左翻页一个八度"
-              disabled={rangeIndex <= 0}
-              onClick={() => setPianoRangeStart?.(PIANO_RANGE_STARTS[Math.max(0, rangeIndex - 1)])}
-            >
-              ‹
-            </button>
-            <div className={styles.pianoArea}>
+          <div
+            ref={pianoViewportRef}
+            className={styles.pianoViewport}
+            role="region"
+            aria-label="左右滑动调整钢琴音域"
+            tabIndex={0}
+            onScroll={rememberPianoPosition}
+          >
+            <div className={styles.pianoArea} style={{ paddingTop: BLACK_KEY_LABEL_CLEARANCE_PX }}>
               <Piano
                 currentMidi={currentMidi}
                 onKeyPress={playNote}
-                startMidi={rangeStart}
-                endMidi={rangeEnd}
+                startMidi={MIDI_C2}
+                endMidi={MIDI_C6}
+                deferKeyPress
               />
             </div>
-            <button
-              type="button"
-              className={`${styles.rangeArrow} ${styles.rangeArrowRight}`}
-              aria-label="向右翻页一个八度"
-              disabled={rangeIndex >= PIANO_RANGE_STARTS.length - 1}
-              onClick={() => setPianoRangeStart?.(PIANO_RANGE_STARTS[Math.min(PIANO_RANGE_STARTS.length - 1, rangeIndex + 1)])}
-            >
-              ›
-            </button>
           </div>
         </section>
 
