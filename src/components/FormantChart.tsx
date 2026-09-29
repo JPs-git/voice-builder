@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { useDisplayAnalysis } from '../hooks/useDisplayAnalysis'
 import { useECharts } from '../hooks/useECharts'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useAppStore } from '../store/appStore'
@@ -70,37 +71,25 @@ interface FormantChartProps {
 }
 
 export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProps) {
-  const frames = useAppStore(s => s.frames)
+  const { frames } = useDisplayAnalysis()
   const bands = useAppStore(s => s.bands)
   const formantVisible = useAppStore(s => s.formantVisible)
   const { chartRef, setOption, getInstance } = useECharts()
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
-  const rafRef = useRef<number | null>(null)
-  const isLiveRef = useRef(false)
+  const isLive = frames.length > 1
   const seriesVisibleRef = useRef({ f0: true, f1: true, f2: true })
 
   useEffect(() => {
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-    rafRef.current = requestAnimationFrame(() => {
-      renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
-      rafRef.current = null
-    })
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-    }
-  }, [frames, isPortrait])
+    renderChart(frames, cursorTime, bands, isLive, false, isPortrait)
+  }, [frames, isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
+    renderChart(frames, cursorTime, bands, isLive, false, isPortrait)
   }, [cursorTime, bands, isPortrait])
 
   useEffect(() => {
-    isLiveRef.current = frames.length > 1
-  }, [frames.length])
-
-  useEffect(() => {
     seriesVisibleRef.current = formantVisible
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
+    renderChart(frames, cursorTime, bands, isLive, false, isPortrait)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formantVisible, isPortrait])
 
@@ -253,7 +242,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   }
 
   useEffect(() => {
-    renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
+    renderChart(frames, cursorTime, bands, isLive, false, isPortrait)
   }, [isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="formantChart" ref={chartRef} />

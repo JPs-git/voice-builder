@@ -1,4 +1,5 @@
-import { useRef, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useDisplayAnalysis } from '../hooks/useDisplayAnalysis'
 import { useECharts } from '../hooks/useECharts'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useAppStore } from '../store/appStore'
@@ -95,31 +96,18 @@ interface F0ChartProps {
 }
 
 export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
-  const frames = useAppStore(s => s.frames)
+  const { frames } = useDisplayAnalysis()
   const { chartRef, setOption } = useECharts()
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
-  const rafRef = useRef<number | null>(null)
-  const isLiveRef = useRef(false)
+  const isLive = frames.length > 1
 
   useEffect(() => {
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-    rafRef.current = requestAnimationFrame(() => {
-      renderChart(frames, cursorTime, isLiveRef.current, false, isPortrait)
-      rafRef.current = null
-    })
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-    }
-  }, [frames, isPortrait])
+    renderChart(frames, cursorTime, isLive, false, isPortrait)
+  }, [frames, isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    renderChart(frames, cursorTime, isLiveRef.current, false, isPortrait)
+    renderChart(frames, cursorTime, isLive, false, isPortrait)
   }, [cursorTime, isPortrait])
-
-  // Detect live vs batch mode
-  useEffect(() => {
-    isLiveRef.current = frames.length > 1
-  }, [frames.length])
 
   function renderChart(
     data: AnalysisFrame[],
@@ -216,7 +204,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
   }
 
   useEffect(() => {
-    renderChart(frames, cursorTime, isLiveRef.current, false, isPortrait)
+    renderChart(frames, cursorTime, isLive, false, isPortrait)
   }, [isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="f0Chart" ref={chartRef} />

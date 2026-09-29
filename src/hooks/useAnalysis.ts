@@ -7,6 +7,7 @@ import { AnalysisPipeline, parseWav, isWavFile, Resampler } from '../dsp'
 import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuration } from '../audio/audioDecoder'
 import type { AnalysisFrame } from '../types'
 import { recordingMetrics } from '../performance/recordingMetrics'
+import { flushDisplayAnalysis } from './useDisplayAnalysis'
 
 const STEREO_NOTICE = '该音频为双声道，仅使用第 0 声道进行分析'
 
@@ -63,6 +64,7 @@ export function useAnalysis() {
     }
     pendingFramesRef.current = []
     getAudioEngine().stopCapture()
+    flushDisplayAnalysis()
     setIsCapturing(false)
     setIsRequesting(false)
   }, [])
@@ -104,6 +106,7 @@ export function useAnalysis() {
     recordingBuffer.write(samples)
     useAppStore.getState().clearFrames()
     useAppStore.getState().setFrames(frames)
+    flushDisplayAnalysis()
     dataSourceRef.current = 'file'
     setDataSource('file')
     frameOffsetRef.current = 0

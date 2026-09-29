@@ -1,6 +1,6 @@
-import { useRef, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useDisplayAnalysis } from '../hooks/useDisplayAnalysis'
 import { useECharts } from '../hooks/useECharts'
-import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame } from '../types'
 import {
   freqToMidi,
@@ -73,29 +73,17 @@ interface PitchChartProps {
 }
 
 export function PitchChart({ cursorTime = -1, layout = 'landscape' }: PitchChartProps) {
-  const frames = useAppStore(s => s.frames)
+  const { frames } = useDisplayAnalysis()
   const { chartRef, setOption } = useECharts()
-  const rafRef = useRef<number | null>(null)
-  const isLiveRef = useRef(false)
+  const isLive = frames.length > 1
 
   useEffect(() => {
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-    rafRef.current = requestAnimationFrame(() => {
-      renderChart(frames, cursorTime, isLiveRef.current)
-      rafRef.current = null
-    })
-    return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-    }
+    renderChart(frames, cursorTime, isLive)
   }, [frames, layout]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    renderChart(frames, cursorTime, isLiveRef.current)
+    renderChart(frames, cursorTime, isLive)
   }, [cursorTime, layout]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    isLiveRef.current = frames.length > 1
-  }, [frames.length])
 
   function renderChart(data: AnalysisFrame[], cursor: number, isLive: boolean) {
     const seriesData = data.map(f => f.f0 && f.f0 > 0
@@ -203,7 +191,7 @@ export function PitchChart({ cursorTime = -1, layout = 'landscape' }: PitchChart
   }
 
   useEffect(() => {
-    renderChart(frames, cursorTime, isLiveRef.current)
+    renderChart(frames, cursorTime, isLive)
   }, [layout]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="pitchChart" ref={chartRef} />

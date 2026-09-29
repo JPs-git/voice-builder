@@ -1,3 +1,4 @@
+import { useDisplayAnalysis } from '../../hooks/useDisplayAnalysis'
 import { useAppStore } from '../../store/appStore'
 import { getFormantStatus } from '../../feedback/status'
 import type { FormantStatus } from '../../feedback/status'
@@ -39,7 +40,7 @@ function formatValue(value: number | null | undefined): string {
 }
 
 export function FeedbackHero() {
-  const latestFrame = useAppStore(s => s.latestFrame)
+  const { latestFrame } = useDisplayAnalysis()
   const bands = useAppStore(s => s.bands)
   const formantVisible = useAppStore(s => s.formantVisible)
 
