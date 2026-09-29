@@ -1,3 +1,5 @@
+import { recordingMetrics } from '../performance/recordingMetrics'
+
 export interface AudioEngineOptions {
   sampleRate?: number
 }
@@ -45,7 +47,14 @@ export class AudioEngine {
 
     this._source = ctx.createMediaStreamSource(stream)
     this._processor = ctx.createScriptProcessor(1024, 1, 1)
+    let previousChunk: number | undefined
+    recordingMetrics.record('sampleRate', ctx.sampleRate)
     this._processor.onaudioprocess = (event) => {
+      if (recordingMetrics.enabled) {
+        const now = performance.now()
+        if (previousChunk !== undefined) recordingMetrics.record('captureInterval', now - previousChunk)
+        previousChunk = now
+      }
       const chunk = event.inputBuffer.getChannelData(0)
       onChunk(chunk, ctx.sampleRate)
     }

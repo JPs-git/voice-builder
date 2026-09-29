@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
+import { recordingMetrics } from '../performance/recordingMetrics'
 
 export function useECharts() {
   const chartRef = useRef<HTMLDivElement>(null)
@@ -28,7 +29,9 @@ export function useECharts() {
   const getInstance = useCallback(() => instanceRef.current, [])
 
   const setOption = useCallback((option: echarts.EChartsOption, opts?: { notMerge?: boolean }) => {
+    const start = recordingMetrics.enabled ? performance.now() : 0
     instanceRef.current?.setOption(option, opts)
+    if (recordingMetrics.enabled) recordingMetrics.record('chartUpdate', performance.now() - start)
   }, [])
 
   return { chartRef, getInstance, setOption }

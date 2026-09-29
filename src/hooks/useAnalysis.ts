@@ -6,6 +6,7 @@ import { recordingBuffer } from '../audio/recordingBuffer'
 import { AnalysisPipeline, parseWav, isWavFile, Resampler } from '../dsp'
 import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuration } from '../audio/audioDecoder'
 import type { AnalysisFrame } from '../types'
+import { recordingMetrics } from '../performance/recordingMetrics'
 
 const STEREO_NOTICE = '该音频为双声道，仅使用第 0 声道进行分析'
 
@@ -75,7 +76,9 @@ export function useAnalysis() {
 
   const onAudioChunk = useCallback((chunk: Float32Array, rate: number) => {
     recordingBuffer.write(chunk)
+    const start = recordingMetrics.enabled ? performance.now() : 0
     pipelineRef.current?.pushChunk(chunk, rate)
+    if (recordingMetrics.enabled) recordingMetrics.record('analysis', performance.now() - start)
   }, [])
 
   // ── Import commit (shared by WAV & decoded paths) ──
