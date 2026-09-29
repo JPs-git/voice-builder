@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { useDisplayAnalysis } from '../hooks/useDisplayAnalysis'
 import { useECharts } from '../hooks/useECharts'
 import type { AnalysisFrame } from '../types'
@@ -76,16 +76,21 @@ export function PitchChart({ cursorTime = -1, layout = 'landscape' }: PitchChart
   const { frames } = useDisplayAnalysis()
   const { chartRef, setOption } = useECharts()
   const isLive = frames.length > 1
+  const previousFrames = useRef(frames)
+  const tooltipFrames = useRef(frames)
+  tooltipFrames.current = frames
 
   useEffect(() => {
-    renderChart(frames, cursorTime, isLive)
-  }, [frames, layout]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (previousFrames.current === frames) return
+    previousFrames.current = frames
+    renderChart(frames, cursorTime, isLive, true)
+  }, [frames]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     renderChart(frames, cursorTime, isLive)
   }, [cursorTime, layout]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function renderChart(data: AnalysisFrame[], cursor: number, isLive: boolean) {
+  function renderChart(data: AnalysisFrame[], cursor: number, isLive: boolean, dataOnly = false) {
     const seriesData = data.map(f => f.f0 && f.f0 > 0
       ? [f.time, freqToMidi(f.f0)]
       : [f.time, null])
@@ -105,6 +110,11 @@ export function PitchChart({ cursorTime = -1, layout = 'landscape' }: PitchChart
       maxTime = WINDOW
     }
 
+    if (dataOnly) {
+      setOption({ xAxis: { min: minTime, max: maxTime }, series: [{ name: 'PITCH', data: seriesData }] } as any)
+      return
+    }
+
     setOption({
       animation: false,
       backgroundColor: 'transparent',
@@ -114,7 +124,7 @@ export function PitchChart({ cursorTime = -1, layout = 'landscape' }: PitchChart
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross', label: { backgroundColor: '#475467' } },
-        formatter: (params: any) => formatPitchTooltip(params, data, layout),
+        formatter: (params: any) => formatPitchTooltip(params, tooltipFrames.current, layout),
       },
       xAxis: {
         type: 'value',

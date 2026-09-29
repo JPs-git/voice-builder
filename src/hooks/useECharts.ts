@@ -11,7 +11,16 @@ export function useECharts() {
   useEffect(() => {
     if (!chartRef.current) return
     instanceRef.current = echarts.init(chartRef.current, null, { renderer: 'canvas' })
-    const onResize = () => instanceRef.current?.resize()
+    let width = chartRef.current.clientWidth
+    let height = chartRef.current.clientHeight
+    const onResize = () => {
+      const el = chartRef.current
+      if (!el || !instanceRef.current || el.clientWidth <= 0 || el.clientHeight <= 0) return
+      if (el.clientWidth === width && el.clientHeight === height) return
+      width = el.clientWidth
+      height = el.clientHeight
+      instanceRef.current.resize()
+    }
     window.addEventListener('resize', onResize)
     // 容器初次挂载时可能还没有布局尺寸（0×0），监听容器尺寸变化后重绘
     const ro = new ResizeObserver(() => {

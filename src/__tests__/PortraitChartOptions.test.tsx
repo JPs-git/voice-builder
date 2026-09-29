@@ -103,6 +103,7 @@ const LANDSCAPE_F0_OPTION = {
   series: [
     {
       name: 'F0',
+      markPoint: { data: [] },
       type: 'line',
       showSymbol: false,
       connectNulls: false,
@@ -367,6 +368,18 @@ describe('portrait chart options', () => {
 
 
 describe.each([['F0', F0Chart], ['formants', FormantChart]] as const)('%s recording window', (_name, Chart) => {
+  it('updates live data without resubmitting static axes and layout', async () => {
+    useAppStore.getState().reset()
+    setMatchMedia(true)
+    render(<Chart />)
+    expect(lastOption().grid).toBeDefined()
+    act(() => useAppStore.getState().appendFrame({ time: 1, f0: 220, f1: 800, f2: 1200 }))
+    await waitFor(() => expect(lastOption().series[0].data).toEqual([[1, 220]]))
+    expect(lastOption().grid).toBeUndefined()
+    expect(lastOption().yAxis).toBeUndefined()
+    expect(lastOption().series[0].lineStyle).toBeUndefined()
+  })
+
   it.each([true, false])('keeps only the latest 10 seconds (portrait=%s)', async (portrait) => {
     useAppStore.getState().reset()
     setOptionMock.mockClear()

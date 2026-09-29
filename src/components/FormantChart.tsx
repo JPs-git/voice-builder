@@ -77,21 +77,18 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   const { chartRef, setOption, getInstance } = useECharts()
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
   const isLive = frames.length > 1
-  const seriesVisibleRef = useRef({ f0: true, f1: true, f2: true })
+  const previousFrames = useRef(frames)
+
+  useEffect(() => {
+    if (previousFrames.current === frames) return
+    previousFrames.current = frames
+    renderChart(frames, cursorTime, bands, isLive, false, isPortrait, true)
+  }, [frames]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     renderChart(frames, cursorTime, bands, isLive, false, isPortrait)
-  }, [frames, isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cursorTime, bands, isPortrait, formantVisible])
 
-  useEffect(() => {
-    renderChart(frames, cursorTime, bands, isLive, false, isPortrait)
-  }, [cursorTime, bands, isPortrait])
-
-  useEffect(() => {
-    seriesVisibleRef.current = formantVisible
-    renderChart(frames, cursorTime, bands, isLive, false, isPortrait)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formantVisible, isPortrait])
 
   // Chart click → find nearest frame
   useEffect(() => {
@@ -120,8 +117,9 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     isLive: boolean,
     useAnimation: boolean,
     isPortrait: boolean,
+    dataOnly = false,
   ) {
-    const visible = seriesVisibleRef.current
+    const visible = formantVisible
     const keys = ['f0', 'f1', 'f2'] as const
     const palette = isPortrait ? PORTRAIT_COLORS : COLORS
     const areaColor = (k: keyof TargetBands) => isPortrait
@@ -148,6 +146,11 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     } else {
       minTime = 0
       maxTime = windowSize
+    }
+
+    if (dataOnly) {
+      setOption({ xAxis: { min: minTime, max: maxTime }, series: keys.map(k => ({ name: k.toUpperCase(), data: seriesData[k] })) } as any)
+      return
     }
 
     const tooltipKeys = ['f2', 'f1', 'f0']
@@ -241,9 +244,6 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     } as any)
   }
 
-  useEffect(() => {
-    renderChart(frames, cursorTime, bands, isLive, false, isPortrait)
-  }, [isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="formantChart" ref={chartRef} />
 }

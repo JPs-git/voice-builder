@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { useDisplayAnalysis } from '../hooks/useDisplayAnalysis'
 import { useECharts } from '../hooks/useECharts'
 import { useMediaQuery } from '../hooks/useMediaQuery'
@@ -100,10 +100,15 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
   const { chartRef, setOption } = useECharts()
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
   const isLive = frames.length > 1
+  const previousFrames = useRef(frames)
+  const tooltipFrames = useRef(frames)
+  tooltipFrames.current = frames
 
   useEffect(() => {
-    renderChart(frames, cursorTime, isLive, false, isPortrait)
-  }, [frames, isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (previousFrames.current === frames) return
+    previousFrames.current = frames
+    renderChart(frames, cursorTime, isLive, false, isPortrait, true)
+  }, [frames]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     renderChart(frames, cursorTime, isLive, false, isPortrait)
@@ -115,13 +120,16 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
     isLive: boolean,
     useAnimation: boolean,
     isPortrait: boolean,
+    dataOnly = false,
   ) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
     const f0Color = isPortrait ? F0_COLOR_PORTRAIT : F0_COLOR_DESKTOP
     const zones = isPortrait ? TARGET_ZONES_PORTRAIT : TARGET_ZONES
     const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => zone.color
-    const dots = data.filter(f => f.f0 != null && f.f0 > 0)
-    const lastDot = dots[dots.length - 1]
+    let lastDot: AnalysisFrame | undefined
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (data[i].f0 != null && data[i].f0! > 0) { lastDot = data[i]; break }
+    }
 
     const hasData = data.length > 0
     const windowSize = WINDOW
@@ -138,6 +146,19 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
       maxTime = windowSize
     }
 
+    const markPoint = isPortrait && lastDot ? {
+      silent: true,
+      symbol: 'circle',
+      symbolSize: 7,
+      itemStyle: { color: f0Color, shadowBlur: 12, shadowColor: 'rgba(63, 131, 248, 0.35)' },
+      data: [{ coord: [lastDot.time, lastDot.f0], symbolSize: 7 }],
+    } : { data: [] }
+
+    if (dataOnly) {
+      setOption({ xAxis: { min: minTime, max: maxTime }, series: [{ name: 'F0', data: seriesData, markPoint }] } as any)
+      return
+    }
+
     setOption({
       animation: useAnimation,
       backgroundColor: 'transparent',
@@ -145,7 +166,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross', label: { backgroundColor: '#475467' } },
-        formatter: (params: any) => formatF0Tooltip(params, data),
+        formatter: (params: any) => formatF0Tooltip(params, tooltipFrames.current),
       },
       xAxis: {
         type: 'value',
@@ -177,13 +198,7 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
           itemStyle: { color: f0Color },
           markArea: { silent: true, data: buildMarkAreas(zones, zoneColor, isPortrait) },
           markLine: { silent: true, symbol: 'none', data: buildMarkLineData(zones, zoneColor, isPortrait) },
-          markPoint: isPortrait && lastDot ? {
-            silent: true,
-            symbol: 'circle',
-            symbolSize: 7,
-            itemStyle: { color: f0Color, shadowBlur: 12, shadowColor: 'rgba(63, 131, 248, 0.35)' },
-            data: [{ coord: [lastDot.time, lastDot.f0], symbolSize: 7 }],
-          } : undefined,
+          markPoint,
           data: seriesData,
         },
         {
@@ -203,9 +218,6 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
     } as any)
   }
 
-  useEffect(() => {
-    renderChart(frames, cursorTime, isLive, false, isPortrait)
-  }, [isPortrait]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="f0Chart" ref={chartRef} />
 }
