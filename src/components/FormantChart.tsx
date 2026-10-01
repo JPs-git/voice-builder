@@ -75,8 +75,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
   const formantVisible = useAppStore(s => s.formantVisible)
   const { chartRef, setOption, getInstance } = useECharts()
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
-  // Large scatter avoids one graphic per point, but cannot reliably pick points with gaps.
-  const useLargeSymbols = isPortrait && !onFrameClick
+  const hasFrameClick = Boolean(onFrameClick)
   const rafRef = useRef<number | null>(null)
   const isLiveRef = useRef(false)
   const seriesVisibleRef = useRef({ f0: true, f1: true, f2: true })
@@ -90,7 +89,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [frames, isPortrait, useLargeSymbols])
+  }, [frames, isPortrait, hasFrameClick])
 
   useEffect(() => {
     renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
@@ -225,15 +224,22 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
       series: [
         ...keys.map(k => ({
           name: k.toUpperCase(),
-          type: isPortrait ? 'scatter' as const : 'line' as const,
-          large: useLargeSymbols,
-          largeThreshold: 100,
+          type: 'line' as const,
           showSymbol: isPortrait,
-          symbol: 'circle',
+          // Connected samples share the line path; isolated samples still need a visible point.
+          symbol: isPortrait && !hasFrameClick
+            ? (_value: unknown, { dataIndex }: { dataIndex: number }) => {
+              const points = seriesData[k]
+              if (!Number.isFinite(points[dataIndex]?.[1])) return 'none'
+              const hasPrevious = Number.isFinite(points[dataIndex - 1]?.[1])
+              const hasNext = Number.isFinite(points[dataIndex + 1]?.[1])
+              return hasPrevious || hasNext ? 'none' : 'circle'
+            }
+            : 'circle',
           symbolSize: 2,
           connectNulls: false,
           color: palette[k],
-          lineStyle: { color: palette[k], width: isPortrait ? 0 : (k === 'f0' ? 2 : 1.5) },
+          lineStyle: { color: palette[k], width: k === 'f0' ? 2 : 1.5 },
           itemStyle: { color: palette[k], opacity: 1 },
           markArea: visible[k] && currentBands[k] ? { silent: true, data: buildMarkArea(currentBands[k].range, areaColor(k), isPortrait) } : undefined,
           markLine: visible[k] ? buildMarkLine(currentBands[k].range, `${k.toUpperCase()} 目标`, lineColor(k), isPortrait, k === 'f1' ? 'insideEndBottom' : 'insideEndTop') : undefined,
@@ -258,7 +264,7 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
 
   useEffect(() => {
     renderChart(frames, cursorTime, bands, isLiveRef.current, false, isPortrait)
-  }, [isPortrait, useLargeSymbols]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isPortrait, hasFrameClick]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div id="formantChart" ref={chartRef} />
 }

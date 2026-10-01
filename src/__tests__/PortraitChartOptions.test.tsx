@@ -316,19 +316,22 @@ describe('portrait chart options', () => {
     expect(f2.markLine.lineStyle.type).toBe('dashed')
   })
 
-  it('uses the new green/red/blue series colors as dots in portrait', () => {
+  it('draws visible green/red/blue continuous lines in portrait', () => {
     setMatchMedia(true)
     render(<FormantChart />)
     expect(lastOption().color).toEqual(['#12B886', '#F04B6A', '#3F83F8'])
     expect(seriesByName('F0').lineStyle.color).toBe('#12B886')
-    expect(seriesByName('F0').lineStyle.width).toBe(0)
+    expect(seriesByName('F0').type).toBe('line')
+    expect(seriesByName('F0').lineStyle.width).toBeGreaterThan(0)
     expect(seriesByName('F1').lineStyle.color).toBe('#F04B6A')
-    expect(seriesByName('F1').lineStyle.width).toBe(0)
+    expect(seriesByName('F1').type).toBe('line')
+    expect(seriesByName('F1').lineStyle.width).toBeGreaterThan(0)
     expect(seriesByName('F2').lineStyle.color).toBe('#3F83F8')
-    expect(seriesByName('F2').lineStyle.width).toBe(0)
+    expect(seriesByName('F2').type).toBe('line')
+    expect(seriesByName('F2').lineStyle.width).toBeGreaterThan(0)
   })
 
-  it('batches a full portrait window without losing timestamps, gaps or short peaks', () => {
+  it('preserves timestamps, gaps and short peaks in a full portrait line window', () => {
     setMatchMedia(true)
     const frames = Array.from({ length: 1000 }, (_, index) => ({
       time: 20 + index / 100, f0: 220 as number | null,
@@ -341,9 +344,9 @@ describe('portrait chart options', () => {
 
     for (const name of ['F0', 'F1', 'F2']) {
       const series = seriesByName(name)
-      expect(series.type).toBe('scatter')
-      expect(series.large).toBe(true)
-      expect(series.largeThreshold).toBeLessThanOrEqual(frames.length)
+      expect(series.type).toBe('line')
+      expect(series.connectNulls).toBe(false)
+      expect(series.lineStyle.width).toBeGreaterThan(0)
       expect(series.itemStyle.opacity).toBe(1)
       expect(series.data).toHaveLength(1000)
     }
@@ -353,21 +356,39 @@ describe('portrait chart options', () => {
     expect(seriesByName('F1').data[999]).toEqual([29.99, 900])
   })
 
-  it('uses individual points whenever a frame-selection callback is present', () => {
+  it('keeps isolated valid observations visible without markers on connected points', () => {
+    setMatchMedia(true)
+    useAppStore.getState().setFrames([
+      { time: 0.1, f0: 220, f1: 900, f2: 1200 },
+      { time: 0.2, f0: 225, f1: 920, f2: 1250 },
+      { time: 0.3, f0: null, f1: null, f2: null },
+      { time: 0.4, f0: 230, f1: 940, f2: 1300 },
+      { time: 0.5, f0: null, f1: null, f2: null },
+      { time: 0.6, f0: 240, f1: 960, f2: 1350 },
+    ])
+    render(<FormantChart />)
+    const series = seriesByName('F1')
+    expect(series.showSymbol).toBe(true)
+    expect(typeof series.symbol).toBe('function')
+    const symbols = series.data.map((value: unknown, dataIndex: number) => series.symbol(value, { dataIndex }))
+    expect(symbols).toEqual(['none', 'none', 'none', 'circle', 'none', 'circle'])
+  })
+
+  it('keeps all point hit targets whenever a frame-selection callback is present', () => {
     setMatchMedia(true)
     useAppStore.getState().setFrames([
       { time: 0.1, f0: 220, f1: 900, f2: 1200 },
       { time: 0.2, f0: null, f1: null, f2: null },
     ])
     const { rerender } = render(<FormantChart />)
-    expect(seriesByName('F1').large).toBe(true)
+    expect(typeof seriesByName('F1').symbol).toBe('function')
 
     rerender(<FormantChart onFrameClick={() => {}} />)
-    expect(seriesByName('F1').large).toBe(false)
+    expect(seriesByName('F1').symbol).toBe('circle')
     expect(seriesByName('F1').data).toEqual([[0.1, 900], [0.2, null]])
 
     rerender(<FormantChart />)
-    expect(seriesByName('F1').large).toBe(true)
+    expect(typeof seriesByName('F1').symbol).toBe('function')
   })
 
   it('re-renders with portrait options when the viewport crosses the breakpoint', () => {
