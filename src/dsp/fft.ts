@@ -119,3 +119,73 @@ export function fftMagnitudes(signal: Float32Array, fftSize: number): Float32Arr
   }
   return magnitudes
 }
+
+// Reusable in-place complex transform; convention matches complexFft above.
+export class NumericFft {
+  readonly real: Float64Array
+  readonly imag: Float64Array
+  private readonly _reversed: Uint32Array
+  private readonly _cos: Float64Array
+  private readonly _sin: Float64Array
+
+  constructor(readonly size: number) {
+    if (!Number.isInteger(size) || size < 2 || size > 0x40000000 || (size & (size - 1)) !== 0) {
+      throw new RangeError('FFT size must be a power of two greater than one')
+    }
+    this.real = new Float64Array(size)
+    this.imag = new Float64Array(size)
+    this._reversed = new Uint32Array(size)
+    const log2N = Math.log2(size)
+    for (let i = 0; i < size; i++) this._reversed[i] = bitReverse(i, log2N)
+    this._cos = new Float64Array(size / 2)
+    this._sin = new Float64Array(size / 2)
+    for (let i = 0; i < size / 2; i++) {
+      const angle = 2 * Math.PI * i / size
+      this._cos[i] = Math.cos(angle)
+      this._sin[i] = Math.sin(angle)
+    }
+  }
+
+  transform(inverse = false): void {
+    const { real, imag, size: N } = this
+    if (inverse) {
+      for (let i = 0; i < N; i++) imag[i] = -imag[i]
+    }
+    for (let i = 0; i < N; i++) {
+      const j = this._reversed[i]
+      if (i < j) {
+        const r = real[i]
+        const im = imag[i]
+        real[i] = real[j]
+        imag[i] = imag[j]
+        real[j] = r
+        imag[j] = im
+      }
+    }
+    for (let size = 2; size <= N; size *= 2) {
+      const half = size / 2
+      const stride = N / size
+      for (let i = 0; i < N; i += size) {
+        for (let j = 0; j < half; j++) {
+          const a = i + j
+          const b = a + half
+          const t = j * stride
+          const oddReal = real[b] * this._cos[t] - imag[b] * this._sin[t]
+          const oddImag = real[b] * this._sin[t] + imag[b] * this._cos[t]
+          const evenReal = real[a]
+          const evenImag = imag[a]
+          real[a] = evenReal + oddReal
+          imag[a] = evenImag + oddImag
+          real[b] = evenReal - oddReal
+          imag[b] = evenImag - oddImag
+        }
+      }
+    }
+    if (inverse) {
+      for (let i = 0; i < N; i++) {
+        real[i] /= N
+        imag[i] = -imag[i] / N
+      }
+    }
+  }
+}

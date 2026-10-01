@@ -1,5 +1,4 @@
-import { Complex } from './complex'
-import { complexFft, ifft } from './fft'
+import { NumericFft } from './fft'
 import { detectPitch } from './lpc'
 import type { FormantPeak } from './lpc'
 import { applyHamming, applyPreEmphasis } from './signal-utils'
@@ -10,38 +9,38 @@ const MIN_FORMANT_FREQ = 50
 const MAX_FORMANT_FREQ = 3500
 const BW_DROP = 0.5 * Math.log(2)
 
+// Keep a single workspace; extraction is synchronous and the returned envelope owns its storage.
+let cepstralWorkspace: { fft: NumericFft; logMag: Float32Array } | undefined
+
 function cepstralEnvelope(signal: Float32Array, fftSize: number, lifterCutoff: number): Float32Array {
-  const n = signal.length
   const N = fftSize
+  if (!cepstralWorkspace || cepstralWorkspace.fft.size !== N) {
+    cepstralWorkspace = { fft: new NumericFft(N), logMag: new Float32Array(N) }
+  }
+  const { fft, logMag } = cepstralWorkspace
+  const { real, imag } = fft
+  real.fill(0)
+  imag.fill(0)
+  real.set(signal)
+  fft.transform()
 
-  const data: Complex[] = new Array(N)
-  for (let i = 0; i < n; i++) data[i] = new Complex(signal[i], 0)
-  for (let i = n; i < N; i++) data[i] = new Complex(0, 0)
-  complexFft(data)
-
-  const logMag = new Float32Array(N)
   for (let i = 0; i < N; i++) {
-    const mag = Math.sqrt(data[i].re * data[i].re + data[i].im * data[i].im)
+    const mag = Math.sqrt(real[i] * real[i] + imag[i] * imag[i])
+    // Preserve the original Float32 rounding before the inverse transform.
     logMag[i] = Math.log(Math.max(mag, 1e-30))
   }
+  real.set(logMag)
+  imag.fill(0)
+  fft.transform(true)
 
-  const cepstrum: Complex[] = new Array(N)
-  for (let i = 0; i < N; i++) cepstrum[i] = new Complex(logMag[i], 0)
-  ifft(cepstrum)
+  real.fill(0, lifterCutoff + 1, N - lifterCutoff)
+  imag.fill(0, lifterCutoff + 1, N - lifterCutoff)
+  fft.transform()
 
-  for (let i = lifterCutoff + 1; i < N - lifterCutoff; i++) {
-    cepstrum[i] = new Complex(0, 0)
-  }
-
-  complexFft(cepstrum)
-
-  const bins = N / 2 + 1
-  const envelope = new Float32Array(bins)
-  for (let i = 0; i < bins; i++) envelope[i] = cepstrum[i].re
-
+  const envelope = new Float32Array(N / 2 + 1)
+  for (let i = 0; i < envelope.length; i++) envelope[i] = real[i]
   return envelope
 }
-
 function parabolicInterp(y0: number, y1: number, y2: number): [number, number] {
   const a = (y0 + y2 - 2 * y1) / 2
   const b = (y2 - y0) / 2
