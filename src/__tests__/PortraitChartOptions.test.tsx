@@ -328,6 +328,48 @@ describe('portrait chart options', () => {
     expect(seriesByName('F2').lineStyle.width).toBe(0)
   })
 
+  it('batches a full portrait window without losing timestamps, gaps or short peaks', () => {
+    setMatchMedia(true)
+    const frames = Array.from({ length: 1000 }, (_, index) => ({
+      time: 20 + index / 100, f0: 220 as number | null,
+      f1: 900 as number | null, f2: 1200 as number | null,
+    }))
+    frames[499] = { time: 24.99, f0: null, f1: 3450, f2: null }
+    frames[999] = { time: 29.99, f0: 220, f1: 900, f2: 1200 }
+    useAppStore.getState().setFrames(frames)
+    render(<FormantChart />)
+
+    for (const name of ['F0', 'F1', 'F2']) {
+      const series = seriesByName(name)
+      expect(series.type).toBe('scatter')
+      expect(series.large).toBe(true)
+      expect(series.largeThreshold).toBeLessThanOrEqual(frames.length)
+      expect(series.itemStyle.opacity).toBe(1)
+      expect(series.data).toHaveLength(1000)
+    }
+    expect(seriesByName('F0').data[499]).toEqual([24.99, null])
+    expect(seriesByName('F1').data[499]).toEqual([24.99, 3450])
+    expect(seriesByName('F2').data[499]).toEqual([24.99, null])
+    expect(seriesByName('F1').data[999]).toEqual([29.99, 900])
+  })
+
+  it('uses individual points whenever a frame-selection callback is present', () => {
+    setMatchMedia(true)
+    useAppStore.getState().setFrames([
+      { time: 0.1, f0: 220, f1: 900, f2: 1200 },
+      { time: 0.2, f0: null, f1: null, f2: null },
+    ])
+    const { rerender } = render(<FormantChart />)
+    expect(seriesByName('F1').large).toBe(true)
+
+    rerender(<FormantChart onFrameClick={() => {}} />)
+    expect(seriesByName('F1').large).toBe(false)
+    expect(seriesByName('F1').data).toEqual([[0.1, 900], [0.2, null]])
+
+    rerender(<FormantChart />)
+    expect(seriesByName('F1').large).toBe(true)
+  })
+
   it('re-renders with portrait options when the viewport crosses the breakpoint', () => {
     const resize = installMatchMedia(false)
     render(<F0Chart />)
@@ -347,6 +389,13 @@ describe('portrait chart options', () => {
     resize(true)
     expect(lastOption().grid.left).toBe(42)
     expect(lastOption().xAxis.axisLabel.show).toBe(false)
+
+    resize(false)
+    expect(lastOption().grid.left).toBe(72)
+    for (const name of ['F0', 'F1', 'F2']) {
+      expect(seriesByName(name).type).toBe('line')
+      expect(seriesByName(name).lineStyle.width).toBeGreaterThan(0)
+    }
   })
 
   it('marks the latest F0 sample with a 6-8px dot', () => {
