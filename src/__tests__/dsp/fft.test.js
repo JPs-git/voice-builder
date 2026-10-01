@@ -56,3 +56,55 @@ describe('fftMagnitudes with 512-FFT (400-sample input)', () => {
     }
   })
 })
+import { vi } from 'vitest'
+import { complexFft } from '../../dsp/fft'
+import { Complex } from '../../dsp/complex'
+
+function referenceMagnitudes(signal, size) {
+  const data = Array.from({ length: size }, () => new Complex(0, 0))
+  let sum = 0
+  for (let i = 0; i < signal.length; i++) {
+    const w = .5 * (1 - Math.cos(2 * Math.PI * i / (signal.length - 1)))
+    data[i] = new Complex(signal[i] * w, 0)
+    sum += w
+  }
+  complexFft(data)
+  return Float32Array.from(data.slice(0, size / 2 + 1),
+    x => 20 * Math.log10(Math.max(Math.sqrt(x.re * x.re + x.im * x.im) / sum, 1e-12)))
+}
+
+describe('FFT optimization contract', () => {
+  it('preserves every bin through different sizes and successive frames', () => {
+    let seed = 123
+    for (const [size, length] of [[2048, 400], [512, 400], [2048, 256], [2048, 400]]) {
+      const signal = Float32Array.from({ length }, () => {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
+        return seed / 2 ** 31 - 1
+      })
+      const before = signal.slice()
+      const actual = fftMagnitudes(signal, size)
+      const expected = referenceMagnitudes(signal, size)
+      assert.equal(actual.length, expected.length)
+      for (let i = 0; i < actual.length; i++) assert.ok(Math.abs(actual[i] - expected[i]) < 1e-4)
+      assert.deepEqual(signal, before)
+      const saved = actual.slice()
+      const silent = fftMagnitudes(new Float32Array(length), size)
+      assert.deepEqual(actual, saved)
+      for (const value of silent) assert.equal(value, -240)
+    }
+  })
+
+  it('does not repeat trigonometry for a warmed spectrum shape', () => {
+    const signal = generateSine(220, 16000, 400)
+    fftMagnitudes(signal, 2048)
+    const sin = vi.spyOn(Math, 'sin')
+    const cos = vi.spyOn(Math, 'cos')
+    try {
+      fftMagnitudes(signal, 2048)
+      assert.equal(sin.mock.calls.length + cos.mock.calls.length, 0)
+    } finally {
+      sin.mockRestore()
+      cos.mockRestore()
+    }
+  })
+})
