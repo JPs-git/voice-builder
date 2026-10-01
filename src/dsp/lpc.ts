@@ -263,6 +263,7 @@ export function extractFormants(
   signal: Float32Array,
   sampleRate: number,
   maxFormants: number = 5,
+  knownF0?: number | null,
 ): { f0: number | null; formants: FormantPeak[] } {
   const order = Math.min(16, Math.floor(signal.length / 3), Math.floor(sampleRate / 1000 + 4))
 
@@ -273,6 +274,6 @@ export function extractFormants(
   const a = levinsonDurbin(r, order)
   const roots = findRoots(a)
   const formants = rootsToFormants(roots, sampleRate)
-  const f0 = detectPitch(signal, sampleRate)
+  const f0 = knownF0 === undefined ? detectPitch(signal, sampleRate) : knownF0
   return { f0, formants: formants.slice(0, maxFormants) }
 }

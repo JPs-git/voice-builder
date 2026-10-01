@@ -138,6 +138,7 @@ export function extractFormantsCepstral(
   signal: Float32Array,
   sampleRate: number,
   maxFormants: number = 5,
+  knownF0?: number | null,
 ): { f0: number | null; formants: FormantPeak[] } {
   const emphasized = applyPreEmphasis(signal)
   const windowed = applyHamming(emphasized)
@@ -149,6 +150,6 @@ export function extractFormantsCepstral(
     return { freq: p.freq, bw }
   })
 
-  const f0 = detectPitch(signal, sampleRate)
+  const f0 = knownF0 === undefined ? detectPitch(signal, sampleRate) : knownF0
   return { f0, formants }
 }
