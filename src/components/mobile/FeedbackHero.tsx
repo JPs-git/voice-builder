@@ -50,10 +50,10 @@ export function FeedbackHero() {
         role="group"
         data-register={register}
         data-testid="hero-badge"
-        aria-label={`声区：${register === 'unvoiced' ? '等待声音' : VOICE_REGISTER_LABELS[register]}`}
+        aria-label={`声区：${register === 'unvoiced' ? '暂无有效数据' : VOICE_REGISTER_LABELS[register]}`}
       >
         <span className={styles.badgeDot} aria-hidden="true" />
-        {register === 'unvoiced' ? '等待声音' : VOICE_REGISTER_LABELS[register]}
+        {register === 'unvoiced' ? '--' : VOICE_REGISTER_LABELS[register]}
       </span>
 
       {visibleKeys.map(key => {
@@ -77,8 +77,8 @@ export function FeedbackHero() {
           <span className={styles.number} data-testid={key === 'f0' ? 'hero-f0' : undefined}>
             {text}
           </span>
-          <span className={styles.direction} aria-hidden="true">{statusGlyph(status)}</span>
           <span className={styles.unit}>Hz</span>
+          <span className={styles.direction} aria-hidden="true">{statusGlyph(status)}</span>
         </span>
         )
       })}

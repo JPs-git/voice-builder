@@ -30,13 +30,13 @@
 | chest | 真声 |
 | mixed | 混声 |
 | falsetto | 假声 |
-| unvoiced、null、undefined，或没有 frame | 等待声音 |
+| unvoiced、null、undefined，或没有 frame | -- |
 
 读取算法已有结果，不新增置信度阈值或 F0 推断规则。声区不依赖指标是否显示，也不依赖目标命中：全部指标隐藏后，仍显示当前声区。有效声区统一使用信息色背景 `var(--info-soft)` 与文字 `#175CD3`；等待状态使用中性灰，不用颜色评价某种声区好坏。
 
 ### 各指标状态
 
-保留 F0/F1/F2 标签现有绿/红/蓝身份颜色。改变数字与箭头颜色，Hz 单位保持现有中性色；箭头放在对应数值后、单位前。
+保留 F0/F1/F2 标签现有绿/红/蓝身份颜色。改变数字与箭头颜色，Hz 单位保持现有中性色；箭头放在对应数值后、单位后。
 
 | 条件 | 数字 | 箭头 | 数字及箭头颜色 |
 |---|---|---|---|
@@ -51,9 +51,9 @@
 
 ### 布局与连续性
 
-声区和每个指标从同一最新帧读取。切换预设或编辑目标后立即重新比较；隐藏的指标不占列；停止录音保留最后结果，清空恢复等待和占位符。
+声区和每个指标从同一最新帧读取。切换预设或编辑目标后立即重新比较；隐藏的指标不占列；停止录音保留最后结果，清空后声区和数值恢复占位符。
 
-保留现有单行尺寸；给箭头预留固定宽度，避免状态变化引发数字跳动。以 320、360、390、768 CSS px 验证，最大四位数、三个箭头和“等待声音”状态均不截断关键内容。
+保留现有单行尺寸；给箭头预留固定宽度，避免状态变化引发数字跳动。以 320、360、390、768 CSS px 验证，最大四位数、三个箭头和“--”状态均不截断关键内容。
 
 ## Global Constraints
 
@@ -87,9 +87,9 @@
 
 ### Task 1: 用现有声区结果替换整体徽标
 
-**Interfaces:** 新增 `VOICE_REGISTER_LABELS: Readonly<Record<VoiceRegister, string>>`，值为 chest→真声、mixed→混声、falsetto→假声、unvoiced→—。桌面消费原样名称；移动端对 unvoiced 及缺失值显示等待声音。保留 `hero-badge` 定位，使用 `data-register` 区分四态，移除旧 resolveBadge、Badge 类型及对应汇总逻辑。
+**Interfaces:** 新增 `VOICE_REGISTER_LABELS: Readonly<Record<VoiceRegister, string>>`，值为 chest→真声、mixed→混声、falsetto→假声、unvoiced→—。桌面消费原样名称；移动端对 unvoiced 及缺失值显示--。保留 `hero-badge` 定位，使用 `data-register` 区分四态，移除旧 resolveBadge、Badge 类型及对应汇总逻辑。
 
-- [x] 先改 FeedbackHero 测试：用 `it.each` 输入 chest/mixed/falsetto/unvoiced/undefined，断言徽标分别显示真声/混声/假声/等待声音/等待声音；包含无 frame 用例。
+- [x] 先改 FeedbackHero 测试：用 `it.each` 输入 chest/mixed/falsetto/unvoiced/undefined，断言徽标分别显示真声/混声/假声/--/--；包含无 frame 用例。
 - [x] 增加两条可见行为断言：`register='chest'` 且 F0 偏高时仍显示真声；隐藏 F0/F1/F2 后仍显示真声。
 - [x] 运行 `npm test -- --project unit src/__tests__/FeedbackHero.test.tsx`，确认新徽标测试因旧行为失败。
 - [x] 新建名称映射、更新两端引用和移动端徽标；CSS 将 `data-tone` 的目标命中样式改为 `data-register` 的声区样式。未知/缺失结果按 unvoiced 处理，不改变桌面缺失值显示。
@@ -113,7 +113,7 @@
 
 **Interfaces:** 复用 Task 1、2 的 DOM 状态及现有 store/shell，无新增产品接口。
 
-- [x] 在 layoutShells 的既有真实组件测试中加入竖屏有结果→清空→等待声音/-- 的行为断言；横竖切换后同一帧的频率及声区保持对应。若现有测试 mock 了组件，使用实际 FeedbackHero，不对 mock 本身做断言。
+- [x] 在 layoutShells 的既有真实组件测试中加入竖屏有结果→清空→声区和数值占位符 的行为断言；横竖切换后同一帧的频率及声区保持对应。若现有测试 mock 了组件，使用实际 FeedbackHero，不对 mock 本身做断言。
 - [x] 先运行该测试并检查覆盖是否有效，再按实际行为完善 Task 1、2；无需专门测试文案源码或常量定义。
 - [x] 更新 docs/ui-design-portrait.md 的实时反馈栏规范：声区独立展示、箭头含义、四种数字颜色、缺失值及可访问性。
 - [x] 执行 `npm test`、`npm run build`、`npx tsc --noEmit`、`git diff --check`；要求退出码均为 0，记录既有警告。
@@ -124,3 +124,9 @@
 ## 交付与执行边界
 
 本计划经用户审核后已在当前会话顺序执行。全量 399 项测试、构建、类型检查和差异检查通过；独立代码审查未发现阻塞问题。已用本地合成夹具验证 320/360/390/768px 的四位数、方向箭头、实际颜色、目标编辑、隐藏列和清空，并验证桌面反馈。集成清空测试位于 AppShellPortrait.test.tsx（该文件使用真实 useToolbar），布局切换测试位于 layoutShells.test.tsx。创建 PR、合并及清理 worktree 按后续用户指令进行。
+
+## 用户审核后的视觉调整（2026-10-14）
+
+- 箭头移到 Hz 后，显示顺序为数值、Hz、箭头。
+- 无声区结果时显示 --；可访问名称明确为声区暂无有效数据。
+- F0/F1/F2 标签与数值字重统一加重至 700，Hz 保留中性色和字重 500。

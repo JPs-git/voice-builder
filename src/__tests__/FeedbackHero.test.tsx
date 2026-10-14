@@ -33,9 +33,10 @@ describe('FeedbackHero', () => {
     useAppStore.getState().reset()
   })
 
-  it('shows a waiting badge and a placeholder before any frame arrives', () => {
+  it('shows a register placeholder before any frame arrives', () => {
     render(<FeedbackHero />)
-    expect(screen.getByTestId('hero-badge').textContent).toBe('等待声音')
+    expect(screen.getByTestId('hero-badge').textContent).toBe('--')
+    expect(screen.getByLabelText('声区：暂无有效数据')).toBeTruthy()
     expect(screen.getByTestId('hero-f0').textContent).toBe('--')
   })
 
@@ -49,9 +50,9 @@ describe('FeedbackHero', () => {
     ['chest', '真声'],
     ['mixed', '混声'],
     ['falsetto', '假声'],
-    ['unvoiced', '等待声音'],
-    [null, '等待声音'],
-    [undefined, '等待声音'],
+    ['unvoiced', '--'],
+    [null, '--'],
+    [undefined, '--'],
   ] as const)('shows the algorithm register %s as %s', (register, label) => {
     setFrame(240, 900, 1200, register)
     render(<FeedbackHero />)
@@ -129,6 +130,8 @@ describe('FeedbackHero', () => {
     expect(hit.getAttribute('data-status')).toBe('hit')
     expect(within(high).getByText('↑').getAttribute('aria-hidden')).toBe('true')
     expect(within(low).getByText('↓').getAttribute('aria-hidden')).toBe('true')
+    expect(within(high).getByText('Hz').nextElementSibling).toBe(within(high).getByText('↑'))
+    expect(within(low).getByText('Hz').nextElementSibling).toBe(within(low).getByText('↓'))
     expect(hit.textContent).not.toMatch(/[↑↓✓]/)
     expect(screen.getByLabelText('F0 300 Hz，高于目标范围')).toBe(high)
     expect(screen.getByLabelText('F1 700 Hz，低于目标范围')).toBe(low)

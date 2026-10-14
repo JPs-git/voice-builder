@@ -84,7 +84,7 @@ describe('AppShell toolbar density', () => {
     expect(screen.getByTestId('hero-badge').textContent).toBe('混声')
     expect(screen.getByTestId('hero-col-f0').textContent).toContain('↑')
     fireEvent.click(screen.getByRole('button', { name: '清除图谱' }))
-    expect(screen.getByTestId('hero-badge').textContent).toBe('等待声音')
+    expect(screen.getByTestId('hero-badge').textContent).toBe('--')
     expect(screen.getByTestId('hero-f0').textContent).toBe('--')
     expect(screen.getByTestId('hero-col-f0').textContent).not.toMatch(/[↑↓]/)
     expect(useAppStore.getState().frames).toEqual([])
