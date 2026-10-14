@@ -3,7 +3,7 @@ import { useECharts } from '../hooks/useECharts'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame } from '../types'
-import { F0_REFERENCE_ZONES } from '../config/analysisRanges'
+import { F0_CHART_RANGE, F0_REFERENCE_ZONES } from '../config/analysisRanges'
 
 const WINDOW = 10
 
@@ -175,8 +175,8 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
       },
       yAxis: {
         type: 'value',
-        min: 0,
-        max: 500,
+        min: F0_CHART_RANGE.min,
+        max: F0_CHART_RANGE.max,
         ...(isPortrait ? { interval: 100 } : {}),
         axisLine: { ...(isPortrait ? { show: true, onZero: false } : {}), lineStyle: { color: isPortrait ? '#B8C4D1' : '#D0D5DD' } },
         axisLabel: { color: isPortrait ? '#7D8DA8' : '#667085', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => `${v} Hz` },

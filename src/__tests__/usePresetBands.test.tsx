@@ -52,12 +52,14 @@ describe('usePresetBands', () => {
     expect(override?.f0[0]).toBe(250)
   })
 
-  it('clamps F0 above the detection ceiling and raises a toast', () => {
+  it('keeps an input draft until blur then clamps F0 to the chart ceiling', () => {
     mount()
     act(() => {
       api!.onInputChange('f0', 1, '1100')
     })
-    expect(useAppStore.getState().bands.f0.range[1]).toBe(1000)
+    expect(useAppStore.getState().bands.f0.range[1]).toBe(280)
+    act(() => api!.onCommit('f0', 1))
+    expect(useAppStore.getState().bands.f0.range[1]).toBe(500)
     expect(useToastStore.getState().toasts).toHaveLength(1)
   })
 
@@ -143,12 +145,12 @@ describe('usePresetBands', () => {
 
   it('onInputKeyDown commits on Enter', () => {
     mount()
-    const blur = vi.fn()
+    const blur = vi.fn(() => api!.onCommit('f0', 0))
     act(() => {
       api!.onInputChange('f0', 0, '260')
     })
     act(() => {
-      api!.onInputKeyDown('f0', 0)({ key: 'Enter', target: { blur } } as never)
+      api!.onInputKeyDown('f0', 0)({ key: 'Enter', preventDefault: vi.fn(), currentTarget: { blur, closest: () => null } } as never)
     })
     expect(useAppStore.getState().bands.f0.range[0]).toBe(260)
     expect(blur).toHaveBeenCalled()

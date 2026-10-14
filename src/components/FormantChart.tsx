@@ -3,9 +3,9 @@ import { useECharts } from '../hooks/useECharts'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame, TargetBands } from '../types'
+import { FORMANT_CHART_RANGE } from '../config/analysisRanges'
 
 const WINDOW = 10
-const FREQ_MAX = 3500
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -24,7 +24,7 @@ const PORTRAIT_COLORS = {
   f2: '#3F83F8',
 }
 
-const SPARSE_TICKS = [0, 1000, 2000, 3000, 3500]
+const SPARSE_TICKS = [FORMANT_CHART_RANGE.min, 1000, 2000, 3000, FORMANT_CHART_RANGE.max]
 
 const PORTRAIT_MARK_AREA: Record<'f0' | 'f1' | 'f2', string> = {
   f0: 'rgba(18, 184, 134, 0.08)',
@@ -205,8 +205,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
       },
       yAxis: isPortrait ? {
         type: 'value',
-        min: 0,
-        max: FREQ_MAX,
+        min: FORMANT_CHART_RANGE.min,
+        max: FORMANT_CHART_RANGE.max,
         interval: 500,
         axisLine: { show: true, onZero: false, lineStyle: { color: '#B8C4D1' } },
         axisLabel: { color: '#7D8DA8', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => SPARSE_TICKS.some(t => Math.abs(v - t) < 1) ? `${Math.round(v)} Hz` : '' },
@@ -214,8 +214,8 @@ export function FormantChart({ cursorTime = -1, onFrameClick }: FormantChartProp
         splitLine: { lineStyle: { color: '#EDF2F7' } },
       } : {
         type: 'value',
-        min: 0,
-        max: FREQ_MAX,
+        min: FORMANT_CHART_RANGE.min,
+        max: FORMANT_CHART_RANGE.max,
         axisLine: { lineStyle: { color: '#D0D5DD' } },
         axisLabel: { color: '#667085', fontSize: isPortrait ? 9 : 11, formatter: (v: number) => `${v} Hz` },
         splitLine: { lineStyle: { color: '#F2F4F7' } },

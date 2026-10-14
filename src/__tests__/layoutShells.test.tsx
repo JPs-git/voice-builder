@@ -196,9 +196,9 @@ describe('portrait analysis structure', () => {
   it('opens target settings from the dock and closes them', () => {
     renderInsideShell(<AnalysisPage />)
     fireEvent.click(screen.getByTestId('dock-goal'))
-    expect(screen.getByLabelText('选择元音预设')).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: '训练目标' })).toBeTruthy()
     fireEvent.click(screen.getByLabelText('关闭'))
-    expect(screen.queryByLabelText('选择元音预设')).toBeNull()
+    expect(screen.queryByRole('dialog', { name: '训练目标' })).toBeNull()
   })
 
   it('routes clear and playback through shell callbacks', () => {

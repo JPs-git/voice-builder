@@ -2,8 +2,10 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { AppConfig, TargetBands, AnalysisFrame, AnalysisStats, FormantSeries, FormantVisibility, PresetOverride } from '../types'
 import { DEFAULT_CONFIG, VOWEL_PRESETS } from '../types'
+import { normalizeTargetBands } from '../config/targetBandRules'
 
 const WINDOW_FRAMES = 1000
+export const PRESET_MIGRATION_BACKUP_KEY = 'voicebuilder-presets-before-target-rules-v1'
 
 interface AppState {
   config: AppConfig
@@ -44,10 +46,35 @@ function resolveBands(name: string, overrides: PresetOverride[]): TargetBands {
   const preset = VOWEL_PRESETS[name]
   if (!preset) return DEFAULT_BANDS
   const o = overrides.find(x => x.key === name)
-  return {
-    f0: { range: o?.f0 ?? preset.f0, color: DEFAULT_BANDS.f0.color },
-    f1: { range: o?.f1 ?? preset.f1, color: DEFAULT_BANDS.f1.color },
-    f2: { range: o?.f2 ?? preset.f2, color: DEFAULT_BANDS.f2.color },
+  const rangeOrDefault = (range: unknown, fallback: [number, number]): [number, number] =>
+    Array.isArray(range) && range.length === 2 && range.every(value => typeof value === 'number' && Number.isFinite(value))
+      ? range as [number, number] : fallback
+  return normalizeTargetBands({
+    f0: { range: rangeOrDefault(o?.f0, preset.f0), color: DEFAULT_BANDS.f0.color },
+    f1: { range: rangeOrDefault(o?.f1, preset.f1), color: DEFAULT_BANDS.f1.color },
+    f2: { range: rangeOrDefault(o?.f2, preset.f2), color: DEFAULT_BANDS.f2.color },
+  })
+}
+
+function normalizeOverrides(value: unknown): PresetOverride[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is PresetOverride =>
+    item != null && typeof item.key === 'string' && Object.prototype.hasOwnProperty.call(VOWEL_PRESETS, item.key),
+  ).map(override => {
+    const bands = resolveBands(override.key, [override])
+    return { key: override.key, f0: bands.f0.range, f1: bands.f1.range, f2: bands.f2.range }
+  })
+}
+
+function preserveMigrationBackup(original: unknown, normalized: PresetOverride[]) {
+  if (JSON.stringify(original) === JSON.stringify(normalized)) return
+  try {
+    const raw = localStorage.getItem('voicebuilder-presets')
+    if (raw && localStorage.getItem(PRESET_MIGRATION_BACKUP_KEY) === null) {
+      localStorage.setItem(PRESET_MIGRATION_BACKUP_KEY, raw)
+    }
+  } catch {
+    // A storage quota or privacy restriction must not prevent the app from loading.
   }
 }
 
@@ -56,7 +83,10 @@ function loadStoredOverrides(): PresetOverride[] {
     const raw = localStorage.getItem('voicebuilder-presets')
     if (!raw) return []
     const data = JSON.parse(raw)
-    return data?.state?.presetOverrides ?? []
+    const original = data?.state?.presetOverrides
+    const normalized = normalizeOverrides(original)
+    preserveMigrationBackup(original, normalized)
+    return normalized
   } catch {
     return []
   }
@@ -92,7 +122,7 @@ export const useAppStore = create<AppStore>()(
             next[k] = { ...next[k], range: r }
           }
         }
-        return { bands: next }
+        return { bands: normalizeTargetBands(next) }
       }),
 
       setActivePreset: (name) => set({ activePreset: name }),
@@ -104,7 +134,8 @@ export const useAppStore = create<AppStore>()(
 
       savePresetOverride: (key, f0, f1, f2) => set((state) => {
         const idx = state.presetOverrides.findIndex(o => o.key === key)
-        const override: PresetOverride = { key, f0, f1, f2 }
+        const normalized = resolveBands(key, [{ key, f0, f1, f2 }])
+        const override: PresetOverride = { key, f0: normalized.f0.range, f1: normalized.f1.range, f2: normalized.f2.range }
         const next = [...state.presetOverrides]
         if (idx >= 0) next[idx] = override
         else next.push(override)
@@ -158,11 +189,11 @@ export const useAppStore = create<AppStore>()(
       partialize: (state) => ({
         presetOverrides: state.presetOverrides,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          const { activePreset, presetOverrides } = state
-          useAppStore.setState({ bands: resolveBands(activePreset, presetOverrides) })
-        }
+      merge: (persisted, current) => {
+        const original = (persisted as Partial<AppState> | undefined)?.presetOverrides
+        const presetOverrides = normalizeOverrides(original)
+        preserveMigrationBackup(original, presetOverrides)
+        return { ...current, presetOverrides, bands: resolveBands(current.activePreset, presetOverrides) }
       },
     }
   )
