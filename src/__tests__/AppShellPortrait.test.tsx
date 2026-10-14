@@ -81,10 +81,10 @@ describe('AppShell toolbar density', () => {
       { time: 1, f0: 300, f1: 700, f2: 1200, register: 'mixed' },
     ])
     renderShell(<AnalysisPage />)
-    expect(screen.getByTestId('hero-badge').textContent).toBe('混声')
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
     expect(screen.getByTestId('hero-col-f0').textContent).toContain('↑')
     fireEvent.click(screen.getByRole('button', { name: '清除图谱' }))
-    expect(screen.getByTestId('hero-badge').textContent).toBe('--')
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
     expect(screen.getByTestId('hero-f0').textContent).toBe('--')
     expect(screen.getByTestId('hero-col-f0').textContent).not.toMatch(/[↑↓]/)
     expect(useAppStore.getState().frames).toEqual([])

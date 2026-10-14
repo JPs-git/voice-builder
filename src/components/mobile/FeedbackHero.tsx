@@ -1,6 +1,5 @@
 import { useAppStore } from '../../store/appStore'
 import { getFormantStatus } from '../../feedback/status'
-import { VOICE_REGISTER_LABELS } from '../../feedback/register'
 import type { FormantStatus } from '../../feedback/status'
 import type { FormantSeries } from '../../types'
 import styles from './FeedbackHero.module.css'
@@ -33,10 +32,6 @@ export function FeedbackHero() {
   const formantVisible = useAppStore(s => s.formantVisible)
 
   const visibleKeys = KEYS.filter(key => formantVisible[key])
-  const detectedRegister = latestFrame?.register
-  const register = detectedRegister === 'chest' || detectedRegister === 'mixed' || detectedRegister === 'falsetto'
-    ? detectedRegister
-    : 'unvoiced'
 
   return (
     <section className={styles.card} aria-label="实时反馈">
@@ -46,17 +41,6 @@ export function FeedbackHero() {
         <i />
       </span>
       <span className={styles.title}>实时反馈</span>
-      <span
-        className={styles.badge}
-        role="group"
-        data-register={register}
-        data-testid="hero-badge"
-        aria-label={`声区：${register === 'unvoiced' ? '暂无有效数据' : VOICE_REGISTER_LABELS[register]}`}
-      >
-        <span className={styles.badgeDot} aria-hidden="true" />
-        {register === 'unvoiced' ? '--' : VOICE_REGISTER_LABELS[register]}
-      </span>
-
       {visibleKeys.map(key => {
         const value = latestFrame?.[key]
         const valid = value != null && Number.isFinite(value) && value > 0

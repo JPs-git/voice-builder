@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking. 本任务建议在当前会话内顺序实施。
 
-**Goal:** 竖屏反馈栏用声区徽标展示真声/混声/假声，各频率指标通过独立箭头和数值颜色表达与目标区间的关系。
+**Goal:** 竖屏反馈栏通过数值、单位颜色与箭头或对勾表达 F0/F1/F2 与目标区间的关系。
+
+**最新有效范围（用户后续调整）：** 竖屏声区徽章已按用户要求移除，不显示名称或声区占位符。下文与声区徽标有关的设计和已完成任务仅保留为实施历史；当前界面以 `docs/ui-design-portrait.md` 为准。频率状态色、Hz 后的箭头或对勾、无效值仅显示 `--` 的规则继续有效。
 
 **Architecture:** 继续读取同一 Zustand store 的 latestFrame、bands、formantVisible。声区直接使用已有 register 结果；频率方向复用 getFormantStatus，展示前统一排除无效值。共享声区名称映射，竖屏组件负责展示规则和样式。
 

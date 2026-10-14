@@ -34,34 +34,6 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
-.badge {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 0 6px;
-  height: 28px;
-  box-sizing: border-box;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.badgeDot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
-.badge[data-register="unvoiced"] {
-  background: #F2F4F7;
-  color: var(--text-mute);
-}
-.badge[data-register="chest"] { background: var(--hit-soft); color: var(--hit); }
-.badge[data-register="mixed"] { background: var(--warn-soft); color: var(--warn); }
-.badge[data-register="falsetto"] { background: var(--primary-soft); color: var(--primary); }
 .value {
   display: inline-flex;
   align-items: baseline;
@@ -89,7 +61,6 @@
 .heroIcon i:nth-child(2) { height: 15px; }
 .heroIcon i:nth-child(3) { height: 11px; }
 .title { font-size: 11px; color: #0a2344; }
-.badge { height: 23px; font-size: 9px; padding: 0 6px; gap: 4px; }
 .value { flex: 1; min-width: 0; gap: 2px; padding-left: 5px; border-left: 1px solid #e0e8f3; font-size: 9px; font-weight: 700; }
 .valueKey { font-size: 9px; font-weight: 700; padding: 3px 2px; border-radius: 5px; background: color-mix(in srgb, currentColor 5%, transparent); }
 .value[data-status="high"], .value[data-status="low"] { --metric-value-color: var(--warn); }

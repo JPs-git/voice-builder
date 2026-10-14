@@ -33,10 +33,9 @@ describe('FeedbackHero', () => {
     useAppStore.getState().reset()
   })
 
-  it('shows a register placeholder before any frame arrives', () => {
+  it('shows only frequency placeholders before any frame arrives', () => {
     render(<FeedbackHero />)
-    expect(screen.getByTestId('hero-badge').textContent).toBe('--')
-    expect(screen.getByLabelText('声区：暂无有效数据')).toBeTruthy()
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
     expect(screen.getByTestId('hero-f0').textContent).toBe('--')
     expect(screen.queryAllByText('Hz')).toHaveLength(0)
   })
@@ -47,33 +46,20 @@ describe('FeedbackHero', () => {
     expect(screen.getByTestId('hero-f0').textContent).toBe('245')
   })
 
-  it.each([
-    ['chest', '真声'],
-    ['mixed', '混声'],
-    ['falsetto', '假声'],
-    ['unvoiced', '--'],
-    [null, '--'],
-    [undefined, '--'],
-  ] as const)('shows the algorithm register %s as %s', (register, label) => {
+  it.each(['chest', 'mixed', 'falsetto', 'unvoiced', null, undefined] as const)(
+    'does not display a register badge for %s', register => {
     setFrame(240, 900, 1200, register)
     render(<FeedbackHero />)
-    const badge = screen.getByTestId('hero-badge')
-    expect(badge.textContent).toBe(label)
-    expect(badge.getAttribute('data-register')).toBe(register ?? 'unvoiced')
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
+    expect(screen.queryByText(/^(真声|混声|假声)$/)).toBeNull()
   })
 
-  it('keeps the register badge independent of target deviations', () => {
-    setFrame(300, 700, 1200, 'chest')
-    render(<FeedbackHero />)
-    expect(screen.getByTestId('hero-badge').textContent).toBe('真声')
-  })
-
-  it('keeps the register when every frequency series is hidden', () => {
+  it('hides all requested frequency columns', () => {
     for (const key of ['f0', 'f1', 'f2'] as const) useAppStore.getState().toggleFormantVisible(key)
     setFrame(240, 900, 1200, 'falsetto')
     render(<FeedbackHero />)
-    expect(screen.getByTestId('hero-badge').textContent).toBe('假声')
-    expect(screen.queryByTestId('hero-col-f0')).toBeNull()
+    expect(screen.getByRole('region', { name: '实时反馈' })).toBeTruthy()
+    for (const key of ['f0', 'f1', 'f2']) expect(screen.queryByTestId(`hero-col-${key}`)).toBeNull()
   })
 
   it('renders F0/F1/F2 values inline in one row', () => {
@@ -108,19 +94,13 @@ describe('FeedbackHero', () => {
     expect(screen.queryByTestId('hero-col-f2-status')).toBeNull()
   })
 
-  it('omits the register row to match the 390px design', () => {
-    setFrame(240, 900, 1200, 'chest')
-    render(<FeedbackHero />)
-    expect(screen.queryByTestId('hero-register')).toBeNull()
-  })
-
   it('treats a non-finite or non-positive F0 as missing', () => {
     setFrame(0, 900, 1200)
     render(<FeedbackHero />)
     expect(screen.getByTestId('hero-f0').textContent).toBe('--')
   })
 
-  it('shows independent high and low directions while keeping the register', () => {
+  it('shows independent high and low directions', () => {
     setFrame(300, 700, 1200, 'mixed')
     render(<FeedbackHero />)
     const high = screen.getByTestId('hero-col-f0')
@@ -139,7 +119,7 @@ describe('FeedbackHero', () => {
     expect(screen.getByLabelText('F0 300 Hz，高于目标范围')).toBe(high)
     expect(screen.getByLabelText('F1 700 Hz，低于目标范围')).toBe(low)
     expect(screen.getByLabelText('F2 1200 Hz，目标范围内')).toBe(hit)
-    expect(screen.getByTestId('hero-badge').textContent).toBe('混声')
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
   })
 
   it.each([
@@ -183,7 +163,7 @@ describe('FeedbackHero', () => {
     act(() => setFrame(190, 900, 1200, 'falsetto'))
     expect(cell.getAttribute('data-status')).toBe('low')
     expect(within(cell).getByText('↓')).toBeTruthy()
-    expect(screen.getByTestId('hero-badge').textContent).toBe('假声')
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
     act(() => useAppStore.getState().toggleFormantVisible('f1'))
     expect(screen.queryByTestId('hero-col-f1')).toBeNull()
   })
