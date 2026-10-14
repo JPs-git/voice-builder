@@ -7,7 +7,7 @@ import styles from './TargetPresetBar.module.css'
 export function TargetPresetBar() {
   const activePreset = useAppStore(s => s.activePreset)
   const switchPreset = useAppStore(s => s.switchPreset)
-  const { localValues, onInputChange, onCommit, onInputKeyDown, onReset } = usePresetBands()
+  const { localValues, inputMessages, showInputMessage, onInputChange, onCommit, onInputKeyDown, onReset } = usePresetBands()
 
   const vowelKeys = Object.keys(VOWEL_PRESETS) as (keyof typeof VOWEL_PRESETS)[]
 
@@ -20,6 +20,7 @@ export function TargetPresetBar() {
           className={styles.resetIcon}
           onClick={onReset}
           aria-label="重置所有预设"
+          title="恢复全部元音默认值"
         >
           ⟲
         </button>
@@ -43,6 +44,8 @@ export function TargetPresetBar() {
             key={key}
             bandKey={key}
             localValues={localValues}
+            inputMessages={inputMessages}
+            onDismissMessage={index => showInputMessage(key, index, '')}
             onInputChange={onInputChange}
             onCommit={onCommit}
             onInputKeyDown={onInputKeyDown}

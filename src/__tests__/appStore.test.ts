@@ -37,6 +37,23 @@ describe('appStore', () => {
   })
 
   describe('bands', () => {
+    it('backs up the original stored targets before normalizing an old override', () => {
+      const backupKey = 'voicebuilder-presets-before-target-rules-v1'
+      localStorage.removeItem(backupKey)
+      const raw = JSON.stringify({ state: { presetOverrides: [{ key: 'vowel-a', f0: [600, 900], f1: [800, 1200], f2: [900, 1000] }] }, version: 0 })
+      localStorage.setItem('voicebuilder-presets', raw)
+      useAppStore.persist.rehydrate()
+      expect(localStorage.getItem(backupKey)).toBe(raw)
+      expect(useAppStore.getState().bands.f0.range).toEqual([495, 500])
+      expect(useAppStore.getState().bands.f2.range).toEqual([1200, 1250])
+      localStorage.setItem('voicebuilder-presets', raw.replace('900', '950'))
+      useAppStore.persist.rehydrate()
+      expect(localStorage.getItem(backupKey)).toBe(raw)
+      useAppStore.getState().reset()
+      expect(localStorage.getItem(backupKey)).toBe(raw)
+      localStorage.removeItem(backupKey)
+    })
+
     it('defaults to vowel-a bands', () => {
       const vowelA = VOWEL_PRESETS['vowel-a']
       const { bands } = useAppStore.getState()

@@ -6,8 +6,7 @@ import { Toolbar } from '../components/Toolbar'
 import { MobileMoreMenu } from '../components/mobile/MobileMoreMenu'
 import { MobilePageTabs } from '../components/mobile/MobilePageTabs'
 import { RecordDock } from '../components/mobile/RecordDock'
-import { TrainingGoalCard } from '../components/mobile/TrainingGoalCard'
-import { Drawer } from '../components/Drawer'
+import { TrainingGoalModal } from '../components/mobile/TrainingGoalModal'
 import { ConfigDrawer } from '../components/ConfigDrawer'
 import { HelpDrawer } from '../components/HelpDrawer'
 import { AboutModal } from '../components/AboutModal'
@@ -103,9 +102,7 @@ export function AppShell() {
             hasData={hasData}
             isPlaying={toolItems.find(item => item.id === 'playback')?.label === '停止'}
           />
-          <Drawer open={goalOpen} title="训练目标" onClose={() => setGoalOpen(false)}>
-            <div data-testid="training-goal-card"><TrainingGoalCard /></div>
-          </Drawer>
+          <TrainingGoalModal open={goalOpen} onClose={() => setGoalOpen(false)} />
         </>
       )}
       <Toast />
