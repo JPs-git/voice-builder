@@ -32,18 +32,18 @@
 | falsetto | 假声 |
 | unvoiced、null、undefined，或没有 frame | -- |
 
-读取算法已有结果，不新增置信度阈值或 F0 推断规则。声区不依赖指标是否显示，也不依赖目标命中：全部指标隐藏后，仍显示当前声区。有效声区统一使用信息色背景 `var(--info-soft)` 与文字 `#175CD3`；等待状态使用中性灰，不用颜色评价某种声区好坏。
+读取算法已有结果，不新增置信度阈值或 F0 推断规则。声区不依赖指标是否显示，也不依赖目标命中：全部指标隐藏后，仍显示当前声区。声区配色复用横屏：真声使用 var(--hit)/var(--hit-soft)，混声使用 var(--warn)/var(--warn-soft)，假声使用 var(--primary)/var(--primary-soft)，缺失状态为中性灰。
 
 ### 各指标状态
 
-保留 F0/F1/F2 标签现有绿/红/蓝身份颜色。改变数字与箭头颜色，Hz 单位保持现有中性色；箭头放在对应数值后、单位后。
+保留 F0/F1/F2 标签现有绿/红/蓝身份颜色。数字、Hz、状态图标同步使用命中或偏离颜色；箭头放在对应数值后、单位后。
 
-| 条件 | 数字 | 箭头 | 数字及箭头颜色 |
+| 条件 | 数字 | 箭头 | 数字、Hz 及图标颜色 |
 |---|---|---|---|
-| 有限正数，低于本指标下限 | 取整 | ↓ | 蓝 `#175CD3` |
-| 有限正数，高于本指标上限 | 取整 | ↑ | 红 `#B42318` |
-| 有限正数，在闭区间内 | 取整 | 无 | 绿 `#067647` |
-| null、undefined、NaN、Infinity、零或负数 | -- | 无 | 灰 `#667085` |
+| 有限正数，低于本指标下限 | 取整 | ↓ | 橙 var(--warn) |
+| 有限正数，高于本指标上限 | 取整 | ↑ | 橙 var(--warn) |
+| 有限正数，在闭区间内 | 取整 | ✓ | 绿 var(--hit) |
+| null、undefined、NaN、Infinity、零或负数 | -- | 无 | 灰 var(--text-mute)，隐藏 Hz |
 
 先以原始精度比较目标，再取整显示。上下限均包含在范围内。箭头描述当前值的位置，不代表要求用户往箭头方向调整。高、低状态同时出现时逐项显示，不再生成偏高优先的整体徽标。
 
@@ -67,7 +67,7 @@
 ## Review Focus
 
 1. 同一帧既有偏高又有偏低：各列独立保留方向，声区不被覆盖（Task 2）。
-2. 无效数值及边界：占位符不得显示方向，边界值不显示箭头（Task 2）。
+2. 无效数值及边界：占位符不得显示方向，边界值显示对勾（Task 2）。
 3. 声区与指标可见性：隐藏全部频率仍能显示声区；缺失声区不伪造为真声（Task 1、2）。
 4. 状态更新：切目标、更新帧及清空后不残留上次箭头或声区（Task 2、3）。
 5. 窄屏排版与桌面回归：箭头不被 overflow:hidden 裁掉，桌面声区标签保持原样（Task 1、3）。
@@ -79,7 +79,7 @@
 | `src/feedback/register.ts`（新建） | 导出共享 VOICE_REGISTER_LABELS，避免两端维护两份声区名称 |
 | `src/components/FeedbackCard.tsx` | 只将私有 REGISTER_LABEL 替换为共享名称映射 |
 | `src/components/mobile/FeedbackHero.tsx` | 声区徽标、逐指标有效性与方向、可访问名称 |
-| `src/components/mobile/FeedbackHero.module.css` | 声区信息色、指标状态色、箭头占位和窄屏布局 |
+| `src/components/mobile/FeedbackHero.module.css` | 声区分类颜色、指标状态色、箭头占位和窄屏布局 |
 | `src/__tests__/FeedbackHero.test.tsx` | 替换旧整体偏高/偏低断言，覆盖新状态交互 |
 | `src/__tests__/FeedbackCard.test.tsx` | 复用现有桌面声区回归测试 |
 | `src/__tests__/layoutShells.test.tsx` | 更新受影响的结构断言，覆盖录音/清空及布局切换 |
@@ -98,14 +98,14 @@
 
 ### Task 2: 增加独立方向箭头与数字状态色
 
-**Interfaces:** `statusGlyph(status: FormantStatus): '↑' | '↓' | ''`。每列设置 `data-status='high'|'low'|'hit'|'none'`；继续保留 `hero-col-f0/f1/f2` 和 `hero-f0` 的数字定位。有效值调用现有 getFormantStatus，无效值直接归为 none，不改共享比较函数。
+**Interfaces:** `statusGlyph(status: FormantStatus): '↑' | '↓' | '✓' | ''`。每列设置 `data-status='high'|'low'|'hit'|'none'`；继续保留 `hero-col-f0/f1/f2` 和 `hero-f0` 的数字定位。有效值调用现有 getFormantStatus，无效值直接归为 none，不改共享比较函数。
 
-- [x] 先添加混合状态测试：默认目标、帧 `{f0:300,f1:700,f2:1200,register:'mixed'}`，F0 为 high/↑，F1 为 low/↓，F2 为 hit/无方向；徽标仍为混声。
+- [x] 先添加混合状态测试：默认目标、帧 `{f0:300,f1:700,f2:1200,register:'mixed'}`，F0 为 high/↑，F1 为 low/↓，F2 为 hit/✓；徽标仍为混声。
 - [x] 添加参数化测试：F0 为 200、280 时 hit；199.9 为 low，280.1 为 high；null/NaN/Infinity/0/-1 时 --/none/无方向。缺失值对 F1/F2 同样覆盖。
 - [x] 添加更新测试：帧 F0=300 时为 high，将目标改成 [290,310] 后为 hit，恢复预设后为 high；更新帧至 190 后为 low；隐藏 F1 后不再显示该列。
 - [x] 为 low/high/hit/none 断言可访问名称，确保方向信息可通过文字理解。
 - [x] 运行 FeedbackHero 测试，确认箭头、data-status 及可访问名称的新断言先失败。
-- [x] 在现有组件的逐指标渲染中加入有效性判断、statusGlyph 和 aria-label；CSS 在数字/箭头层按 data-status 上色，保留标签身份色及单位中性色，预留箭头槽位。不要把所有文字继承为指标颜色。
+- [x] 在现有组件的逐指标渲染中加入有效性判断、statusGlyph 和 aria-label；CSS 在数字/箭头层按 data-status 上色，保留标签身份色，Hz 同步使用状态色，预留箭头槽位。不要把所有文字继承为指标颜色。
 - [x] 运行 `npm test -- --project unit src/__tests__/FeedbackHero.test.tsx src/__tests__/FeedbackCard.test.tsx src/__tests__/status.test.ts`，确认通过。
 - [x] 提交：`feat(feedback): show per-metric direction and status colors`。
 
@@ -115,7 +115,7 @@
 
 - [x] 在 layoutShells 的既有真实组件测试中加入竖屏有结果→清空→声区和数值占位符 的行为断言；横竖切换后同一帧的频率及声区保持对应。若现有测试 mock 了组件，使用实际 FeedbackHero，不对 mock 本身做断言。
 - [x] 先运行该测试并检查覆盖是否有效，再按实际行为完善 Task 1、2；无需专门测试文案源码或常量定义。
-- [x] 更新 docs/ui-design-portrait.md 的实时反馈栏规范：声区独立展示、箭头含义、四种数字颜色、缺失值及可访问性。
+- [x] 更新 docs/ui-design-portrait.md 的实时反馈栏规范：声区独立展示、箭头含义、命中绿、偏离橙及缺失灰、缺失值及可访问性。
 - [x] 执行 `npm test`、`npm run build`、`npx tsc --noEmit`、`git diff --check`；要求退出码均为 0，记录既有警告。
 - [x] 浏览器检查 320/360/390/768px 与桌面宽度：使用本地合成音频或开发测试夹具覆盖混合方向、四位数和无结果，避免调用用户真实麦克风。检查实际 CSS 颜色、固定箭头槽位、单行无截断、隐藏列、清空和切目标。DOM 测试不能替代真实布局检查。
 - [x] 对照需求与 diff 自审：确认声区未从频率推断、旧整体徽标逻辑已删除、桌面只复用名称、PR #47 的共享参考数值保持正确。
@@ -129,4 +129,11 @@
 
 - 箭头移到 Hz 后，显示顺序为数值、Hz、箭头。
 - 无声区结果时显示 --；可访问名称明确为声区暂无有效数据。
-- F0/F1/F2 标签与数值字重统一加重至 700，Hz 保留中性色和字重 500。
+- F0/F1/F2 标签与数值字重统一加重至 700，Hz 与数值同色，保留字重 500。
+
+## 第二轮视觉调整（2026-10-14）
+
+- 指标数值、Hz、图标命中时统一用横屏绿色，偏离时统一用横屏橙色。
+- 真声、混声、假声徽标分别采用横屏绿色、橙色、红色及对应浅色背景。
+- 范围内在 Hz 后显示对勾，偏高偏低保留方向箭头。
+- 无有效数值时仅显示 --，不显示 Hz 或状态图标。

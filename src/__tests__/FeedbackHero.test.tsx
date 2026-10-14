@@ -17,7 +17,7 @@ function setFrame(
 describe('statusGlyph', () => {
   it('maps each status to its glyph', () => {
     const cases: [FormantStatus, string][] = [
-      ['hit', ''],
+      ['hit', '✓'],
       ['low', '↓'],
       ['high', '↑'],
       ['none', ''],
@@ -38,6 +38,7 @@ describe('FeedbackHero', () => {
     expect(screen.getByTestId('hero-badge').textContent).toBe('--')
     expect(screen.getByLabelText('声区：暂无有效数据')).toBeTruthy()
     expect(screen.getByTestId('hero-f0').textContent).toBe('--')
+    expect(screen.queryAllByText('Hz')).toHaveLength(0)
   })
 
   it('shows the current F0 as a large readout', () => {
@@ -132,7 +133,9 @@ describe('FeedbackHero', () => {
     expect(within(low).getByText('↓').getAttribute('aria-hidden')).toBe('true')
     expect(within(high).getByText('Hz').nextElementSibling).toBe(within(high).getByText('↑'))
     expect(within(low).getByText('Hz').nextElementSibling).toBe(within(low).getByText('↓'))
-    expect(hit.textContent).not.toMatch(/[↑↓✓]/)
+    expect(hit.textContent).not.toMatch(/[↑↓]/)
+    expect(within(hit).getByText('Hz').nextElementSibling).toBe(within(hit).getByText('✓'))
+    expect(within(hit).getByText('✓').getAttribute('aria-hidden')).toBe('true')
     expect(screen.getByLabelText('F0 300 Hz，高于目标范围')).toBe(high)
     expect(screen.getByLabelText('F1 700 Hz，低于目标范围')).toBe(low)
     expect(screen.getByLabelText('F2 1200 Hz，目标范围内')).toBe(hit)
@@ -140,7 +143,7 @@ describe('FeedbackHero', () => {
   })
 
   it.each([
-    [200, 'hit', ''], [280, 'hit', ''], [199.9, 'low', '↓'], [280.1, 'high', '↑'],
+    [200, 'hit', '✓'], [280, 'hit', '✓'], [199.9, 'low', '↓'], [280.1, 'high', '↑'],
   ])('compares unrounded F0 %s with inclusive target boundaries', (value, status, glyph) => {
     setFrame(value as number, 900, 1200, 'chest')
     render(<FeedbackHero />)
@@ -160,6 +163,7 @@ describe('FeedbackHero', () => {
       const cell = screen.getByTestId(`hero-col-${key}`)
       expect(cell.getAttribute('data-status')).toBe('none')
       expect(within(cell).getByText('--')).toBeTruthy()
+      expect(within(cell).queryByText('Hz')).toBeNull()
       expect(cell.textContent).not.toMatch(/[↑↓✓]/)
       expect(screen.getByLabelText(`${key.toUpperCase()} 暂无有效数据`)).toBe(cell)
     }
@@ -173,6 +177,7 @@ describe('FeedbackHero', () => {
     act(() => useAppStore.getState().setBands({ f0: [290, 310] }))
     expect(cell.getAttribute('data-status')).toBe('hit')
     expect(cell.textContent).not.toMatch(/[↑↓]/)
+    expect(within(cell).getByText('✓')).toBeTruthy()
     act(() => useAppStore.getState().switchPreset('vowel-a'))
     expect(cell.getAttribute('data-status')).toBe('high')
     act(() => setFrame(190, 900, 1200, 'falsetto'))

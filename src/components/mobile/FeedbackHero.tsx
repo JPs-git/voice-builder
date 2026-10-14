@@ -20,7 +20,8 @@ const STATUS_LABELS: Record<FormantStatus, string> = {
   none: '暂无有效数据',
 }
 
-export function statusGlyph(status: FormantStatus): '↑' | '↓' | '' {
+export function statusGlyph(status: FormantStatus): '↑' | '↓' | '✓' | '' {
+  if (status === 'hit') return '✓'
   if (status === 'low') return '↓'
   if (status === 'high') return '↑'
   return ''
@@ -77,7 +78,7 @@ export function FeedbackHero() {
           <span className={styles.number} data-testid={key === 'f0' ? 'hero-f0' : undefined}>
             {text}
           </span>
-          <span className={styles.unit}>Hz</span>
+          {valid && <span className={styles.unit}>Hz</span>}
           <span className={styles.direction} aria-hidden="true">{statusGlyph(status)}</span>
         </span>
         )
