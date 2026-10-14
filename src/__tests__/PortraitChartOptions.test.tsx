@@ -232,14 +232,14 @@ describe('portrait chart options', () => {
     expect(series.lineStyle.color).toBe('#3F83F8')
     expect(series.itemStyle.color).toBe('#3F83F8')
     expect(lastOption().color).toEqual(['#3F83F8'])
-    expect(series.markArea.data[0][0].yAxis).toBe(160)
-    expect(series.markArea.data[0][1].yAxis).toBe(240)
-    expect(series.markArea.data[1][0].yAxis).toBe(270)
-    expect(series.markArea.data[1][1].yAxis).toBe(350)
+    expect(series.markArea.data[0][0].yAxis).toBe(80)
+    expect(series.markArea.data[0][1].yAxis).toBe(150)
+    expect(series.markArea.data[1][0].yAxis).toBe(180)
+    expect(series.markArea.data[1][1].yAxis).toBe(300)
     expect(series.markArea.data[0][0].itemStyle.color).toBe('rgba(63, 131, 248, 0.08)')
     expect(series.markArea.data[1][0].itemStyle.color).toBe('rgba(233, 71, 99, 0.08)')
-    expect(series.markLine.data[0].yAxis).toBe(200)
-    expect(series.markLine.data[1].yAxis).toBe(300)
+    expect(series.markLine.data[0].yAxis).toBe(115)
+    expect(series.markLine.data[1].yAxis).toBe(240)
     expect(series.markLine.data[0].lineStyle.color).toBe('#8BB9FF')
     expect(series.markLine.data[0].lineStyle.type).toBe('dashed')
     expect(series.markLine.data[1].lineStyle.color).toBe('#F4A0B1')
@@ -394,12 +394,24 @@ describe('portrait chart options', () => {
   it('re-renders with portrait options when the viewport crosses the breakpoint', () => {
     const resize = installMatchMedia(false)
     render(<F0Chart />)
+    const expectReferenceRanges = () => {
+      const series = seriesByName('F0')
+      expect(series.markArea.data.map((area: Array<{ yAxis: number }>) => area.map(edge => edge.yAxis)))
+        .toEqual([[80, 150], [180, 300]])
+      expect(series.markLine.data.map((line: { yAxis: number }) => line.yAxis)).toEqual([115, 240])
+    }
     expect(lastOption().grid.left).toBe(72)
     expect(lastOption().xAxis.axisLabel.show).toBe(false)
+    expectReferenceRanges()
 
     resize(true)
     expect(lastOption().grid.left).toBe(42)
     expect(lastOption().xAxis.axisLabel.show).toBe(false)
+    expectReferenceRanges()
+
+    resize(false)
+    expect(lastOption().grid.left).toBe(72)
+    expectReferenceRanges()
   })
 
   it('re-renders the formant chart when the viewport crosses the breakpoint', () => {

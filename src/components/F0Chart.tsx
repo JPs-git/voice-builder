@@ -3,20 +3,23 @@ import { useECharts } from '../hooks/useECharts'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { useAppStore } from '../store/appStore'
 import type { AnalysisFrame } from '../types'
+import { F0_REFERENCE_ZONES } from '../config/analysisRanges'
 
 const WINDOW = 10
 
-const TARGET_ZONES = [
-  { label: '男声', range: [80, 150], color: '#5BCEFA' },
-  { label: '女声', range: [180, 300], color: '#F5A9B8' },
-]
+type ReferenceZone = typeof F0_REFERENCE_ZONES[number]
+type ZoneStyle = { color: string; dash?: string; labelColor?: string }
+type TargetZone = ReferenceZone & ZoneStyle
 
-const TARGET_ZONES_PORTRAIT = [
-  { label: '男声', range: [160, 240], color: 'rgba(63, 131, 248, 0.08)', dash: '#8BB9FF', labelColor: '#3F83F8' },
-  { label: '女声', range: [270, 350], color: 'rgba(233, 71, 99, 0.08)', dash: '#F4A0B1', labelColor: '#E94763' },
-]
+const ZONE_STYLES: Record<ReferenceZone['id'], ZoneStyle> = {
+  male: { color: '#5BCEFA' },
+  female: { color: '#F5A9B8' },
+}
 
-type TargetZone = { label: string; range: number[]; color: string; dash?: string; labelColor?: string }
+const ZONE_STYLES_PORTRAIT: Record<ReferenceZone['id'], ZoneStyle> = {
+  male: { color: 'rgba(63, 131, 248, 0.08)', dash: '#8BB9FF', labelColor: '#3F83F8' },
+  female: { color: 'rgba(233, 71, 99, 0.08)', dash: '#F4A0B1', labelColor: '#E94763' },
+}
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -62,24 +65,24 @@ export function formatF0Tooltip(params: any, frames: AnalysisFrame[]): string {
 </div>`
 }
 
-function buildMarkAreas(zones: TargetZone[], colorFor: (zone: TargetZone) => string, verbatim = false) {
+function buildMarkAreas(zones: readonly TargetZone[], colorFor: (zone: TargetZone) => string, isPortrait = false) {
   return zones.map(z => ([{
     yAxis: z.range[0],
-    itemStyle: { color: verbatim ? colorFor(z) : hexToRgba(colorFor(z), 0.15) },
+    itemStyle: { color: isPortrait ? colorFor(z) : hexToRgba(colorFor(z), 0.15) },
   }, {
     yAxis: z.range[1],
   }]))
 }
 
-function buildMarkLineData(zones: TargetZone[], colorFor: (zone: TargetZone) => string, verbatim = false) {
+function buildMarkLineData(zones: readonly TargetZone[], colorFor: (zone: TargetZone) => string, isPortrait = false) {
   return zones.map(z => {
-    const mid = verbatim ? (z.label === '男声' ? 200 : 300) : Math.round((z.range[0] + z.range[1]) / 2)
+    const mid = (z.range[0] + z.range[1]) / 2
     const color = colorFor(z)
     const lineColor = z.dash ?? color
     const labelColor = z.labelColor ?? color
     return {
       yAxis: mid,
-      lineStyle: { color: verbatim ? lineColor : hexToRgba(lineColor, 0.4), type: 'dashed' as const, width: 1 },
+      lineStyle: { color: isPortrait ? lineColor : hexToRgba(lineColor, 0.4), type: 'dashed' as const, width: 1 },
       label: {
         formatter: z.label,
         color: labelColor,
@@ -130,7 +133,8 @@ export function F0Chart({ cursorTime = -1 }: F0ChartProps) {
   ) {
     const seriesData = data.map(f => [f.time, f.f0 ?? null])
     const f0Color = isPortrait ? F0_COLOR_PORTRAIT : F0_COLOR_DESKTOP
-    const zones = isPortrait ? TARGET_ZONES_PORTRAIT : TARGET_ZONES
+    const styles = isPortrait ? ZONE_STYLES_PORTRAIT : ZONE_STYLES
+    const zones = F0_REFERENCE_ZONES.map(zone => ({ ...zone, ...styles[zone.id] }))
     const zoneColor: (zone: TargetZone) => string = (zone: TargetZone) => zone.color
     const dots = data.filter(f => f.f0 != null && f.f0 > 0)
     const lastDot = dots[dots.length - 1]

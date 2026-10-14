@@ -39,11 +39,11 @@ export function AnalysisPortrait() {
                 </span>
                 <span className={styles.f0LegendItem}>
                   <i className={styles.f0LegendZone} aria-hidden="true" />
-                  目标区间
+                  参考区间
                 </span>
                 <span className={styles.f0LegendItem}>
                   <i className={styles.f0LegendTarget} aria-hidden="true" />
-                  目标线
+                  参考线
                 </span>
               </div>
             </div>

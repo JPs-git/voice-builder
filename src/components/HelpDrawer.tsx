@@ -1,5 +1,6 @@
 import { Drawer } from './Drawer'
 import styles from './HelpDrawer.module.css'
+import { F0_REFERENCE_ZONES } from '../config/analysisRanges'
 
 interface HelpDrawerProps {
   open: boolean
@@ -15,7 +16,7 @@ export function HelpDrawer({ open, onClose }: HelpDrawerProps) {
       </section>
       <section>
         <h4>基频</h4>
-        <p>展示 F0 基频随时间的变化曲线。蓝色区域为男性典型基频范围(80–150 Hz)，粉色区域为女性典型基频范围(180–300 Hz)。</p>
+        <p>展示 F0 基频随时间的变化曲线。蓝色、粉色区域分别为固定参考区间：{F0_REFERENCE_ZONES.map(zone => `${zone.label} ${zone.range[0]}–${zone.range[1]} Hz`).join('，')}。参考线位于各区间中点。</p>
       </section>
       <section>
         <h4>共振峰</h4>
