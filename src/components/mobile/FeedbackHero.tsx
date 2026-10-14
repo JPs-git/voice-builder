@@ -13,20 +13,22 @@ const VAL_COLORS: Record<FormantSeries, string> = {
   f2: 'var(--v2-f2)',
 }
 
-export function statusGlyph(status: FormantStatus): string {
-  if (status === 'hit') return '✓'
-  if (status === 'low') return '↓'
-  if (status === 'high') return '↑'
-  return '—'
+const STATUS_LABELS: Record<FormantStatus, string> = {
+  high: '高于目标范围',
+  low: '低于目标范围',
+  hit: '目标范围内',
+  none: '暂无有效数据',
 }
 
-function formatValue(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value) || value <= 0) return '--'
-  return String(Math.round(value))
+export function statusGlyph(status: FormantStatus): '↑' | '↓' | '' {
+  if (status === 'low') return '↓'
+  if (status === 'high') return '↑'
+  return ''
 }
 
 export function FeedbackHero() {
   const latestFrame = useAppStore(s => s.latestFrame)
+  const bands = useAppStore(s => s.bands)
   const formantVisible = useAppStore(s => s.formantVisible)
 
   const visibleKeys = KEYS.filter(key => formantVisible[key])
@@ -45,6 +47,7 @@ export function FeedbackHero() {
       <span className={styles.title}>实时反馈</span>
       <span
         className={styles.badge}
+        role="group"
         data-register={register}
         data-testid="hero-badge"
         aria-label={`声区：${register === 'unvoiced' ? '等待声音' : VOICE_REGISTER_LABELS[register]}`}
@@ -53,19 +56,32 @@ export function FeedbackHero() {
         {register === 'unvoiced' ? '等待声音' : VOICE_REGISTER_LABELS[register]}
       </span>
 
-      {visibleKeys.map(key => (
+      {visibleKeys.map(key => {
+        const value = latestFrame?.[key]
+        const valid = value != null && Number.isFinite(value) && value > 0
+        const status = valid ? getFormantStatus(value, bands[key].range) : 'none'
+        const text = valid ? String(Math.round(value)) : '--'
+        return (
         <span
           key={key}
           className={styles.value}
+          role="group"
+          aria-label={status === 'none'
+            ? `${key.toUpperCase()} ${STATUS_LABELS.none}`
+            : `${key.toUpperCase()} ${text} Hz，${STATUS_LABELS[status]}`}
+          data-status={status}
           data-testid={`hero-col-${key}`}
           style={{ color: VAL_COLORS[key] }}
         >
           <span className={styles.valueKey}>{key.toUpperCase()}</span>
           <span className={styles.number} data-testid={key === 'f0' ? 'hero-f0' : undefined}>
-            {formatValue(latestFrame?.[key])}
-          </span><span className={styles.unit}>Hz</span>
+            {text}
+          </span>
+          <span className={styles.direction} aria-hidden="true">{statusGlyph(status)}</span>
+          <span className={styles.unit}>Hz</span>
         </span>
-      ))}
+        )
+      })}
     </section>
   )
 }

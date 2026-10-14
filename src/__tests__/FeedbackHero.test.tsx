@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import { FeedbackHero, statusGlyph } from '../components/mobile/FeedbackHero'
 import { useAppStore } from '../store/appStore'
 import type { FormantStatus } from '../feedback/status'
@@ -17,10 +17,10 @@ function setFrame(
 describe('statusGlyph', () => {
   it('maps each status to its glyph', () => {
     const cases: [FormantStatus, string][] = [
-      ['hit', '✓'],
+      ['hit', ''],
       ['low', '↓'],
       ['high', '↑'],
-      ['none', '—'],
+      ['none', ''],
     ]
     for (const [status, glyph] of cases) {
       expect(statusGlyph(status)).toBe(glyph)
@@ -116,5 +116,67 @@ describe('FeedbackHero', () => {
     setFrame(0, 900, 1200)
     render(<FeedbackHero />)
     expect(screen.getByTestId('hero-f0').textContent).toBe('--')
+  })
+
+  it('shows independent high and low directions while keeping the register', () => {
+    setFrame(300, 700, 1200, 'mixed')
+    render(<FeedbackHero />)
+    const high = screen.getByTestId('hero-col-f0')
+    const low = screen.getByTestId('hero-col-f1')
+    const hit = screen.getByTestId('hero-col-f2')
+    expect(high.getAttribute('data-status')).toBe('high')
+    expect(low.getAttribute('data-status')).toBe('low')
+    expect(hit.getAttribute('data-status')).toBe('hit')
+    expect(within(high).getByText('↑').getAttribute('aria-hidden')).toBe('true')
+    expect(within(low).getByText('↓').getAttribute('aria-hidden')).toBe('true')
+    expect(hit.textContent).not.toMatch(/[↑↓✓]/)
+    expect(screen.getByLabelText('F0 300 Hz，高于目标范围')).toBe(high)
+    expect(screen.getByLabelText('F1 700 Hz，低于目标范围')).toBe(low)
+    expect(screen.getByLabelText('F2 1200 Hz，目标范围内')).toBe(hit)
+    expect(screen.getByTestId('hero-badge').textContent).toBe('混声')
+  })
+
+  it.each([
+    [200, 'hit', ''], [280, 'hit', ''], [199.9, 'low', '↓'], [280.1, 'high', '↑'],
+  ])('compares unrounded F0 %s with inclusive target boundaries', (value, status, glyph) => {
+    setFrame(value as number, 900, 1200, 'chest')
+    render(<FeedbackHero />)
+    const cell = screen.getByTestId('hero-col-f0')
+    expect(cell.getAttribute('data-status')).toBe(status)
+    expect(screen.getByTestId('hero-f0').textContent).toBe(String(Math.round(value as number)))
+    if (glyph) expect(within(cell).getByText(glyph)).toBeTruthy()
+    else expect(cell.textContent).not.toMatch(/[↑↓✓]/)
+  })
+
+  it.each(['f0', 'f1', 'f2'] as const)('shows no direction for invalid %s data', key => {
+    render(<FeedbackHero />)
+    for (const value of [null, undefined, NaN, Infinity, -Infinity, 0, -1]) {
+      act(() => useAppStore.getState().setLatestFrame({
+        time: 1, f0: 300, f1: 700, f2: 1200, register: 'chest', [key]: value,
+      }))
+      const cell = screen.getByTestId(`hero-col-${key}`)
+      expect(cell.getAttribute('data-status')).toBe('none')
+      expect(within(cell).getByText('--')).toBeTruthy()
+      expect(cell.textContent).not.toMatch(/[↑↓✓]/)
+      expect(screen.getByLabelText(`${key.toUpperCase()} 暂无有效数据`)).toBe(cell)
+    }
+  })
+
+  it('updates directions on target edits, preset changes and new frames', () => {
+    setFrame(300, 700, 1200, 'chest')
+    render(<FeedbackHero />)
+    const cell = screen.getByTestId('hero-col-f0')
+    expect(cell.getAttribute('data-status')).toBe('high')
+    act(() => useAppStore.getState().setBands({ f0: [290, 310] }))
+    expect(cell.getAttribute('data-status')).toBe('hit')
+    expect(cell.textContent).not.toMatch(/[↑↓]/)
+    act(() => useAppStore.getState().switchPreset('vowel-a'))
+    expect(cell.getAttribute('data-status')).toBe('high')
+    act(() => setFrame(190, 900, 1200, 'falsetto'))
+    expect(cell.getAttribute('data-status')).toBe('low')
+    expect(within(cell).getByText('↓')).toBeTruthy()
+    expect(screen.getByTestId('hero-badge').textContent).toBe('假声')
+    act(() => useAppStore.getState().toggleFormantVisible('f1'))
+    expect(screen.queryByTestId('hero-col-f1')).toBeNull()
   })
 })

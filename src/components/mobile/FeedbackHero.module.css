@@ -93,6 +93,11 @@
 .badge { height: 23px; font-size: 9px; padding: 0 6px; gap: 4px; }
 .value { flex: 1; min-width: 0; gap: 2px; padding-left: 5px; border-left: 1px solid #e0e8f3; font-size: 9px; font-weight: 500; }
 .valueKey { font-size: 9px; padding: 3px 2px; border-radius: 5px; background: color-mix(in srgb, currentColor 5%, transparent); }
-.number { color: #0a2344; }
+.value[data-status="high"] { --metric-value-color: #B42318; }
+.value[data-status="low"] { --metric-value-color: #175CD3; }
+.value[data-status="hit"] { --metric-value-color: #067647; }
+.value[data-status="none"] { --metric-value-color: #667085; }
+.number, .direction { color: var(--metric-value-color, #667085); }
+.direction { display: inline-block; width: .65em; flex: 0 0 .65em; text-align: center; font-weight: 700; }
 .unit { color: #7288a6; font-size: 8px; }
 @media (max-width: 360px) { .card { gap: 4px; padding: 0 6px; } .heroIcon { display: none; } .title { font-size: 10px; } }
