@@ -34,43 +34,6 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
-.badge {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 0 6px;
-  height: 28px;
-  box-sizing: border-box;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.badgeDot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
-.badge[data-tone="hit"] .badgeDot {
-  background: var(--v2-f0);
-}
-.badge[data-tone="idle"] {
-  background: #F2F4F7;
-  color: var(--text-mute);
-}
-.badge[data-tone="hit"] {
-  background: #E9FAF5;
-  color: #0FA77D;
-  border: 1px solid #B9E9CC;
-}
-.badge[data-tone="warn"] {
-  background: var(--warn-soft);
-  color: #B45309;
-}
 .value {
   display: inline-flex;
   align-items: baseline;
@@ -98,10 +61,12 @@
 .heroIcon i:nth-child(2) { height: 15px; }
 .heroIcon i:nth-child(3) { height: 11px; }
 .title { font-size: 11px; color: #0a2344; }
-.badge { height: 23px; font-size: 9px; padding: 0 6px; gap: 4px; }
-.badge[data-tone="hit"] { border: 0; background: #e8fbf6; color: #00b58d; }
-.value { flex: 1; min-width: 0; gap: 2px; padding-left: 5px; border-left: 1px solid #e0e8f3; font-size: 9px; font-weight: 500; }
-.valueKey { font-size: 9px; padding: 3px 2px; border-radius: 5px; background: color-mix(in srgb, currentColor 5%, transparent); }
-.number { color: #0a2344; }
-.unit { color: #7288a6; font-size: 8px; }
+.value { flex: 1; min-width: 0; gap: 2px; padding-left: 5px; border-left: 1px solid #e0e8f3; font-size: 9px; font-weight: 700; }
+.valueKey { font-size: 9px; font-weight: 700; padding: 3px 2px; border-radius: 5px; background: color-mix(in srgb, currentColor 5%, transparent); }
+.value[data-status="high"], .value[data-status="low"] { --metric-value-color: var(--warn); }
+.value[data-status="hit"] { --metric-value-color: var(--hit); }
+.value[data-status="none"] { --metric-value-color: var(--text-mute); }
+.number, .direction, .unit { color: var(--metric-value-color, var(--text-mute)); }
+.direction { display: inline-block; width: .85em; flex: 0 0 .85em; text-align: center; font-weight: 700; }
+.unit { font-size: 8px; font-weight: 500; }
 @media (max-width: 360px) { .card { gap: 4px; padding: 0 6px; } .heroIcon { display: none; } .title { font-size: 10px; } }

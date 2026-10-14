@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import type { ReactElement } from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { act, render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom'
 import { AnalysisPage } from '../routes/AnalysisPage'
 import { PracticePage } from '../routes/PracticePage'
@@ -48,15 +48,20 @@ vi.mock('../audio/PianoSynth', () => ({
 }))
 
 function setMatchMedia(matches: boolean) {
+  const listeners = new Set<(e: { matches: boolean }) => void>()
   const mql = {
     matches,
-    addEventListener: (_type: string, _cb: (e: { matches: boolean }) => void) => {},
-    removeEventListener: (_type: string, _cb: (e: { matches: boolean }) => void) => {},
+    addEventListener: (_type: string, cb: (e: { matches: boolean }) => void) => { listeners.add(cb) },
+    removeEventListener: (_type: string, cb: (e: { matches: boolean }) => void) => { listeners.delete(cb) },
   }
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     configurable: true,
     value: vi.fn().mockReturnValue(mql),
+  })
+  return (next: boolean) => act(() => {
+    mql.matches = next
+    for (const listener of listeners) listener({ matches: next })
   })
 }
 
@@ -244,5 +249,24 @@ describe('portrait analysis structure', () => {
     expect(pageLayout()).toBe('landscape')
     expect(document.querySelector('[data-portrait-dock="true"]')).toBeNull()
     expect(document.querySelectorAll('header button[id]').length).toBe(7)
+  })
+
+  it('preserves the same frame and register across responsive layouts', () => {
+    const resize = setMatchMedia(false)
+    useAppStore.getState().setFrames([
+      { time: 1, f0: 300, f1: 700, f2: 1200, register: 'chest' },
+    ])
+    renderInsideShell(<AnalysisPage />)
+    expect(screen.getByText('真声')).toBeTruthy()
+    expect(screen.getByText('300 Hz')).toBeTruthy()
+    resize(true)
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
+    expect(screen.queryByText('真声')).toBeNull()
+    expect(screen.getByTestId('hero-f0').textContent).toBe('300')
+    expect(screen.getByTestId('hero-col-f0').getAttribute('data-status')).toBe('high')
+    resize(false)
+    expect(screen.getByText('真声')).toBeTruthy()
+    expect(screen.getByText('300 Hz')).toBeTruthy()
+    expect(screen.getByText('F0偏高 F1偏低')).toBeTruthy()
   })
 })

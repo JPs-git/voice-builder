@@ -12,30 +12,18 @@ const VAL_COLORS: Record<FormantSeries, string> = {
   f2: 'var(--v2-f2)',
 }
 
-export interface Badge {
-  tone: 'idle' | 'hit' | 'warn'
-  text: string
+const STATUS_LABELS: Record<FormantStatus, string> = {
+  high: '高于目标范围',
+  low: '低于目标范围',
+  hit: '目标范围内',
+  none: '暂无有效数据',
 }
 
-export function resolveBadge(statuses: FormantStatus[]): Badge {
-  if (statuses.length === 0) return { tone: 'idle', text: '等待声音' }
-  const meaningful = statuses.filter(s => s !== 'none')
-  if (meaningful.length === 0) return { tone: 'idle', text: '等待声音' }
-  if (meaningful.every(s => s === 'hit')) return { tone: 'hit', text: '目标范围内' }
-  if (meaningful.some(s => s === 'high')) return { tone: 'warn', text: '偏高' }
-  return { tone: 'warn', text: '偏低' }
-}
-
-export function statusGlyph(status: FormantStatus): string {
+export function statusGlyph(status: FormantStatus): '↑' | '↓' | '✓' | '' {
   if (status === 'hit') return '✓'
   if (status === 'low') return '↓'
   if (status === 'high') return '↑'
-  return '—'
-}
-
-function formatValue(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value) || value <= 0) return '--'
-  return String(Math.round(value))
+  return ''
 }
 
 export function FeedbackHero() {
@@ -44,8 +32,6 @@ export function FeedbackHero() {
   const formantVisible = useAppStore(s => s.formantVisible)
 
   const visibleKeys = KEYS.filter(key => formantVisible[key])
-  const statuses = visibleKeys.map(key => getFormantStatus(latestFrame?.[key], bands[key].range))
-  const badge = resolveBadge(statuses)
 
   return (
     <section className={styles.card} aria-label="实时反馈">
@@ -55,28 +41,32 @@ export function FeedbackHero() {
         <i />
       </span>
       <span className={styles.title}>实时反馈</span>
-      <span
-        className={styles.badge}
-        data-tone={badge.tone}
-        data-testid="hero-badge"
-      >
-        <span className={styles.badgeDot} aria-hidden="true" />
-        {badge.text}
-      </span>
-
-      {visibleKeys.map(key => (
+      {visibleKeys.map(key => {
+        const value = latestFrame?.[key]
+        const valid = value != null && Number.isFinite(value) && value > 0
+        const status = valid ? getFormantStatus(value, bands[key].range) : 'none'
+        const text = valid ? String(Math.round(value)) : '--'
+        return (
         <span
           key={key}
           className={styles.value}
+          role="group"
+          aria-label={status === 'none'
+            ? `${key.toUpperCase()} ${STATUS_LABELS.none}`
+            : `${key.toUpperCase()} ${text} Hz，${STATUS_LABELS[status]}`}
+          data-status={status}
           data-testid={`hero-col-${key}`}
           style={{ color: VAL_COLORS[key] }}
         >
           <span className={styles.valueKey}>{key.toUpperCase()}</span>
           <span className={styles.number} data-testid={key === 'f0' ? 'hero-f0' : undefined}>
-            {formatValue(latestFrame?.[key])}
-          </span><span className={styles.unit}>Hz</span>
+            {text}
+          </span>
+          {valid && <span className={styles.unit}>Hz</span>}
+          <span className={styles.direction} aria-hidden="true">{statusGlyph(status)}</span>
         </span>
-      ))}
+        )
+      })}
     </section>
   )
 }

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { AppShell } from '../routes/AppShell'
+import { AnalysisPage } from '../routes/AnalysisPage'
 import { useAppStore } from '../store/appStore'
 
 const { setOptionMock } = vi.hoisted(() => ({ setOptionMock: vi.fn() }))
@@ -27,12 +28,12 @@ function setMatchMedia(matches: boolean) {
   })
 }
 
-function renderShell() {
+function renderShell(page = <div data-testid="page" />) {
   return render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route element={<AppShell />}>
-          <Route index element={<div data-testid="page" />} />
+          <Route index element={page} />
           <Route path="practice" element={<div data-testid="practice-page" />} />
         </Route>
       </Routes>
@@ -72,5 +73,20 @@ describe('AppShell toolbar density', () => {
     fireEvent.click(screen.getByRole('link', { name: '音高参考' }))
     expect(screen.getByTestId('practice-page')).toBeTruthy()
     expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('clears the real portrait feedback through the dock action', () => {
+    setMatchMedia(true)
+    useAppStore.getState().setFrames([
+      { time: 1, f0: 300, f1: 700, f2: 1200, register: 'mixed' },
+    ])
+    renderShell(<AnalysisPage />)
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
+    expect(screen.getByTestId('hero-col-f0').textContent).toContain('↑')
+    fireEvent.click(screen.getByRole('button', { name: '清除图谱' }))
+    expect(screen.queryByRole('group', { name: /^声区：/ })).toBeNull()
+    expect(screen.getByTestId('hero-f0').textContent).toBe('--')
+    expect(screen.getByTestId('hero-col-f0').textContent).not.toMatch(/[↑↓]/)
+    expect(useAppStore.getState().frames).toEqual([])
   })
 })
