@@ -1,5 +1,6 @@
 import { useAppStore } from '../../store/appStore'
 import { getFormantStatus } from '../../feedback/status'
+import { VOICE_REGISTER_LABELS } from '../../feedback/register'
 import type { FormantStatus } from '../../feedback/status'
 import type { FormantSeries } from '../../types'
 import styles from './FeedbackHero.module.css'
@@ -10,20 +11,6 @@ const VAL_COLORS: Record<FormantSeries, string> = {
   f0: 'var(--v2-f0)',
   f1: 'var(--v2-f1)',
   f2: 'var(--v2-f2)',
-}
-
-export interface Badge {
-  tone: 'idle' | 'hit' | 'warn'
-  text: string
-}
-
-export function resolveBadge(statuses: FormantStatus[]): Badge {
-  if (statuses.length === 0) return { tone: 'idle', text: '等待声音' }
-  const meaningful = statuses.filter(s => s !== 'none')
-  if (meaningful.length === 0) return { tone: 'idle', text: '等待声音' }
-  if (meaningful.every(s => s === 'hit')) return { tone: 'hit', text: '目标范围内' }
-  if (meaningful.some(s => s === 'high')) return { tone: 'warn', text: '偏高' }
-  return { tone: 'warn', text: '偏低' }
 }
 
 export function statusGlyph(status: FormantStatus): string {
@@ -40,12 +27,13 @@ function formatValue(value: number | null | undefined): string {
 
 export function FeedbackHero() {
   const latestFrame = useAppStore(s => s.latestFrame)
-  const bands = useAppStore(s => s.bands)
   const formantVisible = useAppStore(s => s.formantVisible)
 
   const visibleKeys = KEYS.filter(key => formantVisible[key])
-  const statuses = visibleKeys.map(key => getFormantStatus(latestFrame?.[key], bands[key].range))
-  const badge = resolveBadge(statuses)
+  const detectedRegister = latestFrame?.register
+  const register = detectedRegister === 'chest' || detectedRegister === 'mixed' || detectedRegister === 'falsetto'
+    ? detectedRegister
+    : 'unvoiced'
 
   return (
     <section className={styles.card} aria-label="实时反馈">
@@ -57,11 +45,12 @@ export function FeedbackHero() {
       <span className={styles.title}>实时反馈</span>
       <span
         className={styles.badge}
-        data-tone={badge.tone}
+        data-register={register}
         data-testid="hero-badge"
+        aria-label={`声区：${register === 'unvoiced' ? '等待声音' : VOICE_REGISTER_LABELS[register]}`}
       >
         <span className={styles.badgeDot} aria-hidden="true" />
-        {badge.text}
+        {register === 'unvoiced' ? '等待声音' : VOICE_REGISTER_LABELS[register]}
       </span>
 
       {visibleKeys.map(key => (

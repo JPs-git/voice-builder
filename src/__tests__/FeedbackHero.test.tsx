@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { FeedbackHero, resolveBadge, statusGlyph } from '../components/mobile/FeedbackHero'
+import { FeedbackHero, statusGlyph } from '../components/mobile/FeedbackHero'
 import { useAppStore } from '../store/appStore'
 import type { FormantStatus } from '../feedback/status'
 import type { VoiceRegister } from '../types'
@@ -9,32 +9,10 @@ function setFrame(
   f0: number | null,
   f1: number | null,
   f2: number | null,
-  register?: VoiceRegister,
+  register?: VoiceRegister | null,
 ) {
   useAppStore.getState().setLatestFrame({ time: 1, f0, f1, f2, register })
 }
-
-describe('resolveBadge', () => {
-  it('reports waiting when there are no statuses', () => {
-    expect(resolveBadge([])).toEqual({ tone: 'idle', text: '等待声音' })
-  })
-
-  it('reports in-range when every meaningful status hits', () => {
-    expect(resolveBadge(['hit', 'hit', 'hit'])).toEqual({ tone: 'hit', text: '目标范围内' })
-  })
-
-  it('reports high when any status is high', () => {
-    expect(resolveBadge(['hit', 'high', 'low'])).toEqual({ tone: 'warn', text: '偏高' })
-  })
-
-  it('reports low when there is a low and no high', () => {
-    expect(resolveBadge(['low', 'hit', 'hit'])).toEqual({ tone: 'warn', text: '偏低' })
-  })
-
-  it('treats none as neither hit nor warn', () => {
-    expect(resolveBadge(['none', 'none', 'none'])).toEqual({ tone: 'idle', text: '等待声音' })
-  })
-})
 
 describe('statusGlyph', () => {
   it('maps each status to its glyph', () => {
@@ -67,22 +45,33 @@ describe('FeedbackHero', () => {
     expect(screen.getByTestId('hero-f0').textContent).toBe('245')
   })
 
-  it('shows the in-range badge when every visible band is inside its range', () => {
-    const { bands } = useAppStore.getState()
-    setFrame(240, bands.f1.range[0] + 10, bands.f2.range[0] + 10)
+  it.each([
+    ['chest', '真声'],
+    ['mixed', '混声'],
+    ['falsetto', '假声'],
+    ['unvoiced', '等待声音'],
+    [null, '等待声音'],
+    [undefined, '等待声音'],
+  ] as const)('shows the algorithm register %s as %s', (register, label) => {
+    setFrame(240, 900, 1200, register)
     render(<FeedbackHero />)
     const badge = screen.getByTestId('hero-badge')
-    expect(badge.textContent).toBe('目标范围内')
-    expect(badge.getAttribute('data-tone')).toBe('hit')
+    expect(badge.textContent).toBe(label)
+    expect(badge.getAttribute('data-register')).toBe(register ?? 'unvoiced')
   })
 
-  it('shows the low badge when a band falls under its range', () => {
-    const { bands } = useAppStore.getState()
-    setFrame(240, bands.f1.range[0] - 50, bands.f2.range[0] + 10)
+  it('keeps the register badge independent of target deviations', () => {
+    setFrame(300, 700, 1200, 'chest')
     render(<FeedbackHero />)
-    const badge = screen.getByTestId('hero-badge')
-    expect(badge.textContent).toBe('偏低')
-    expect(badge.getAttribute('data-tone')).toBe('warn')
+    expect(screen.getByTestId('hero-badge').textContent).toBe('真声')
+  })
+
+  it('keeps the register when every frequency series is hidden', () => {
+    for (const key of ['f0', 'f1', 'f2'] as const) useAppStore.getState().toggleFormantVisible(key)
+    setFrame(240, 900, 1200, 'falsetto')
+    render(<FeedbackHero />)
+    expect(screen.getByTestId('hero-badge').textContent).toBe('假声')
+    expect(screen.queryByTestId('hero-col-f0')).toBeNull()
   })
 
   it('renders F0/F1/F2 values inline in one row', () => {
