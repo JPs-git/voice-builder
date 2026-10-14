@@ -1,6 +1,6 @@
 # Portrait Feedback Indicators Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. 本任务建议在当前会话内顺序实施。
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking. 本任务建议在当前会话内顺序实施。
 
 **Goal:** 竖屏反馈栏用声区徽标展示真声/混声/假声，各频率指标通过独立箭头和数值颜色表达与目标区间的关系。
 
@@ -17,7 +17,7 @@
 - 分支：`feat/portrait-feedback-indicators`。
 - Worktree：`C:/Users/Administrator/Projects/voice-builder/.worktrees/feat/portrait-feedback-indicators`。
 - 基线验证：52 个测试文件、387 项测试通过；已有异常路径日志和 Toast act 警告。
-- 当前仅编制计划；以下任务尚未实施。
+- 计划已获用户审核，以下三项任务已完成。
 
 ## 确认范围与交互规则
 
@@ -89,38 +89,38 @@
 
 **Interfaces:** 新增 `VOICE_REGISTER_LABELS: Readonly<Record<VoiceRegister, string>>`，值为 chest→真声、mixed→混声、falsetto→假声、unvoiced→—。桌面消费原样名称；移动端对 unvoiced 及缺失值显示等待声音。保留 `hero-badge` 定位，使用 `data-register` 区分四态，移除旧 resolveBadge、Badge 类型及对应汇总逻辑。
 
-- [ ] 先改 FeedbackHero 测试：用 `it.each` 输入 chest/mixed/falsetto/unvoiced/undefined，断言徽标分别显示真声/混声/假声/等待声音/等待声音；包含无 frame 用例。
-- [ ] 增加两条可见行为断言：`register='chest'` 且 F0 偏高时仍显示真声；隐藏 F0/F1/F2 后仍显示真声。
-- [ ] 运行 `npm test -- --project unit src/__tests__/FeedbackHero.test.tsx`，确认新徽标测试因旧行为失败。
-- [ ] 新建名称映射、更新两端引用和移动端徽标；CSS 将 `data-tone` 的目标命中样式改为 `data-register` 的声区样式。未知/缺失结果按 unvoiced 处理，不改变桌面缺失值显示。
-- [ ] 运行 `npm test -- --project unit src/__tests__/FeedbackHero.test.tsx src/__tests__/FeedbackCard.test.tsx`，确认通过。删除仅服务于旧汇总行为的测试。
-- [ ] 提交：`feat(feedback): display register in portrait badge`。
+- [x] 先改 FeedbackHero 测试：用 `it.each` 输入 chest/mixed/falsetto/unvoiced/undefined，断言徽标分别显示真声/混声/假声/等待声音/等待声音；包含无 frame 用例。
+- [x] 增加两条可见行为断言：`register='chest'` 且 F0 偏高时仍显示真声；隐藏 F0/F1/F2 后仍显示真声。
+- [x] 运行 `npm test -- --project unit src/__tests__/FeedbackHero.test.tsx`，确认新徽标测试因旧行为失败。
+- [x] 新建名称映射、更新两端引用和移动端徽标；CSS 将 `data-tone` 的目标命中样式改为 `data-register` 的声区样式。未知/缺失结果按 unvoiced 处理，不改变桌面缺失值显示。
+- [x] 运行 `npm test -- --project unit src/__tests__/FeedbackHero.test.tsx src/__tests__/FeedbackCard.test.tsx`，确认通过。删除仅服务于旧汇总行为的测试。
+- [x] 提交：`feat(feedback): display register in portrait badge`。
 
 ### Task 2: 增加独立方向箭头与数字状态色
 
 **Interfaces:** `statusGlyph(status: FormantStatus): '↑' | '↓' | ''`。每列设置 `data-status='high'|'low'|'hit'|'none'`；继续保留 `hero-col-f0/f1/f2` 和 `hero-f0` 的数字定位。有效值调用现有 getFormantStatus，无效值直接归为 none，不改共享比较函数。
 
-- [ ] 先添加混合状态测试：默认目标、帧 `{f0:300,f1:700,f2:1200,register:'mixed'}`，F0 为 high/↑，F1 为 low/↓，F2 为 hit/无方向；徽标仍为混声。
-- [ ] 添加参数化测试：F0 为 200、280 时 hit；199.9 为 low，280.1 为 high；null/NaN/Infinity/0/-1 时 --/none/无方向。缺失值对 F1/F2 同样覆盖。
-- [ ] 添加更新测试：帧 F0=300 时为 high，将目标改成 [290,310] 后为 hit，恢复预设后为 high；更新帧至 190 后为 low；隐藏 F1 后不再显示该列。
-- [ ] 为 low/high/hit/none 断言可访问名称，确保方向信息可通过文字理解。
-- [ ] 运行 FeedbackHero 测试，确认箭头、data-status 及可访问名称的新断言先失败。
-- [ ] 在现有组件的逐指标渲染中加入有效性判断、statusGlyph 和 aria-label；CSS 在数字/箭头层按 data-status 上色，保留标签身份色及单位中性色，预留箭头槽位。不要把所有文字继承为指标颜色。
-- [ ] 运行 `npm test -- --project unit src/__tests__/FeedbackHero.test.tsx src/__tests__/FeedbackCard.test.tsx src/__tests__/status.test.ts`，确认通过。
-- [ ] 提交：`feat(feedback): show per-metric direction and status colors`。
+- [x] 先添加混合状态测试：默认目标、帧 `{f0:300,f1:700,f2:1200,register:'mixed'}`，F0 为 high/↑，F1 为 low/↓，F2 为 hit/无方向；徽标仍为混声。
+- [x] 添加参数化测试：F0 为 200、280 时 hit；199.9 为 low，280.1 为 high；null/NaN/Infinity/0/-1 时 --/none/无方向。缺失值对 F1/F2 同样覆盖。
+- [x] 添加更新测试：帧 F0=300 时为 high，将目标改成 [290,310] 后为 hit，恢复预设后为 high；更新帧至 190 后为 low；隐藏 F1 后不再显示该列。
+- [x] 为 low/high/hit/none 断言可访问名称，确保方向信息可通过文字理解。
+- [x] 运行 FeedbackHero 测试，确认箭头、data-status 及可访问名称的新断言先失败。
+- [x] 在现有组件的逐指标渲染中加入有效性判断、statusGlyph 和 aria-label；CSS 在数字/箭头层按 data-status 上色，保留标签身份色及单位中性色，预留箭头槽位。不要把所有文字继承为指标颜色。
+- [x] 运行 `npm test -- --project unit src/__tests__/FeedbackHero.test.tsx src/__tests__/FeedbackCard.test.tsx src/__tests__/status.test.ts`，确认通过。
+- [x] 提交：`feat(feedback): show per-metric direction and status colors`。
 
 ### Task 3: 验证集成、窄屏及文档同步
 
 **Interfaces:** 复用 Task 1、2 的 DOM 状态及现有 store/shell，无新增产品接口。
 
-- [ ] 在 layoutShells 的既有真实组件测试中加入竖屏有结果→清空→等待声音/-- 的行为断言；横竖切换后同一帧的频率及声区保持对应。若现有测试 mock 了组件，使用实际 FeedbackHero，不对 mock 本身做断言。
-- [ ] 先运行该测试并检查覆盖是否有效，再按实际行为完善 Task 1、2；无需专门测试文案源码或常量定义。
-- [ ] 更新 docs/ui-design-portrait.md 的实时反馈栏规范：声区独立展示、箭头含义、四种数字颜色、缺失值及可访问性。
-- [ ] 执行 `npm test`、`npm run build`、`npx tsc --noEmit`、`git diff --check`；要求退出码均为 0，记录既有警告。
-- [ ] 浏览器检查 320/360/390/768px 与桌面宽度：使用本地合成音频或开发测试夹具覆盖混合方向、四位数和无结果，避免调用用户真实麦克风。检查实际 CSS 颜色、固定箭头槽位、单行无截断、隐藏列、清空和切目标。DOM 测试不能替代真实布局检查。
-- [ ] 对照需求与 diff 自审：确认声区未从频率推断、旧整体徽标逻辑已删除、桌面只复用名称、PR #47 的共享参考数值保持正确。
-- [ ] 提交：`test(feedback): cover portrait feedback integration`（包含相应规范文档更新）。
+- [x] 在 layoutShells 的既有真实组件测试中加入竖屏有结果→清空→等待声音/-- 的行为断言；横竖切换后同一帧的频率及声区保持对应。若现有测试 mock 了组件，使用实际 FeedbackHero，不对 mock 本身做断言。
+- [x] 先运行该测试并检查覆盖是否有效，再按实际行为完善 Task 1、2；无需专门测试文案源码或常量定义。
+- [x] 更新 docs/ui-design-portrait.md 的实时反馈栏规范：声区独立展示、箭头含义、四种数字颜色、缺失值及可访问性。
+- [x] 执行 `npm test`、`npm run build`、`npx tsc --noEmit`、`git diff --check`；要求退出码均为 0，记录既有警告。
+- [x] 浏览器检查 320/360/390/768px 与桌面宽度：使用本地合成音频或开发测试夹具覆盖混合方向、四位数和无结果，避免调用用户真实麦克风。检查实际 CSS 颜色、固定箭头槽位、单行无截断、隐藏列、清空和切目标。DOM 测试不能替代真实布局检查。
+- [x] 对照需求与 diff 自审：确认声区未从频率推断、旧整体徽标逻辑已删除、桌面只复用名称、PR #47 的共享参考数值保持正确。
+- [x] 提交：`test(feedback): cover portrait feedback integration`（包含相应规范文档更新）。
 
 ## 交付与执行边界
 
-本次请求交付新 worktree 和实施计划；产品代码在计划审核后实施。推荐在当前会话顺序执行上述三个任务。创建 PR、合并及清理工作区在相应阶段按用户指令进行。
+本计划经用户审核后已在当前会话顺序执行。全量 399 项测试、构建、类型检查和差异检查通过；独立代码审查未发现阻塞问题。已用本地合成夹具验证 320/360/390/768px 的四位数、方向箭头、实际颜色、目标编辑、隐藏列和清空，并验证桌面反馈。集成清空测试位于 AppShellPortrait.test.tsx（该文件使用真实 useToolbar），布局切换测试位于 layoutShells.test.tsx。创建 PR、合并及清理 worktree 按后续用户指令进行。
