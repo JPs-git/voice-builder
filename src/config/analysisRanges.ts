@@ -1,5 +1,11 @@
 export const F0_RANGE = { min: 60, max: 1000 } as const
 
+// Fixed F0 chart references, separate from editable vowel training targets.
+export const F0_REFERENCE_ZONES = [
+  { id: 'male', label: '男声', range: [80, 150] },
+  { id: 'female', label: '女声', range: [180, 300] },
+] as const
+
 export const BAND_INPUT_LIMITS: Record<
   'f0' | 'f1' | 'f2',
   { min: number; max: number; step: number }

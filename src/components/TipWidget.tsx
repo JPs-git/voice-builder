@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import styles from './TipWidget.module.css'
+import { F0_REFERENCE_ZONES } from '../config/analysisRanges'
 
 const DEFAULT_TIPS = [
   '点击顶部「开始录音」或「导入 WAV」即可开始分析',
@@ -8,7 +9,7 @@ const DEFAULT_TIPS = [
   '保持话筒距离 10–15cm，录音效果更佳',
   '持续平稳发声，能获得更稳定的共振峰曲线',
   '点击图例可单独隐藏或显示 F0/F1/F2 曲线',
-  'F0 基频决定音高，女性通常 180–300Hz，男性 80–150Hz',
+  `基频图中的固定参考区间：${F0_REFERENCE_ZONES.map(zone => `${zone.label} ${zone.range[0]}–${zone.range[1]} Hz`).join('；')}`,
   '录音超过 10 秒时自动保留最近 10 秒数据',
   '点「清空」按钮重置所有数据和图表',
   '遇到问题？点击顶栏 ? 按钮查看完整使用说明',
