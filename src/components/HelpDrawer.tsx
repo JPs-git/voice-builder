@@ -1,66 +1,45 @@
-import { Drawer } from './Drawer'
+import { useEffect, useRef } from 'react'
+import { Modal } from './Modal'
+import { useMediaQuery } from '../hooks/useMediaQuery'
+import { HELP_TOPIC_ORDER, getHelpTopicTitle, getHelpSections, getPresetRows, type HelpTopic } from '../content/helpContent'
 import styles from './HelpDrawer.module.css'
-import { F0_REFERENCE_ZONES } from '../config/analysisRanges'
 
 interface HelpDrawerProps {
   open: boolean
   onClose: () => void
+  topic: HelpTopic
+  onTopicChange: (topic: HelpTopic) => void
 }
 
-export function HelpDrawer({ open, onClose }: HelpDrawerProps) {
+export function HelpDrawer({ open, onClose, topic, onTopicChange }: HelpDrawerProps) {
+  const portrait = useMediaQuery('(max-width: 768px)')
+  const contentRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    contentRef.current?.closest('[data-modal-body]')?.scrollTo?.({ top: 0 })
+  }, [topic, open])
   return (
-    <Drawer open={open} title="使用说明" onClose={onClose}>
-      <section>
-        <h4>如何开始</h4>
-        <p>点击顶部「开始录音」，或点击「导入 WAV」选择已有音频文件。首次使用浏览器会询问麦克风权限。</p>
-      </section>
-      <section>
-        <h4>基频</h4>
-        <p>展示 F0 基频随时间的变化曲线。蓝色、粉色区域分别为固定参考区间：{F0_REFERENCE_ZONES.map(zone => `${zone.label} ${zone.range[0]}–${zone.range[1]} Hz`).join('，')}。参考线位于各区间中点。</p>
-      </section>
-      <section>
-        <h4>共振峰</h4>
-        <p>F0 是基频（决定声音高低），F1/F2 决定音色。绿色区间为目标区间。</p>
-      </section>
-      <section>
-        <h4>目标区间含义（女声普通话参考）</h4>
-        <table className={styles.refTable}>
-          <thead>
-            <tr>
-              {['元音', 'F0 (Hz)', 'F1 (Hz)', 'F2 (Hz)', 'F3 (Hz)', 'F4 (Hz)'].map(h => (
-                <th key={h}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              { v: 'a', f0: '200–280', f1: '800–1000', f2: '1100–1400', f3: '2700–3100', f4: '3800–4200' },
-              { v: 'o', f0: '200–280', f1: '480–620', f2: '700–1000', f3: '2700–3100', f4: '3700–4100' },
-              { v: 'e', f0: '200–280', f1: '500–660', f2: '1000–1300', f3: '2700–3200', f4: '3800–4200' },
-              { v: 'i', f0: '220–300', f1: '280–380', f2: '2500–3000', f3: '3200–3600', f4: '4000–4400' },
-              { v: 'u', f0: '200–280', f1: '300–400', f2: '600–900', f3: '2500–3000', f4: '3600–4000' },
-              { v: 'ü', f0: '220–300', f1: '280–380', f2: '1800–2200', f3: '2400–2900', f4: '3800–4200' },
-            ].map(row => (
-              <tr key={row.v}>
-                <td>{row.v}</td>
-                <td>{row.f0}</td>
-                <td>{row.f1}</td>
-                <td>{row.f2}</td>
-                <td>{row.f3}</td>
-                <td>{row.f4}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-      <section>
-        <h4>常见问题</h4>
-        <ul>
-          <li>麦克风没反应？请检查浏览器地址栏的权限图标。</li>
-          <li>曲线过于抖动？说话尽量持续、平稳会更稳定。</li>
-          <li>看不到任何图像？刷新页面并重新开始录音。</li>
-        </ul>
-      </section>
-    </Drawer>
+    <Modal open={open} title="使用说明" onClose={onClose}>
+      <nav className={styles.topics} aria-label="帮助主题">
+        {HELP_TOPIC_ORDER.map(item => <button key={item} type="button" aria-pressed={topic === item}
+          onClick={() => onTopicChange(item)}>{getHelpTopicTitle(item)}</button>)}
+      </nav>
+      <div ref={contentRef} className={styles.content}>
+        <h4 className={styles.chapterTitle}>{getHelpTopicTitle(topic)}</h4>
+        {getHelpSections(topic, portrait ? 'portrait' : 'landscape').map((section, index) => (
+          <section key={section.title} className={styles.section}>
+            <h5>{topic === 'quick-start' && <span className={styles.step}>{index + 1}</span>}{section.title}</h5>
+            {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+          </section>
+        ))}
+        {topic === 'targets' && <table className={styles.refTable}>
+          <caption>默认预设（Hz）</caption>
+          <thead><tr>{['元音', 'F0', 'F1', 'F2'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
+          <tbody>{getPresetRows().map(row => <tr key={row.vowel}>
+            <th scope="row">{row.vowel}</th>
+            {row.ranges.map((range, index) => <td key={index}>{range.join('–')}</td>)}
+          </tr>)}</tbody>
+        </table>}
+      </div>
+    </Modal>
   )
 }

@@ -1,23 +1,14 @@
-.refTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-  margin-top: 4px;
-}
-
-.refTable th, .refTable td {
-  border: 1px solid #E5E7EB;
-  padding: 3px 4px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.refTable th {
-  background: #F9FAFB;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.refTable td {
-  color: var(--text-soft);
-}
+.topics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 24px; }
+.topics button { min-height: 44px; padding: 8px 4px; border: 1px solid var(--border); border-radius: 12px; background: #f3f7fc; color: var(--text-soft); font: inherit; font-size: 13px; cursor: pointer; }
+.topics button[aria-pressed='true'] { background: #eaf3ff; color: #1677ff; border-color: #91c1ff; font-weight: 700; }
+.topics button:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; }
+.content { color: var(--text-soft); font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
+.chapterTitle { color: var(--text); font-size: 18px; margin: 0 0 20px; }
+.section { margin-bottom: 20px; }
+.section h5 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; color: var(--text); font-size: 15px; }
+.section p { margin: 6px 0; }
+.step { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; color: #1677ff; background: #eaf3ff; }
+.refTable { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; }
+.refTable caption { text-align: left; margin-bottom: 8px; color: var(--text); font-weight: 700; font-size: 14px; }
+.refTable th, .refTable td { padding: 8px 3px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.refTable thead { background: #f3f7fc; }

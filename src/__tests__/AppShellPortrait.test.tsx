@@ -75,6 +75,19 @@ describe('AppShell toolbar density', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
+  it('opens quick-start from More without requesting microphone permission', () => {
+    setMatchMedia(true)
+    const getUserMedia = vi.fn()
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
+    renderShell()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '更多操作' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /帮助/ }))
+    expect(screen.getByRole('button', { name: '快速上手' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByText(/点击底部麦克风按钮/)).toBeTruthy()
+    expect(getUserMedia).not.toHaveBeenCalled()
+  })
+
   it('clears the real portrait feedback through the dock action', () => {
     setMatchMedia(true)
     useAppStore.getState().setFrames([

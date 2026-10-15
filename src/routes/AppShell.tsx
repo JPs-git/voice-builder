@@ -13,6 +13,7 @@ import { AboutModal } from '../components/AboutModal'
 import { Toast } from '../components/Toast'
 import { useAppStore } from '../store/appStore'
 import { presetShortLabel } from '../types'
+import type { HelpTopic } from '../content/helpContent'
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -27,11 +28,13 @@ export interface ShellContext {
   onRecord: () => void
   pianoScrollProgress?: number
   setPianoScrollProgress?: (progress: number) => void
+  onOpenHelp?: (topic: HelpTopic) => void
 }
 
 export function AppShell() {
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [helpTopic, setHelpTopic] = useState<HelpTopic>('quick-start')
   const [aboutOpen, setAboutOpen] = useState(false)
   const [goalOpen, setGoalOpen] = useState(false)
   const pianoScrollProgressRef = useRef(0)
@@ -40,6 +43,17 @@ export function AppShell() {
   const isPractice = useMatch('/practice') != null
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
   const activePreset = useAppStore(s => s.activePreset)
+
+  const openOverlay = (overlay: 'config' | 'help' | 'about' | 'goal') => {
+    setConfigOpen(overlay === 'config')
+    setHelpOpen(overlay === 'help')
+    setAboutOpen(overlay === 'about')
+    setGoalOpen(overlay === 'goal')
+  }
+  const openHelp = (topic: HelpTopic = 'quick-start') => {
+    setHelpTopic(topic)
+    openOverlay('help')
+  }
 
   const {
     toolItems,
@@ -51,14 +65,15 @@ export function AppShell() {
     fileInputRef,
     handleFileChange,
   } = useToolbar(
-    () => setConfigOpen(true),
-    () => setHelpOpen(true),
-    () => setAboutOpen(true),
+    () => openOverlay('config'),
+    () => openHelp(),
+    () => openOverlay('about'),
   )
 
   const togglePage = () => navigate(isPractice ? '/' : '/practice')
 
   const shellContext: ShellContext = {
+    onOpenHelp: openHelp,
     cursorTime,
     hasData,
     isCapturing,
@@ -95,7 +110,7 @@ export function AppShell() {
             isCapturing={isCapturing}
             isRequesting={isRequesting}
             goalLabel={presetShortLabel(activePreset)}
-            onGoalClick={() => setGoalOpen(true)}
+            onGoalClick={() => openOverlay('goal')}
             showGoal={!isPractice}
             onClear={() => handleClickTool('clear')}
             onPlayback={() => handleClickTool('playback')}
@@ -107,7 +122,7 @@ export function AppShell() {
       )}
       <Toast />
       <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
-      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} />
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <input ref={fileInputRef} type="file" accept="audio/*" hidden onChange={handleFileChange} />
     </>
