@@ -86,6 +86,8 @@ describe('AppShell toolbar density', () => {
     expect(screen.getByRole('button', { name: '快速上手' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByText(/点击底部麦克风按钮/)).toBeTruthy()
     expect(getUserMedia).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
   })
 
   it('clears the real portrait feedback through the dock action', () => {

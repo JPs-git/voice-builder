@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ToolItem } from '../../hooks/useToolbar'
 import styles from './MobileMoreMenu.module.css'
 
@@ -10,10 +10,11 @@ export interface MobileMoreMenuProps {
 
 export function MobileMoreMenu({ items, onSelect, nav }: MobileMoreMenuProps) {
   const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const menuItems = items.filter(item => item.id !== 'record')
   return (
     <div className={styles.wrap}>
-      <button type="button" className={styles.trigger} aria-label="更多操作"
+      <button ref={triggerRef} type="button" className={styles.trigger} aria-label="更多操作"
         aria-expanded={open} onClick={() => setOpen(prev => !prev)}>⋯</button>
       {open && (
         <div className={styles.menu} role="menu">
@@ -27,7 +28,13 @@ export function MobileMoreMenu({ items, onSelect, nav }: MobileMoreMenuProps) {
           {menuItems.map(item => (
             <button key={item.id} type="button" role="menuitem" className={styles.item}
               disabled={item.disabled}
-              onClick={() => { if (item.disabled) return; onSelect(item.id); setOpen(false) }}>
+              onClick={() => {
+                if (item.disabled) return
+                // The menu item unmounts; modal focus restoration needs a persistent origin.
+                triggerRef.current?.focus()
+                onSelect(item.id)
+                setOpen(false)
+              }}>
               <span className={styles.itemIcon} aria-hidden="true">{item.icon}</span>
               <span className={styles.itemLabel}>{item.label}</span>
             </button>
