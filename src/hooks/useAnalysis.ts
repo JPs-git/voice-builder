@@ -6,12 +6,13 @@ import { recordingBuffer } from '../audio/recordingBuffer'
 import { AnalysisPipeline, parseWav, isWavFile, Resampler } from '../dsp'
 import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuration } from '../audio/audioDecoder'
 import type { AnalysisFrame } from '../types'
+import { AUDIO_WINDOW_SECONDS } from '../config/audioLimits'
 
 const STEREO_NOTICE = '该音频为双声道，仅使用第 0 声道进行分析'
 
 function importErrorMessage(err: unknown): string {
   if (err instanceof AudioTooLongError) {
-    return '音频不能超过 10 秒，请裁剪后重试。'
+    return `音频不能超过 ${AUDIO_WINDOW_SECONDS} 秒，请裁剪后重试。`
   }
   if (err instanceof DOMException) {
     return '浏览器不支持该音频格式或文件已损坏，请尝试 wav/mp3/m4a。'
@@ -81,7 +82,7 @@ export function useAnalysis() {
   // ── Import commit (shared by WAV & decoded paths) ──
 
   const commitImport = useCallback((samples: Float32Array) => {
-    const maxSamples = 16000 * 10
+    const maxSamples = 16000 * AUDIO_WINDOW_SECONDS
     if (samples.length > maxSamples) {
       throw new AudioTooLongError()
     }
@@ -188,7 +189,7 @@ export function useAnalysis() {
         // full file is read into memory. `null` (header unresolvable) falls
         // through to the full parse, where commitImport backstops the limit.
         const duration = await probeWavDuration(file)
-        if (duration !== null && duration > 10) {
+        if (duration !== null && duration > AUDIO_WINDOW_SECONDS) {
           throw new AudioTooLongError()
         }
         const buf = await file.arrayBuffer()
@@ -207,7 +208,7 @@ export function useAnalysis() {
       // Compressed audio: probe duration (metadata only) BEFORE decoding,
       // so >10s files are rejected without full decode or heap churn.
       const duration = await probeAudioDuration(file)
-      if (duration > 10) {
+      if (duration > AUDIO_WINDOW_SECONDS) {
         throw new AudioTooLongError()
       }
 
