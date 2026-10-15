@@ -46,7 +46,6 @@ export function AnalysisLandscape() {
                   title="还没有声音数据"
                   description="点击顶栏「开始录音」"
                   visible={!hasData}
-                  action={onOpenHelp ? { label: '查看上手步骤', onClick: () => onOpenHelp('quick-start') } : undefined}
                 />
               </div>
             </div>

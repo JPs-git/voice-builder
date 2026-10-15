@@ -15,6 +15,23 @@ it('provides three steps with correct recording and goal entry positions', () =>
   expect(getQuickStartSteps('portrait')[0].description).toContain('底部')
   expect(getQuickStartSteps('landscape')[0].description).toContain('顶栏')
 })
+it('summarizes feedback, references and target actions using the current layout', () => {
+  const portrait = JSON.stringify(getQuickStartSteps('portrait'))
+  const landscape = JSON.stringify(getQuickStartSteps('landscape'))
+  for (const text of [portrait, landscape]) {
+    expect(text).toContain('固定参考色带')
+    expect(text).toContain('训练目标')
+    expect(text).toContain('全部元音')
+    expect(text).toContain('失焦')
+  }
+  expect(portrait).toContain('↑')
+  expect(portrait).toContain('✓')
+  expect(portrait).toContain('滑杆')
+  expect(landscape).toContain('颜色和文字')
+  expect(landscape).toContain('左侧')
+  expect(landscape).not.toContain('滑杆')
+  expect(landscape).not.toContain('底部')
+})
 it('reads targets from built-in presets rather than current customized settings', () => {
   expect(getPresetRows()).toHaveLength(6)
   const preset = VOWEL_PRESETS['vowel-a']

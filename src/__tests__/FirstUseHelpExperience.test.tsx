@@ -44,6 +44,21 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('first-use help integration', () => {
+  it.each([true, false])('uses contextual controls and one first-use banner on both pages (portrait=%s)', portrait => {
+    render(<TestApp />)
+    resizeLayout(portrait)
+    expect(screen.queryByRole('button', { name: '查看上手步骤' })).toBeNull()
+    expect(screen.getAllByRole('region', { name: '首次使用帮助' })).toHaveLength(1)
+    fireEvent.click(portrait ? screen.getByRole('link', { name: '音高参考' }) : screen.getByRole('button', { name: /音高参考/ }))
+    expect(screen.queryByRole('button', { name: '了解音高参考' })).toBeNull()
+    expect(screen.getByRole('button', { name: '音高图说明' })).toBeTruthy()
+    expect(screen.getAllByRole('region', { name: '首次使用帮助' })).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: '关闭首次使用提示' }))
+    resizeLayout(!portrait)
+    act(() => useAppStore.getState().clearFrames())
+    expect(screen.queryByRole('region', { name: '首次使用帮助' })).toBeNull()
+    expect(audio).not.toHaveBeenCalled()
+  })
   it.each([true, false])('restores current-layout focus after help crosses the breakpoint (starts portrait=%s)', portrait => {
     render(<TestApp />)
     resizeLayout(portrait)
@@ -137,8 +152,12 @@ describe('first-use help integration', () => {
     expect(useIntroHintStore.getState().handled).toBe(false)
   })
 
-  it.each(['capturing', 'requesting', 'playing', 'data'] as const)('temporarily hides for %s without completing', flag => {
+  it.each([
+    [true, 'capturing'], [false, 'capturing'], [true, 'requesting'], [false, 'requesting'],
+    [true, 'playing'], [false, 'playing'], [true, 'data'], [false, 'data'],
+  ] as const)('temporarily hides in portrait=%s for %s without completing', (portrait, flag) => {
     const view = render(<TestApp />)
+    resizeLayout(portrait)
     state[flag] = true
     view.rerender(<TestApp />)
     expect(screen.queryByRole('region', { name: '首次使用帮助' })).toBeNull()

@@ -120,13 +120,7 @@ describe('layout shell selection', () => {
     const onOpenHelp = vi.fn()
     const onRecord = vi.fn()
     renderWithContext(<AnalysisPage />, { ...SHELL_CONTEXT, hasData: false, onOpenHelp, onRecord })
-    if (portrait) {
-      expect(screen.queryByRole('button', { name: '查看上手步骤' })).toBeNull()
-    } else {
-      expect(screen.getAllByRole('button', { name: '查看上手步骤' })).toHaveLength(1)
-      fireEvent.click(screen.getByRole('button', { name: '查看上手步骤' }))
-      expect(onOpenHelp).toHaveBeenLastCalledWith('quick-start')
-    }
+    expect(screen.queryByRole('button', { name: '查看上手步骤' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '基频图说明' }))
     expect(onOpenHelp).toHaveBeenLastCalledWith('charts')
     fireEvent.click(screen.getByRole('button', { name: '共振峰图说明' }))
@@ -134,16 +128,11 @@ describe('layout shell selection', () => {
     expect(onRecord).not.toHaveBeenCalled()
   })
 
-  it.each([false, true])('opens pitch-reference help from both entry points (portrait=%s)', portrait => {
+  it.each([false, true])('opens pitch-reference help from chart controls (portrait=%s)', portrait => {
     setMatchMedia(portrait)
     const onOpenHelp = vi.fn()
     renderWithContext(<PracticePage />, { ...SHELL_CONTEXT, hasData: false, onOpenHelp })
-    if (portrait) {
-      expect(screen.queryByRole('button', { name: '了解音高参考' })).toBeNull()
-    } else {
-      fireEvent.click(screen.getByRole('button', { name: '了解音高参考' }))
-      expect(onOpenHelp).toHaveBeenLastCalledWith('pitch-reference')
-    }
+    expect(screen.queryByRole('button', { name: '了解音高参考' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '音高图说明' }))
     expect(onOpenHelp).toHaveBeenLastCalledWith('pitch-reference')
   })

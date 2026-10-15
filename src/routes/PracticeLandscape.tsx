@@ -38,7 +38,6 @@ export function PracticeLandscape() {
                 title="还没有声音数据"
                 description="点击顶栏「开始录音」，或点击琴键听参考音"
                 visible={!hasData}
-                action={onOpenHelp ? { label: '了解音高参考', onClick: () => onOpenHelp('pitch-reference') } : undefined}
               />
             </div>
           </div>
