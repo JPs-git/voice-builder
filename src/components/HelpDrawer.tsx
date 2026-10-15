@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { Modal } from './Modal'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { HELP_TOPIC_ORDER, getHelpTopicTitle, getHelpSections, getPresetRows, type HelpTopic } from '../content/helpContent'
@@ -9,16 +9,17 @@ interface HelpDrawerProps {
   onClose: () => void
   topic: HelpTopic
   onTopicChange: (topic: HelpTopic) => void
+  fallbackFocusRef?: RefObject<HTMLElement | null>
 }
 
-export function HelpDrawer({ open, onClose, topic, onTopicChange }: HelpDrawerProps) {
+export function HelpDrawer({ open, onClose, topic, onTopicChange, fallbackFocusRef }: HelpDrawerProps) {
   const portrait = useMediaQuery('(max-width: 768px)')
   const contentRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     contentRef.current?.closest('[data-modal-body]')?.scrollTo?.({ top: 0 })
   }, [topic, open])
   return (
-    <Modal open={open} title="使用说明" onClose={onClose}>
+    <Modal open={open} title="使用说明" onClose={onClose} fallbackFocusRef={fallbackFocusRef}>
       <nav className={styles.topics} aria-label="帮助主题">
         {HELP_TOPIC_ORDER.map(item => <button key={item} type="button" aria-pressed={topic === item}
           onClick={() => onTopicChange(item)}>{getHelpTopicTitle(item)}</button>)}

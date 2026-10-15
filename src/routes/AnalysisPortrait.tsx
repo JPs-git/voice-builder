@@ -57,7 +57,6 @@ export function AnalysisPortrait() {
                 description="点击下方开始录音"
                 visible={!hasData}
                 icon="🎙"
-                action={onOpenHelp ? { label: '查看上手步骤', onClick: () => onOpenHelp('quick-start') } : undefined}
               />
             </div>
           </section>

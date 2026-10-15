@@ -14,6 +14,8 @@ import { Toast } from '../components/Toast'
 import { useAppStore } from '../store/appStore'
 import { presetShortLabel } from '../types'
 import type { HelpTopic } from '../content/helpContent'
+import { useFirstUseHelp } from '../hooks/useFirstUseHelp'
+import { FirstUseHelpBanner } from '../components/mobile/FirstUseHelpBanner'
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -38,6 +40,9 @@ export function AppShell() {
   const [aboutOpen, setAboutOpen] = useState(false)
   const [goalOpen, setGoalOpen] = useState(false)
   const pianoScrollProgressRef = useRef(0)
+  const recordButtonRef = useRef<HTMLButtonElement>(null)
+  const [dockHeight, setDockHeight] = useState(0)
+  const { eligible, dismiss } = useFirstUseHelp()
 
   const navigate = useNavigate()
   const isPractice = useMatch('/practice') != null
@@ -71,6 +76,7 @@ export function AppShell() {
   )
 
   const togglePage = () => navigate(isPractice ? '/' : '/practice')
+  const isPlaying = toolItems.some(item => item.id === 'playback' && item.label === '停止')
 
   const shellContext: ShellContext = {
     onOpenHelp: openHelp,
@@ -81,7 +87,7 @@ export function AppShell() {
     onRecord: () => handleClickTool('record'),
     onClear: () => handleClickTool('clear'),
     onPlayback: () => handleClickTool('playback'),
-    isPlaying: toolItems.find(item => item.id === 'playback')?.label === '停止',
+    isPlaying,
     pianoScrollProgress: pianoScrollProgressRef.current,
     setPianoScrollProgress: (progress: number) => {
       pianoScrollProgressRef.current = progress
@@ -106,6 +112,8 @@ export function AppShell() {
       {isPortrait && (
         <>
           <RecordDock
+            recordButtonRef={recordButtonRef}
+            onHeightChange={setDockHeight}
             onRecord={() => handleClickTool('record')}
             isCapturing={isCapturing}
             isRequesting={isRequesting}
@@ -115,14 +123,21 @@ export function AppShell() {
             onClear={() => handleClickTool('clear')}
             onPlayback={() => handleClickTool('playback')}
             hasData={hasData}
-            isPlaying={toolItems.find(item => item.id === 'playback')?.label === '停止'}
+            isPlaying={isPlaying}
+          />
+          <FirstUseHelpBanner
+            visible={eligible}
+            suppressed={hasData || isCapturing || isRequesting || isPlaying || helpOpen || configOpen || aboutOpen || goalOpen}
+            dockHeight={dockHeight}
+            onOpen={() => openHelp('quick-start')}
+            onDismiss={() => { recordButtonRef.current?.focus({ preventScroll: true }); dismiss() }}
           />
           <TrainingGoalModal open={goalOpen} onClose={() => setGoalOpen(false)} />
         </>
       )}
       <Toast />
       <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
-      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} />
+      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} fallbackFocusRef={recordButtonRef} />
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <input ref={fileInputRef} type="file" accept="audio/*" hidden onChange={handleFileChange} />
     </>

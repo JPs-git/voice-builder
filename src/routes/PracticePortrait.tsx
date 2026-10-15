@@ -84,7 +84,6 @@ export function PracticePortrait() {
                 description="点击下方开始录音"
                 visible={!hasData}
                 icon="🎙"
-                action={onOpenHelp ? { label: '了解音高参考', onClick: () => onOpenHelp('pitch-reference') } : undefined}
               />
             </div>
           </div>

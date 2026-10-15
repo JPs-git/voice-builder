@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
 import styles from './Modal.module.css'
 
 interface ModalProps {
@@ -6,9 +6,10 @@ interface ModalProps {
   title: string
   onClose: () => void
   children: ReactNode
+  fallbackFocusRef?: RefObject<HTMLElement | null>
 }
 
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({ open, title, onClose, children, fallbackFocusRef }: ModalProps) {
   const titleId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -43,9 +44,12 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
       document.documentElement.style.overflow = rootOverflow
       viewport?.removeEventListener('resize', resize)
       viewport?.removeEventListener('scroll', resize)
-      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
+      const canRestore = previousFocus?.isConnected && !previousFocus.matches(':disabled')
+        && getComputedStyle(previousFocus).visibility !== 'hidden'
+      const target = canRestore ? previousFocus : fallbackFocusRef?.current
+      target?.focus({ preventScroll: true })
     }
-  }, [open])
+  }, [open, fallbackFocusRef])
 
   if (!open) return null
   return (
