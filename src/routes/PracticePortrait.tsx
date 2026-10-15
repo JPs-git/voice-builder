@@ -4,6 +4,7 @@ import type { ShellContext } from './AppShell'
 import { Piano } from '../components/Piano'
 import { PitchChart } from '../components/PitchChart'
 import { EmptyState } from '../components/EmptyState'
+import { ContextHelpButton } from '../components/ContextHelpButton'
 import { getPianoSynth } from '../audio/PianoSynth'
 import { useCurrentMidi } from '../hooks/useCurrentMidi'
 import { MIDI_C2, MIDI_C6 } from '../utils/pitch'
@@ -12,7 +13,7 @@ import styles from './PracticePage.module.css'
 const BLACK_KEY_LABEL_CLEARANCE_PX = 20
 
 export function PracticePortrait() {
-  const { cursorTime, hasData, pianoScrollProgress = 0, setPianoScrollProgress } = useOutletContext<ShellContext>()
+  const { cursorTime, hasData, pianoScrollProgress = 0, setPianoScrollProgress, onOpenHelp } = useOutletContext<ShellContext>()
   const pianoViewportRef = useRef<HTMLDivElement>(null)
   const currentMidi = useCurrentMidi(MIDI_C2, MIDI_C6)
 
@@ -74,6 +75,7 @@ export function PracticePortrait() {
                 </svg>
                 音高图
               </h2>
+              {onOpenHelp && <ContextHelpButton label="音高图说明" onClick={() => onOpenHelp('pitch-reference')} />}
             </div>
             <div className={styles.chartArea}>
               <PitchChart cursorTime={cursorTime} layout="portrait" />
@@ -82,6 +84,7 @@ export function PracticePortrait() {
                 description="点击下方开始录音"
                 visible={!hasData}
                 icon="🎙"
+                action={onOpenHelp ? { label: '了解音高参考', onClick: () => onOpenHelp('pitch-reference') } : undefined}
               />
             </div>
           </div>

@@ -6,6 +6,7 @@ import { FeedbackCard } from '../components/FeedbackCard'
 import { F0Chart } from '../components/F0Chart'
 import { FormantChart } from '../components/FormantChart'
 import { EmptyState } from '../components/EmptyState'
+import { ContextHelpButton } from '../components/ContextHelpButton'
 import type { FormantSeries } from '../types'
 import styles from './AnalysisPage.module.css'
 
@@ -18,7 +19,7 @@ const COLORS: Record<FormantSeries, string> = {
 }
 
 export function AnalysisLandscape() {
-  const { cursorTime, hasData } = useOutletContext<ShellContext>()
+  const { cursorTime, hasData, onOpenHelp } = useOutletContext<ShellContext>()
 
   const formantVisible = useAppStore(s => s.formantVisible)
   const toggleFormantVisible = useAppStore(s => s.toggleFormantVisible)
@@ -35,14 +36,17 @@ export function AnalysisLandscape() {
           <section className={`${styles.card} ${styles.chartsColumnCard}`}>
             <div className={styles.chartWrapper}>
               <div className={styles.chartHeader}>
-                <h2 className={styles.cardTitle}>基频</h2>
+                <div className={styles.titleWithHelp}><h2 className={styles.cardTitle}>基频</h2>
+                  {onOpenHelp && <ContextHelpButton label="基频图说明" onClick={() => onOpenHelp('charts')} />}
+                </div>
               </div>
               <div className={styles.chartArea}>
                 <F0Chart cursorTime={cursorTime} />
                 <EmptyState
                   title="还没有声音数据"
-                  description="🎤 点击顶栏'开始录音'试试"
+                  description="点击顶栏「开始录音」"
                   visible={!hasData}
+                  action={onOpenHelp ? { label: '查看上手步骤', onClick: () => onOpenHelp('quick-start') } : undefined}
                 />
               </div>
             </div>
@@ -51,7 +55,9 @@ export function AnalysisLandscape() {
           <section className={`${styles.card} ${styles.chartsColumnCard}`}>
             <div className={styles.chartWrapper}>
               <div className={`${styles.chartHeader} ${styles.chartHeaderLegend}`}>
-                <h2 className={styles.cardTitle}>共振峰</h2>
+                <div className={styles.titleWithHelp}><h2 className={styles.cardTitle}>共振峰</h2>
+                  {onOpenHelp && <ContextHelpButton label="共振峰图说明" onClick={() => onOpenHelp('charts')} />}
+                </div>
                 <div className={styles.cardLegend} aria-label="图例">
                   {LEGEND_KEYS.map(key => (
                     <button

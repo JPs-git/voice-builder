@@ -18,3 +18,17 @@
 }
 .desc { font-size: 13px; font-weight: 400; }
 .icon { font-size: 24px; line-height: 1; }
+.action {
+  pointer-events: auto;
+  margin-top: 8px;
+  padding: 8px 14px;
+  min-height: 40px;
+  border: 1px solid #c6ddff;
+  border-radius: 20px;
+  background: #f3f8ff;
+  color: #1677ff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.action:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; }

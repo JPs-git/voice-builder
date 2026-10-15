@@ -32,6 +32,7 @@
 }
 .chartHeader {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: 12px 14px 0;
 }
