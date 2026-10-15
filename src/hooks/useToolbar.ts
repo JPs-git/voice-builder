@@ -26,6 +26,7 @@ export function useToolbar(
     onImport: analysisImport,
     onClear: analysisClear,
     isCapturing,
+    micInput,
     isRequesting,
     dataSource,
     fileInputRef,
@@ -146,5 +147,6 @@ export function useToolbar(
     handleFileChange,
     isCapturing,
     isRequesting,
+    micInput,
   }
 }

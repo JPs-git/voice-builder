@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type Ref } from 'react'
 import styles from './RecordDock.module.css'
+import type { MicInput } from '../../types'
 
 export interface RecordDockProps {
   onRecord: () => void
   isCapturing: boolean
+  micInput?: MicInput | null
   isRequesting: boolean
   goalLabel: string
   onGoalClick: () => void
@@ -30,7 +32,7 @@ function MicGlyph() {
   )
 }
 
-export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange }: RecordDockProps) {
+export function RecordDock({ onRecord, isCapturing, micInput, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange }: RecordDockProps) {
   const dockRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const dock = dockRef.current
@@ -50,6 +52,9 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
   }, [isCapturing])
   const timer = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
   const micLabel = isRequesting ? '麦克风授权中' : isCapturing ? '停止录音' : '开始录音'
+  const input = isCapturing ? micInput : null
+  // Map -60..0 dBFS to a compact meter so quiet input is still visible.
+  const inputLevel = input ? Math.min(1, Math.max(0, (20 * Math.log10(Math.max(input.rms, 1e-6)) + 60) / 60)) : 0
   return (
     <div
       ref={dockRef}
@@ -78,8 +83,11 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
       {onPlayback && <button type="button" className={styles.action} onClick={onPlayback} disabled={!hasData || isRequesting}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d={isPlaying ? 'M9 9h6v6H9z' : 'm10 8 6 4-6 4z'} fill="currentColor" /></svg>{isPlaying ? '停止' : '回放'}
       </button>}
-      <span className={styles.hint} data-testid="dock-hint">
-        {isCapturing ? '正在录音' : '点击开始录音'}
+      <span className={styles.hint} data-testid="dock-hint" data-input={Boolean(input)}>
+        {input ? <>
+          <span>{input.gateOpen ? '正在分析' : '输入偏弱'}</span>
+          <meter className={styles.inputMeter} aria-label="麦克风输入电平" min={0} max={1} value={inputLevel} />
+        </> : isCapturing ? '正在录音' : '点击开始录音'}
       </span>
       {isCapturing && <span className={styles.timer} data-testid="dock-timer">{timer}</span>}
     </div>

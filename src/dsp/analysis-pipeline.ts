@@ -6,6 +6,7 @@ import { detectPitch, extractFormants, isHarmonicLocked } from './lpc'
 import type { FormantPeak } from './lpc'
 import { extractFormantsCepstral } from './cepstral'
 import { VoiceActivityDetector } from './vad'
+import type { VadOptions } from './vad'
 import { FormantSmoother } from './formant-smoother'
 import type { SmootherFrame } from './formant-smoother'
 import { RegisterDetector } from './register-detector'
@@ -19,6 +20,7 @@ export type FormantMethodValue = 'hybrid' | 'lpc' | 'cepstral'
 export interface PipelineOptions {
   onFrame?: (frame: SmootherFrame) => void
   vadThreshold?: number
+  vadOptions?: VadOptions
   formantMethod?: FormantMethodValue
   frameOffset?: number
   formantSmoothing?: boolean
@@ -39,12 +41,13 @@ export class AnalysisPipeline {
   constructor({
     onFrame,
     vadThreshold,
+    vadOptions,
     formantMethod = 'hybrid',
     frameOffset = 0,
     formantSmoothing = true,
   }: PipelineOptions = {}) {
     this._frameOffset = frameOffset
-    this._vad = new VoiceActivityDetector({ threshold: vadThreshold })
+    this._vad = new VoiceActivityDetector({ ...vadOptions, threshold: vadThreshold ?? vadOptions?.threshold })
     this._formantMethod = formantMethod
     this._smoother = formantSmoothing ? new FormantSmoother() : null
     this._registerDetector = new RegisterDetector()
@@ -61,7 +64,7 @@ export class AnalysisPipeline {
         hopSize: HOP_SIZE,
       })
       this._frameProcessor.onFrame = (frame: FrameData) => {
-        const { voiced } = this._vad.compute(frame.samples)
+        const { voiced, rms } = this._vad.compute(frame.samples, HOP_SIZE / TARGET_RATE * 1000)
         let f0: number | null = null
         let formants: (FormantPeak | null)[] = []
         if (voiced) {
@@ -126,6 +129,7 @@ export class AnalysisPipeline {
           time: (this._frameCount + this._frameOffset) * 0.01,
           magnitudes,
           voiced,
+          rms,
         }
         if (this._smoother) {
           output = this._smoother.push(output)
@@ -157,6 +161,7 @@ export class AnalysisPipeline {
   }
 
   reset(): void {
+    this._vad.reset()
     if (this._resampler) this._resampler.reset()
     if (this._frameProcessor) this._frameProcessor.reset()
     if (this._smoother) this._smoother.reset()

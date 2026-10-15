@@ -74,6 +74,7 @@ export function AppShell() {
     cursorTime,
     hasData,
     isCapturing,
+    micInput,
     isRequesting,
     fileInputRef,
     handleFileChange,
@@ -127,6 +128,7 @@ export function AppShell() {
             onHeightChange={setDockHeight}
             onRecord={() => handleClickTool('record')}
             isCapturing={isCapturing}
+            micInput={micInput}
             isRequesting={isRequesting}
             goalLabel={presetShortLabel(activePreset)}
             onGoalClick={() => openOverlay('goal')}

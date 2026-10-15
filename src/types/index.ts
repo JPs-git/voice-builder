@@ -1,5 +1,10 @@
 export type VoiceRegister = 'chest' | 'mixed' | 'falsetto' | 'unvoiced'
 
+export interface MicInput {
+  rms: number
+  gateOpen: boolean
+}
+
 export interface AnalysisFrame {
   time: number
   f0: number | null
@@ -8,6 +13,7 @@ export interface AnalysisFrame {
   f3?: number | null
   f4?: number | null
   voiced?: boolean
+  rms?: number
   magnitudes?: Float32Array
   register?: VoiceRegister | null
   registerConfidence?: number | null
