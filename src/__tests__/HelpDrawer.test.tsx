@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { HelpDrawer } from '../components/HelpDrawer'
 import type { HelpTopic } from '../content/helpContent'
+import { Modal } from '../components/Modal'
 
 function Harness({ initial = 'quick-start' }: { initial?: HelpTopic }) {
   const [open, setOpen] = useState(false)
@@ -12,6 +13,25 @@ function Harness({ initial = 'quick-start' }: { initial?: HelpTopic }) {
 }
 
 describe('manual topic help', () => {
+  it('uses latest fallback for a connected trigger hidden with display:none', () => {
+    function Probe() {
+      const [open, setOpen] = useState(false)
+      const [hidden, setHidden] = useState(false)
+      const fallback = useRef<HTMLButtonElement>(null)
+      return <><button style={{ display: hidden ? 'none' : undefined }} onClick={() => setOpen(true)}>原入口</button>
+        <button ref={fallback}>备用入口</button>
+        <Modal open={open} title="焦点检查" onClose={() => setOpen(false)} getFallbackFocus={() => fallback.current}>
+          <button onClick={() => setHidden(true)}>隐藏原入口</button>
+        </Modal></>
+    }
+    render(<Probe />)
+    const original = screen.getByRole('button', { name: '原入口' })
+    original.focus(); fireEvent.click(original)
+    fireEvent.click(screen.getByRole('button', { name: '隐藏原入口' }))
+    expect(original.isConnected).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '备用入口' }))
+  })
   it('opens only on request, selects chapters, traps focus and restores the trigger on Escape', () => {
     render(<Harness />)
     expect(screen.queryByRole('dialog')).toBeNull()

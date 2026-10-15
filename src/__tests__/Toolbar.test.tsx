@@ -1,3 +1,4 @@
+import { createRef } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { Toolbar } from '../components/Toolbar'
@@ -8,6 +9,13 @@ const ITEMS: ToolItem[] = [
 ]
 
 describe('Toolbar', () => {
+  it('exposes the real recording and help buttons through optional refs', () => {
+    const record = createRef<HTMLButtonElement>(), help = createRef<HTMLButtonElement>()
+    render(<Toolbar toolItems={[...ITEMS, { id: 'help', variant: 'ghost', icon: '?', label: '帮助' }]}
+      onToolClick={() => {}} recordButtonRef={record} helpButtonRef={help} />)
+    expect(record.current).toBe(screen.getByRole('button', { name: /开始录音/ }))
+    expect(help.current).toBe(screen.getByRole('button', { name: /帮助/ }))
+  })
   it('renders centered nav button when nav prop is provided', () => {
     render(
       <Toolbar

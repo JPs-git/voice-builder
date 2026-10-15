@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Outlet, useMatch, useNavigate } from 'react-router-dom'
 import { useToolbar } from '../hooks/useToolbar'
 import { useMediaQuery } from '../hooks/useMediaQuery'
@@ -16,6 +16,7 @@ import { presetShortLabel } from '../types'
 import type { HelpTopic } from '../content/helpContent'
 import { useFirstUseHelp } from '../hooks/useFirstUseHelp'
 import { FirstUseHelpBanner } from '../components/FirstUseHelpBanner'
+import { isAvailableFocusTarget } from '../components/focusTarget'
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -41,6 +42,8 @@ export function AppShell() {
   const [goalOpen, setGoalOpen] = useState(false)
   const pianoScrollProgressRef = useRef(0)
   const recordButtonRef = useRef<HTMLButtonElement>(null)
+  const helpButtonRef = useRef<HTMLButtonElement>(null)
+  const moreButtonRef = useRef<HTMLButtonElement>(null)
   const [dockHeight, setDockHeight] = useState(0)
   const { eligible, dismiss } = useFirstUseHelp()
 
@@ -48,6 +51,11 @@ export function AppShell() {
   const isPractice = useMatch('/practice') != null
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
   const activePreset = useAppStore(s => s.activePreset)
+  useEffect(() => {
+    if (!isPortrait) setGoalOpen(false)
+  }, [isPortrait])
+  const getHelpFallbackFocus = () =>
+    [recordButtonRef.current, helpButtonRef.current, moreButtonRef.current].find(isAvailableFocusTarget) ?? null
 
   const openOverlay = (overlay: 'config' | 'help' | 'about' | 'goal') => {
     setConfigOpen(overlay === 'config')
@@ -97,12 +105,15 @@ export function AppShell() {
   return (
     <>
       <Toolbar
+        recordButtonRef={recordButtonRef}
+        helpButtonRef={helpButtonRef}
         toolItems={toolItems}
         onToolClick={handleClickTool}
         nav={isPortrait ? undefined : { label: isPractice ? '返回分析' : '音高参考', onClick: togglePage }}
         pageTabs={isPortrait ? <MobilePageTabs /> : undefined}
         moreMenu={isPortrait
           ? <MobileMoreMenu
+              triggerButtonRef={moreButtonRef}
               items={toolItems}
               onSelect={handleClickTool}
             />
@@ -134,11 +145,11 @@ export function AppShell() {
         suppressed={hasData || isCapturing || isRequesting || isPlaying || helpOpen || configOpen || aboutOpen || goalOpen}
         dockHeight={dockHeight}
         onOpen={() => openHelp('quick-start')}
-        onDismiss={() => { recordButtonRef.current?.focus({ preventScroll: true }); dismiss() }}
+        onDismiss={() => { getHelpFallbackFocus()?.focus({ preventScroll: true }); dismiss() }}
       />
       <Toast />
       <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
-      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} fallbackFocusRef={recordButtonRef} />
+      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} getFallbackFocus={getHelpFallbackFocus} />
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <input ref={fileInputRef} type="file" accept="audio/*" hidden onChange={handleFileChange} />
     </>

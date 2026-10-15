@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type RefObject } from 'react'
 import type { ToolItem } from '../../hooks/useToolbar'
 import styles from './MobileMoreMenu.module.css'
 
@@ -6,11 +6,13 @@ export interface MobileMoreMenuProps {
   items: ToolItem[]
   onSelect: (toolId: string) => void
   nav?: { label: string; onClick: () => void }
+  triggerButtonRef?: RefObject<HTMLButtonElement | null>
 }
 
-export function MobileMoreMenu({ items, onSelect, nav }: MobileMoreMenuProps) {
+export function MobileMoreMenu({ items, onSelect, nav, triggerButtonRef }: MobileMoreMenuProps) {
   const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const internalTriggerRef = useRef<HTMLButtonElement>(null)
+  const triggerRef = triggerButtonRef ?? internalTriggerRef
   const menuItems = items.filter(item => item.id !== 'record')
   return (
     <div className={styles.wrap}>

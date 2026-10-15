@@ -12,6 +12,7 @@ vi.mock('../hooks/useToolbar', () => ({ useToolbar: (config: () => void, help: (
   cursorTime: -1, hasData: state.data, isCapturing: state.capturing, isRequesting: state.requesting,
   fileInputRef: { current: null }, handleFileChange: vi.fn(),
   toolItems: [
+    { id: 'record', label: '开始录音', icon: '●', variant: 'primary', disabled: state.requesting },
     { id: 'help', label: '帮助', icon: '?', variant: 'ghost' },
     { id: 'config', label: '配置', icon: '⚙', variant: 'ghost' },
     { id: 'about', label: '关于', icon: 'ⓘ', variant: 'ghost' },
@@ -43,6 +44,44 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('first-use help integration', () => {
+  it.each([true, false])('restores current-layout focus after help crosses the breakpoint (starts portrait=%s)', portrait => {
+    render(<TestApp />)
+    resizeLayout(portrait)
+    const original = screen.getByRole('button', { name: '基频图说明' })
+    original.focus(); fireEvent.click(original)
+    const topic = screen.getByRole('button', { name: '读图与反馈' })
+    topic.focus()
+    resizeLayout(!portrait)
+    expect(document.activeElement).toBe(topic)
+    expect(topic.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /开始录音/ }))
+    expect(audio).not.toHaveBeenCalled()
+  })
+
+  it.each([true, false])('uses help or More if current recording button is disabled (starts portrait=%s)', portrait => {
+    const view = render(<TestApp />)
+    resizeLayout(portrait)
+    const original = screen.getByRole('button', { name: '基频图说明' })
+    original.focus(); fireEvent.click(original)
+    state.requesting = true
+    view.rerender(<TestApp />)
+    resizeLayout(!portrait)
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+    expect(document.activeElement).toBe(portrait
+      ? screen.getByRole('button', { name: /帮助/ })
+      : screen.getByRole('button', { name: '更多操作' }))
+    expect(audio).not.toHaveBeenCalled()
+  })
+
+  it('clears the unmounted portrait goal overlay when switching to landscape', () => {
+    render(<TestApp />)
+    fireEvent.click(screen.getByRole('button', { name: '回到训练目标' }))
+    expect(screen.getByRole('dialog', { name: '训练目标' })).toBeTruthy()
+    resizeLayout(false)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByRole('region', { name: '首次使用帮助' })).toBeTruthy()
+  })
   it('uses one banner across portrait pages and removes both empty-state actions', () => {
     render(<TestApp />)
     expect(screen.getAllByRole('region', { name: '首次使用帮助' })).toHaveLength(1)
@@ -109,11 +148,10 @@ describe('first-use help integration', () => {
     expect(screen.getByRole('region', { name: '首次使用帮助' })).toBeTruthy()
   })
 
-  it('preserves desktop actions and completes on analysis performed in landscape', () => {
+  it('completes on analysis performed in landscape and stays hidden after returning to portrait', () => {
     render(<TestApp />)
     resizeLayout(false)
-    expect(screen.queryByRole('region', { name: '首次使用帮助' })).toBeNull()
-    expect(screen.getByRole('button', { name: '查看上手步骤' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: '首次使用帮助' })).toBeTruthy()
     act(() => useAppStore.getState().setFrames([{ time: 1, f0: 200, f1: null, f2: null }]))
     act(() => useAppStore.getState().clearFrames())
     resizeLayout(true)
