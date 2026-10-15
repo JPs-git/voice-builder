@@ -15,7 +15,7 @@ import { useAppStore } from '../store/appStore'
 import { presetShortLabel } from '../types'
 import type { HelpTopic } from '../content/helpContent'
 import { useFirstUseHelp } from '../hooks/useFirstUseHelp'
-import { FirstUseHelpBanner } from '../components/mobile/FirstUseHelpBanner'
+import { FirstUseHelpBanner } from '../components/FirstUseHelpBanner'
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -125,16 +125,17 @@ export function AppShell() {
             hasData={hasData}
             isPlaying={isPlaying}
           />
-          <FirstUseHelpBanner
-            visible={eligible}
-            suppressed={hasData || isCapturing || isRequesting || isPlaying || helpOpen || configOpen || aboutOpen || goalOpen}
-            dockHeight={dockHeight}
-            onOpen={() => openHelp('quick-start')}
-            onDismiss={() => { recordButtonRef.current?.focus({ preventScroll: true }); dismiss() }}
-          />
           <TrainingGoalModal open={goalOpen} onClose={() => setGoalOpen(false)} />
         </>
       )}
+      <FirstUseHelpBanner
+        layout={isPortrait ? 'portrait' : 'landscape'}
+        visible={eligible}
+        suppressed={hasData || isCapturing || isRequesting || isPlaying || helpOpen || configOpen || aboutOpen || goalOpen}
+        dockHeight={dockHeight}
+        onOpen={() => openHelp('quick-start')}
+        onDismiss={() => { recordButtonRef.current?.focus({ preventScroll: true }); dismiss() }}
+      />
       <Toast />
       <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} fallbackFocusRef={recordButtonRef} />

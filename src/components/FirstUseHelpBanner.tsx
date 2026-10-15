@@ -3,14 +3,16 @@ import styles from './FirstUseHelpBanner.module.css'
 interface FirstUseHelpBannerProps {
   visible: boolean
   suppressed: boolean
-  dockHeight: number
+  layout: 'portrait' | 'landscape'
+  dockHeight?: number
   onOpen: () => void
   onDismiss: () => void
 }
 
-export function FirstUseHelpBanner({ visible, suppressed, dockHeight, onOpen, onDismiss }: FirstUseHelpBannerProps) {
-  if (!visible || dockHeight <= 0) return null
-  return <section aria-label="首次使用帮助" className={styles.anchor} style={{ bottom: dockHeight + 10 }}
+export function FirstUseHelpBanner({ visible, suppressed, layout, dockHeight = 0, onOpen, onDismiss }: FirstUseHelpBannerProps) {
+  if (!visible || (layout === 'portrait' && dockHeight <= 0)) return null
+  return <section aria-label="首次使用帮助" className={styles.anchor} style={{ bottom: layout === 'portrait' ? dockHeight + 10 : 24 }}
+    data-layout={layout}
     data-suppressed={suppressed} aria-hidden={suppressed || undefined}>
     <div className={styles.banner}>
       <svg className={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">

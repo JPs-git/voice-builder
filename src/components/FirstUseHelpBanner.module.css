@@ -8,6 +8,13 @@
   pointer-events: none;
 }
 .anchor[data-suppressed='true'] { visibility: hidden; }
+.anchor[data-layout='landscape'] {
+  left: auto;
+  right: 24px;
+  width: 400px;
+  max-width: calc(100vw - 48px);
+  margin: 0;
+}
 .banner {
   display: flex;
   align-items: center;
