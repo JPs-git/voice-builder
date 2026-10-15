@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type Ref } from 'react'
 import styles from './RecordDock.module.css'
 
 export interface RecordDockProps {
@@ -12,6 +12,8 @@ export interface RecordDockProps {
   onPlayback?: () => void
   hasData?: boolean
   isPlaying?: boolean
+  recordButtonRef?: Ref<HTMLButtonElement>
+  onHeightChange?: (height: number) => void
 }
 
 function MicGlyph() {
@@ -28,7 +30,18 @@ function MicGlyph() {
   )
 }
 
-export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying }: RecordDockProps) {
+export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange }: RecordDockProps) {
+  const dockRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const dock = dockRef.current
+    if (!dock || !onHeightChange) return
+    const measure = () => onHeightChange(dock.getBoundingClientRect().height)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(dock)
+    return () => observer.disconnect()
+  }, [onHeightChange])
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
     if (!isCapturing) { setElapsed(0); return }
@@ -39,6 +52,7 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
   const micLabel = isRequesting ? '麦克风授权中' : isCapturing ? '停止录音' : '开始录音'
   return (
     <div
+      ref={dockRef}
       className={styles.dock}
       data-portrait-dock="true"
       data-actions={Boolean(onClear || onPlayback)}
@@ -53,7 +67,7 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
         </button>
       )}
       <span className={styles.micHalo} data-testid="dock-mic-halo">
-        <button type="button" className={styles.mic} data-recording={isCapturing}
+        <button ref={recordButtonRef} type="button" className={styles.mic} data-recording={isCapturing}
           onClick={onRecord} disabled={isRequesting} aria-label={micLabel}>
           {isCapturing ? '●' : <MicGlyph />}
         </button>

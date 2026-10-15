@@ -1,8 +1,32 @@
+import { createRef } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { RecordDock } from '../components/mobile/RecordDock'
 
 describe('RecordDock', () => {
+  it('reports actual height changes, exposes its mic ref and cleans up the observer', () => {
+    let resize: () => void = () => {}
+    const disconnect = vi.fn()
+    const observer = vi.fn(function (callback: () => void) {
+      resize = callback
+      return { observe: vi.fn(), disconnect }
+    })
+    vi.stubGlobal('ResizeObserver', observer)
+    let height = 76
+    const measure = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({ height }) as DOMRect)
+    const onHeightChange = vi.fn()
+    const ref = createRef<HTMLButtonElement>()
+    const view = render(<RecordDock onRecord={() => {}} isCapturing={false} isRequesting={false} goalLabel="a" onGoalClick={() => {}} onHeightChange={onHeightChange} recordButtonRef={ref} />)
+    expect(ref.current).toBe(screen.getByRole('button', { name: '开始录音' }))
+    expect(onHeightChange).toHaveBeenLastCalledWith(76)
+    height = 102
+    act(() => resize())
+    expect(onHeightChange).toHaveBeenLastCalledWith(102)
+    view.unmount()
+    expect(disconnect).toHaveBeenCalledOnce()
+    measure.mockRestore()
+    vi.unstubAllGlobals()
+  })
   it('starts recording when the idle mic is clicked', () => {
     const onRecord = vi.fn()
     render(
