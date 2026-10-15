@@ -115,6 +115,48 @@ function renderInsideShell(element: ReactElement, initialEntry = '/') {
 }
 
 describe('layout shell selection', () => {
+  it.each([false, true])('opens contextual analysis help without recording (portrait=%s)', portrait => {
+    setMatchMedia(portrait)
+    const onOpenHelp = vi.fn()
+    const onRecord = vi.fn()
+    renderWithContext(<AnalysisPage />, { ...SHELL_CONTEXT, hasData: false, onOpenHelp, onRecord })
+    expect(screen.queryByRole('button', { name: '查看上手步骤' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '基频图说明' }))
+    expect(onOpenHelp).toHaveBeenLastCalledWith('charts')
+    fireEvent.click(screen.getByRole('button', { name: '共振峰图说明' }))
+    expect(onOpenHelp).toHaveBeenLastCalledWith('charts')
+    expect(onRecord).not.toHaveBeenCalled()
+  })
+
+  it.each([false, true])('opens pitch-reference help from chart controls (portrait=%s)', portrait => {
+    setMatchMedia(portrait)
+    const onOpenHelp = vi.fn()
+    renderWithContext(<PracticePage />, { ...SHELL_CONTEXT, hasData: false, onOpenHelp })
+    expect(screen.queryByRole('button', { name: '了解音高参考' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '音高图说明' }))
+    expect(onOpenHelp).toHaveBeenLastCalledWith('pitch-reference')
+  })
+
+  it.each([false, true])('does not show empty-state actions with data or automatically open help (portrait=%s)', portrait => {
+    setMatchMedia(portrait)
+    const onOpenHelp = vi.fn()
+    renderWithContext(<AnalysisPage />, { ...SHELL_CONTEXT, hasData: true, isCapturing: true, isRequesting: true, onOpenHelp })
+    expect(screen.queryByRole('button', { name: '查看上手步骤' })).toBeNull()
+    expect(screen.getByRole('button', { name: '基频图说明' })).toBeTruthy()
+    expect(onOpenHelp).not.toHaveBeenCalled()
+  })
+  it.each([false, true])('never displays automatic random tips (portrait=%s)', (portrait) => {
+    vi.useFakeTimers()
+    try {
+      setMatchMedia(portrait)
+      const view = renderRoute(<AnalysisPage />)
+      expect(screen.queryByRole('button', { name: '小提示' })).toBeNull()
+      act(() => vi.advanceTimersByTime(30000))
+      expect(screen.queryByRole('button', { name: '小提示' })).toBeNull()
+      expect(screen.queryByRole('button', { name: '关闭小提示' })).toBeNull()
+      view.unmount()
+    } finally { vi.useRealTimers() }
+  })
   beforeEach(() => {
     useAppStore.getState().reset()
     setOptionMock.mockClear()

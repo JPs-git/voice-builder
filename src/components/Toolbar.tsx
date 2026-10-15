@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import logo from '../../assets/logo.png'
 import { Button } from './Button'
 import styles from './Toolbar.module.css'
@@ -10,9 +10,11 @@ interface ToolbarProps {
   nav?: { label: string; onClick: () => void }
   pageTabs?: ReactNode
   moreMenu?: ReactNode
+  recordButtonRef?: Ref<HTMLButtonElement>
+  helpButtonRef?: Ref<HTMLButtonElement>
 }
 
-export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu }: ToolbarProps) {
+export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recordButtonRef, helpButtonRef }: ToolbarProps) {
   return (
     <header className={styles.toolbar} data-compact={moreMenu ? 'true' : 'false'}>
       <div className={styles.brand}>
@@ -33,6 +35,7 @@ export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu }: Too
         <div className={styles.actions}>
           {toolItems.map(item => (
             <Button
+              ref={item.id === 'record' ? recordButtonRef : item.id === 'help' ? helpButtonRef : undefined}
               key={item.id}
               id={item.id}
               variant={item.variant}

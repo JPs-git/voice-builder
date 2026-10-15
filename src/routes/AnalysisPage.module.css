@@ -46,6 +46,7 @@
   line-height: 1;
   white-space: nowrap;
 }
+.titleWithHelp { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .chartWrapper {
   position: relative;
   display: flex;

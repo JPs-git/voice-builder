@@ -1,3 +1,4 @@
+import { createRef } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MobileMoreMenu } from '../components/mobile/MobileMoreMenu'
@@ -27,6 +28,14 @@ function menuItemNames() {
 }
 
 describe('MobileMoreMenu', () => {
+  it('exposes its persistent trigger through an external ref', () => {
+    const trigger = createRef<HTMLButtonElement>()
+    render(<MobileMoreMenu items={ITEMS} onSelect={() => {}} triggerButtonRef={trigger} />)
+    expect(trigger.current).toBe(screen.getByRole('button', { name: '更多操作' }))
+    open()
+    fireEvent.click(screen.getByRole('menuitem', { name: /帮助/ }))
+    expect(document.activeElement).toBe(trigger.current)
+  })
   it('is collapsed until the trigger is tapped', () => {
     render(<MobileMoreMenu items={ITEMS} onSelect={() => {}} />)
     expect(screen.queryByRole('menu')).toBeNull()

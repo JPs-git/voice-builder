@@ -1,19 +1,23 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import styles from './Modal.module.css'
+import { isAvailableFocusTarget } from './focusTarget'
 
 interface ModalProps {
   open: boolean
   title: string
   onClose: () => void
   children: ReactNode
+  getFallbackFocus?: () => HTMLElement | null
 }
 
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({ open, title, onClose, children, getFallbackFocus }: ModalProps) {
   const titleId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
   closeRef.current = onClose
+  const fallbackRef = useRef(getFallbackFocus)
+  fallbackRef.current = getFallbackFocus
   const close = () => {
     // Closing with Escape must blur the field before unmounting, so its draft is committed.
     const active = document.activeElement
@@ -43,7 +47,8 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
       document.documentElement.style.overflow = rootOverflow
       viewport?.removeEventListener('resize', resize)
       viewport?.removeEventListener('scroll', resize)
-      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
+      const target = isAvailableFocusTarget(previousFocus) ? previousFocus : fallbackRef.current?.() ?? null
+      if (isAvailableFocusTarget(target)) target.focus({ preventScroll: true })
     }
   }, [open])
 

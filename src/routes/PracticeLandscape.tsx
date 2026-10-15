@@ -4,12 +4,13 @@ import type { ShellContext } from './AppShell'
 import { Piano } from '../components/Piano'
 import { PitchChart } from '../components/PitchChart'
 import { EmptyState } from '../components/EmptyState'
+import { ContextHelpButton } from '../components/ContextHelpButton'
 import { getPianoSynth } from '../audio/PianoSynth'
 import { useCurrentMidi } from '../hooks/useCurrentMidi'
 import styles from './PracticePage.module.css'
 
 export function PracticeLandscape() {
-  const { cursorTime, hasData } = useOutletContext<ShellContext>()
+  const { cursorTime, hasData, onOpenHelp } = useOutletContext<ShellContext>()
   const currentMidi = useCurrentMidi()
 
   useEffect(() => () => getPianoSynth().stopAll(), [])
@@ -29,12 +30,13 @@ export function PracticeLandscape() {
           <div className={styles.chartWrapper}>
             <div className={styles.chartHeader}>
               <h2 className={styles.cardTitle}>音高</h2>
+              {onOpenHelp && <ContextHelpButton label="音高图说明" onClick={() => onOpenHelp('pitch-reference')} />}
             </div>
             <div className={styles.chartArea}>
               <PitchChart cursorTime={cursorTime} />
               <EmptyState
                 title="还没有声音数据"
-                description="🎤 点击顶栏'开始录音'试试"
+                description="点击顶栏「开始录音」，或点击琴键听参考音"
                 visible={!hasData}
               />
             </div>
