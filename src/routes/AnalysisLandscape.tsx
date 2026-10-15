@@ -6,7 +6,6 @@ import { FeedbackCard } from '../components/FeedbackCard'
 import { F0Chart } from '../components/F0Chart'
 import { FormantChart } from '../components/FormantChart'
 import { EmptyState } from '../components/EmptyState'
-import { TipWidget } from '../components/TipWidget'
 import type { FormantSeries } from '../types'
 import styles from './AnalysisPage.module.css'
 
@@ -80,7 +79,6 @@ export function AnalysisLandscape() {
         </div>
       </main>
 
-      <TipWidget />
     </div>
   )
 }

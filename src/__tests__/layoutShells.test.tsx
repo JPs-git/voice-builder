@@ -115,6 +115,18 @@ function renderInsideShell(element: ReactElement, initialEntry = '/') {
 }
 
 describe('layout shell selection', () => {
+  it.each([false, true])('never displays automatic random tips (portrait=%s)', (portrait) => {
+    vi.useFakeTimers()
+    try {
+      setMatchMedia(portrait)
+      const view = renderRoute(<AnalysisPage />)
+      expect(screen.queryByRole('button', { name: '小提示' })).toBeNull()
+      act(() => vi.advanceTimersByTime(30000))
+      expect(screen.queryByRole('button', { name: '小提示' })).toBeNull()
+      expect(screen.queryByRole('button', { name: '关闭小提示' })).toBeNull()
+      view.unmount()
+    } finally { vi.useRealTimers() }
+  })
   beforeEach(() => {
     useAppStore.getState().reset()
     setOptionMock.mockClear()
