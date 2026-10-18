@@ -60,10 +60,14 @@ export function useAnalysis() {
   const [isCapturing, setIsCapturing] = useState(false)
   const [isRequesting, setIsRequesting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const requestIdRef = useRef(0)
+  const requestingRef = useRef(false)
 
   // ── Shared stop-recording helper ──
 
   const stopRecording = useCallback((flush: boolean) => {
+    requestIdRef.current++
+    requestingRef.current = false
     const pipeline = pipelineRef.current
     if (pipeline) {
       if (flush) {
@@ -80,10 +84,13 @@ export function useAnalysis() {
     setIsCapturing(false)
     setIsRequesting(false)
   }, [])
+  const suspend = useCallback(() => stopRecording(true), [stopRecording])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      requestIdRef.current++
+      requestingRef.current = false
       pipelineRef.current?.reset()
       pipelineRef.current = null
       getAudioEngine().stopCapture()
@@ -129,8 +136,10 @@ export function useAnalysis() {
     }
 
     // Guard: already requesting permission
-    if (isRequesting) return
+    if (requestingRef.current) return
 
+    requestingRef.current = true
+    const requestId = ++requestIdRef.current
     setIsRequesting(true)
 
     const config = useAppStore.getState().config  // 快照
@@ -143,7 +152,10 @@ export function useAnalysis() {
     }
 
     try {
-      await getAudioEngine().startCapture(onAudioChunk)
+      await getAudioEngine().startCapture((chunk, rate) => {
+        if (requestId === requestIdRef.current) onAudioChunk(chunk, rate)
+      })
+      if (requestId !== requestIdRef.current) return
 
       // Only create pipeline AFTER capture succeeds
       pipelineRef.current = new AnalysisPipeline({
@@ -159,9 +171,11 @@ export function useAnalysis() {
       setDataSource('mic')
       setIsCapturing(true)
       setIsRequesting(false)
+      requestingRef.current = false
       const page = getAnalyticsPage()
       if (page) track('record_start', { page })
     } catch (err) {
+      if (requestId !== requestIdRef.current) return
       const page = getAnalyticsPage()
       if (page) track('record_error', { page, reason: recordingErrorReason(err) })
       console.error('Failed to start recording:', err)
@@ -178,6 +192,7 @@ export function useAnalysis() {
         useToastStore.getState().showToast('error', '无法启动录音,请检查麦克风权限。')
       }
       setIsRequesting(false)
+      requestingRef.current = false
     }
   }, [isCapturing, isRequesting, stopRecording, onAudioChunk])
 
@@ -261,6 +276,7 @@ export function useAnalysis() {
   }, [stopRecording, commitImport, isImporting])
 
   return {
+    suspend,
     onRecord,
     onImport,
     onClear,

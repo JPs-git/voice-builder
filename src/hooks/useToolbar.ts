@@ -30,8 +30,13 @@ export function useToolbar(
     dataSource,
     fileInputRef,
     handleFileChange,
+    suspend: suspendAnalysis,
   } = useAnalysis()
   const { play, stop, isPlaying, cursorTime } = usePlayback()
+  const suspend = useCallback(() => {
+    stop()
+    suspendAnalysis()
+  }, [stop, suspendAnalysis])
 
   const hasData = isCapturing || frameCount > 0
 
@@ -138,6 +143,7 @@ export function useToolbar(
   ], [isCapturing, isRequesting, isPlaying, hasData, dataSource, recorderLabel])
 
   return {
+    suspend,
     toolItems,
     handleClickTool,
     hasData,
