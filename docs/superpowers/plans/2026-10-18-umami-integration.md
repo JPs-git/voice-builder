@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 19、TypeScript、Vite、Vitest、Testing Library、现有 @vercel/analytics；使用 Umami 官方浏览器脚本，不增加运行时 npm 依赖。
 
-**Spec:** 本文“接入范围与统计口径”章节，依据本对话中的可行性分析及用户“制定接入计划”的要求；以下为待审阅的接入设计。
+**Spec:** 本文“接入范围与统计口径”章节，依据本对话中的可行性分析及用户“制定接入计划”的要求；用户已授权按此计划开始实施。
 
 ## 基线与工作区
 
@@ -17,7 +17,7 @@
 - 文档分支：`docs/umami-integration-plan`。
 - 文档 worktree：`C:/Users/Administrator/Projects/voice-builder/.worktrees/docs/umami-integration-plan`。
 - 实施时从最新 master 创建 `feat/umami-analytics`，worktree 使用 `.worktrees/feat/umami-analytics`；将本计划复制到该 worktree 的相同仓库相对路径，随功能 PR 保存。一个功能分支对应一个 PR，base 为 master，建议标题 `feat(analytics): add lightweight Umami tracking`。
-- 本轮只新增本计划；测试、构建、账户配置、上线验收均是后续步骤，未执行。
+- 实施基线：2c84ad6，版本 1.17.1；2026-10-18 已获取最新 origin/master 并创建 feat/umami-analytics worktree。Tasks 1–4 的代码与自动验证已完成；572 项测试、生产构建和类型检查通过，账户配置与生产验收尚未执行。
 
 ## Global Constraints
 
@@ -107,7 +107,7 @@
 - 导出 `isAnalyticsAllowed(): boolean`、`getAnalyticsDisabled(): boolean`、`setAnalyticsDisabled(disabled: boolean): void`、`subscribeAnalyticsPreference(listener: () => void): () => void`。allowed 包括全局环境/域名/偏好/DNT，不依赖 Umami ID；缺 ID 只关闭 Umami。
 - 在 src/vite-env.d.ts 声明四个 VITE 配置、Umami tracker 和 before-send hook；tracker 支持事件自定义 payload，返回 `void | Promise<unknown>`。
 
-- [ ] 先写上述接口的失败测试，覆盖 Review Focus 1/2/3；使用 vi.stubEnv、受控 location/storage、模拟 script load/error 与 tracker，不连接真实服务。关键断言包括：
+- [x] 先写上述接口的失败测试，覆盖 Review Focus 1/2/3；使用 vi.stubEnv、受控 location/storage、模拟 script load/error 与 tracker，不连接真实服务。关键断言包括：
 
 ```ts
 expect(document.querySelectorAll('script[data-website-id]')).toHaveLength(1) // 重复 init
@@ -116,11 +116,11 @@ expect(window.voiceBuilderAnalyticsBeforeSend('event', payload)).toBe(false) // 
 expect(vercelBeforeSend({ type: 'pageview', url: location.href })).toBeNull() // 同步关闭
 ```
 
-- [ ] 运行 `npx vitest run --project unit src/__tests__/analytics.test.ts`，确认因功能缺失失败，再实现接口和配置。
-- [ ] 让 main.tsx 只调用 initAnalytics；移除原先直接的 inject()，由新模块在允许时调用 `inject({ beforeSend })`。注册隐私 hook 必须先于加载 Umami。
-- [ ] 补足并通过：开发/Preview/后缀伪装域名不加载、缺 ID 不影响 Vercel、SDK 慢加载期间换路由仍保留原 URL/时间、20 条上限/30 秒过期、load 不重复发送、error 清队列、Promise 拒绝无 unhandledrejection、DNT、storage 读写报错和跨标签关闭。
-- [ ] 用包含 `?token=secret&utm_source=bilibili#private` 的 payload 验证只保留允许的 UTM；原始错误/文件/store 额外字段不会透传，未知路由取消发送。两个渠道都检查。
-- [ ] 运行同一测试命令和 `npx tsc --noEmit`，通过后提交 `feat(analytics): add guarded analytics initialization`。
+- [x] 运行 `npx vitest run --project unit src/__tests__/analytics.test.ts`，确认因功能缺失失败，再实现接口和配置。
+- [x] 让 main.tsx 只调用 initAnalytics；移除原先直接的 inject()，由新模块在允许时调用 `inject({ beforeSend })`。注册隐私 hook 必须先于加载 Umami。
+- [x] 补足并通过：开发/Preview/后缀伪装域名不加载、缺 ID 不影响 Vercel、SDK 慢加载期间换路由仍保留原 URL/时间、20 条上限/30 秒过期、load 不重复发送、error 清队列、Promise 拒绝无 unhandledrejection、DNT、storage 读写报错和跨标签关闭。
+- [x] 用包含 `?token=secret&utm_source=bilibili#private` 的 payload 验证只保留允许的 UTM；原始错误/文件/store 额外字段不会透传，未知路由取消发送。两个渠道都检查。
+- [x] 运行同一测试命令和 `npx tsc --noEmit`，通过后提交 `feat(analytics): add guarded analytics initialization`。
 
 ## Task 2: 定义可验证的累计录音参与度
 
@@ -131,7 +131,7 @@ expect(vercelBeforeSend({ type: 'pageview', url: location.href })).toBeNull() //
 - 导出 `createPracticeProgress(onEngaged: () => void): (sampleCount: number, sampleRate: number) => void`，用于独立验证累计行为。
 - 导出 `recordPracticeSamples(sampleCount: number, sampleRate: number): void`，持有当前文档的单个累计器；只在允许采集且页面已知时累计。阈值回调发 practice_engaged。
 
-- [ ] 先写边界与重复测试；关键断言使用独立新累计器：
+- [x] 先写边界与重复测试；关键断言使用独立新累计器：
 
 ```ts
 const reached = vi.fn()
@@ -144,23 +144,23 @@ add(16000 * 60, 16000)
 expect(reached).toHaveBeenCalledTimes(1)
 ```
 
-- [ ] 运行 `npx vitest run --project unit src/__tests__/practiceProgress.test.ts` 确认失败，再实现累计器。拒绝非有限数、非正采样率、非正或非整数 sampleCount；持续累加秒数，以累计秒数 + 1e-9 >= 30 判断阈值，避免浮点累计导致恰好 30 秒漏触发。
-- [ ] 覆盖 29.999 秒未触发、恰好/跨过 30 秒触发、无效参数不污染累计、不同采样率、关闭期间样本不计入，以及达到阈值后 no-op。实例不保存音频或分析帧。
-- [ ] 同一测试命令通过后提交 `feat(analytics): measure cumulative recording engagement`。
+- [x] 运行 `npx vitest run --project unit src/__tests__/practiceProgress.test.ts` 确认失败，再实现累计器。拒绝非有限数、非正采样率、非正或非整数 sampleCount；持续累加秒数，以累计秒数 + 1e-9 >= 30 判断阈值，避免浮点累计导致恰好 30 秒漏触发。
+- [x] 覆盖 29.999 秒未触发、恰好/跨过 30 秒触发、无效参数不污染累计、不同采样率、关闭期间样本不计入，以及达到阈值后 no-op。实例不保存音频或分析帧。
+- [x] 同一测试命令通过后提交 `feat(analytics): measure cumulative recording engagement`。
 
 ## Task 3: 将六类事件接入实际业务边界
 
-**Files:** Modify `src/hooks/useAnalysis.ts`, `src/hooks/usePlayback.ts`, `src/routes/AppShell.tsx`, `src/__tests__/useAnalysis.test.ts`, `src/__tests__/useAnalysis.test.tsx`, `src/__tests__/usePlayback.test.ts`, `src/__tests__/FirstUseHelpExperience.test.tsx`。
+**Files:** Modify `src/hooks/useAnalysis.ts`, `src/hooks/usePlayback.ts`, `src/routes/AppShell.tsx`, `src/__tests__/FirstUseHelpExperience.test.tsx`; create `src/__tests__/analyticsFlows.test.tsx`（集中业务埋点测试）；原有音频测试继续作为回归验证。
 
 **Interfaces:** 消费 Task 1 的 track/getAnalyticsPage 与 Task 2 的 recordPracticeSamples；不改变现有 hook 的返回值、AudioEngine 接口或 ShellContext。
 
-- [ ] 先扩展现有业务测试并模拟 analytics 模块，断言事件顺序和业务状态：成功授权后 record_start 一次；拒绝时只有 record_error；停止/等待中再次点击不报 start；发送失败时原音频状态仍正确。
-- [ ] 运行 `npx vitest run --project unit src/__tests__/useAnalysis.test.ts src/__tests__/useAnalysis.test.tsx src/__tests__/usePlayback.test.ts src/__tests__/FirstUseHelpExperience.test.tsx`，确认新增断言因缺事件失败。
-- [ ] 在 startCapture 成功分支与错误处理分支发送分类事件；在 onAudioChunk 中仅向 recordPracticeSamples 传 chunk.length 和 rate，不传 chunk。停止、清空和换路由不重置文档累计器。
-- [ ] 在共用 commitImport 成功出口记录 audio_import success，在 handleFileChange catch 记录 failure；保证 WAV 的提前 return 不漏报也不重复。不得在打开文件选择器时记录 success。
-- [ ] 在 source.start() 成功后记录 playback_start；在统一 openHelp 中、仅 helpOpen 为 false 时记录 help_open。帮助中的 onTopicChange 不算重新打开；工具栏、更多菜单、上下文帮助和首次使用横幅均复用统一入口。
-- [ ] 补足 Review Focus 4/5 的集成断言：10 秒窗口反复覆盖仍能累计到 30 秒；暂停/清空继续、路由切换后不重复；WAV 和压缩音频各一条 success；too_long 分类；取消文件选择零事件；空回放零事件；横竖屏各帮助入口每次打开恰好一条且保留正确 topic。
-- [ ] 同一测试命令及 `npx tsc --noEmit` 通过后提交 `feat(analytics): instrument recording playback import and help`。
+- [x] 先扩展现有业务测试并模拟 analytics 模块，断言事件顺序和业务状态：成功授权后 record_start 一次；拒绝时只有 record_error；停止/等待中再次点击不报 start；发送失败时原音频状态仍正确。
+- [x] 运行 `npx vitest run --project unit src/__tests__/useAnalysis.test.ts src/__tests__/useAnalysis.test.tsx src/__tests__/usePlayback.test.ts src/__tests__/FirstUseHelpExperience.test.tsx`，确认新增断言因缺事件失败。
+- [x] 在 startCapture 成功分支与错误处理分支发送分类事件；在 onAudioChunk 中仅向 recordPracticeSamples 传 chunk.length 和 rate，不传 chunk。停止、清空和换路由不重置文档累计器。
+- [x] 在共用 commitImport 成功出口记录 audio_import success，在 handleFileChange catch 记录 failure；保证 WAV 的提前 return 不漏报也不重复。不得在打开文件选择器时记录 success。
+- [x] 在 source.start() 成功后记录 playback_start；在统一 openHelp 中、仅 helpOpen 为 false 时记录 help_open。帮助中的 onTopicChange 不算重新打开；工具栏、更多菜单、上下文帮助和首次使用横幅均复用统一入口。
+- [x] 补足 Review Focus 4/5 的集成断言：10 秒窗口反复覆盖仍能累计到 30 秒；暂停/清空继续、路由切换后不重复；WAV 和压缩音频各一条 success；too_long 分类；取消文件选择零事件；空回放零事件；横竖屏各帮助入口每次打开恰好一条且保留正确 topic。
+- [x] 同一测试命令及 `npx tsc --noEmit` 通过后提交 `feat(analytics): instrument recording playback import and help`。
 
 ## Task 4: 用户控制、运营文档与发布验收
 
@@ -168,10 +168,10 @@ expect(reached).toHaveBeenCalledTimes(1)
 
 **Interfaces:** 关于弹窗通过 Task 1 的偏好接口订阅状态；不新增全局应用 store，不把偏好写入 voicebuilder-presets。
 
-- [ ] 先写可访问性与状态测试：带“匿名使用统计”标签的复选框可用键盘切换；切换调用 setAnalyticsDisabled；重开弹窗保留状态；storage 事件更新界面；DNT 和存储失败显示对应说明。运行 `npx vitest run --project unit src/__tests__/AboutModal.test.tsx` 确认缺功能失败。
-- [ ] 实现本文确定的说明和复选框；关闭立即清待发队列并阻止后续 Umami 与 Vercel 请求，不关闭录音、不清空数据、不触发刷新。录音中关闭的行为加入业务集成测试，验证 startCapture/stopCapture 调用次数与原音频结果保持一致。
-- [ ] 同一测试命令通过；docs/analytics.md 记录事件字典、30 秒口径、匿名身份局限、来源链接约定、配置步骤、关闭偏好、失败降级、六个月保留与定期导出、回滚方案。README 链接该文档，说明自行部署默认不采集。
-- [ ] 实施者按顺序运行 `npm test`、`npm run build`、`npx tsc --noEmit`、`git diff --check`，均通过后提交 `feat(analytics): add privacy controls and setup documentation`。
+- [x] 先写可访问性与状态测试：带“匿名使用统计”标签的复选框可用键盘切换；切换调用 setAnalyticsDisabled；重开弹窗保留状态；storage 事件更新界面；DNT 和存储失败显示对应说明。运行 `npx vitest run --project unit src/__tests__/AboutModal.test.tsx` 确认缺功能失败。
+- [x] 实现本文确定的说明和复选框；关闭立即清待发队列并阻止后续 Umami 与 Vercel 请求，不关闭录音、不清空数据、不触发刷新。录音中关闭的行为加入业务集成测试，验证 startCapture/stopCapture 调用次数与原音频结果保持一致。
+- [x] 同一测试命令通过；docs/analytics.md 记录事件字典、30 秒口径、匿名身份局限、来源链接约定、配置步骤、关闭偏好、失败降级、六个月保留与定期导出、回滚方案。README 链接该文档，说明自行部署默认不采集。
+- [x] 实施者按顺序运行 `npm test`、`npm run build`、`npx tsc --noEmit`、`git diff --check`，均通过后提交 `feat(analytics): add privacy controls and setup documentation`。
 - [ ] 创建 PR 并附上测试与手工验收记录，base master，Squash 合并；生产开关仍保持关闭直到准备好 Cloud 配置和上线授权。
 
 ## 账户配置与生产验收清单
