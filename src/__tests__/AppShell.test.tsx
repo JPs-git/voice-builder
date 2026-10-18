@@ -61,14 +61,16 @@ describe('AppShell', () => {
   it('shows analysis page with "go to practice" nav by default', () => {
     renderApp('/')
     expect(screen.getByText('analysis-content')).toBeDefined()
-    expect(screen.getByRole('button', { name: /音高参考/ })).toBeDefined()
+    expect(screen.getByRole('link', { name: '音高参考' })).toBeDefined()
+    expect(screen.getByRole('link', { name: '录音统计' })).toBeDefined()
   })
 
   it('navigates to practice and flips the nav label', () => {
     renderApp('/')
-    fireEvent.click(screen.getByRole('button', { name: /音高参考/ }))
+    fireEvent.click(screen.getByRole('link', { name: '音高参考' }))
     expect(screen.getByText(/practice-content/)).toBeDefined()
-    expect(screen.getByRole('button', { name: /返回分析/ })).toBeDefined()
+    expect(screen.getByRole('link', { name: '音高参考' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('link', { name: '实时分析' })).toBeDefined()
   })
 
   it('passes cursorTime through outlet context', () => {

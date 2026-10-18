@@ -90,6 +90,23 @@
 .toolbar[data-compact="true"] .title { font-size: 18px; line-height: 26px; color: #0a2344; letter-spacing: .6px; white-space: nowrap; }
 .toolbar[data-compact="true"] .brand { gap: 6px; }
 .toolbar[data-compact="true"] .pageTabs { max-width: 330px; }
+.toolbar[data-recording-page="true"] .subtitle { display:none; }
+.toolbar[data-recording-page="true"] .logo { width:36px; height:36px; }
+@media (max-width:1100px) and (min-width:769px) {
+  .toolbar { flex-wrap:wrap; gap:10px 20px; }
+  .toolbar .actions { margin-left:auto; }
+}
+@media (max-width:768px) {
+  .toolbar[data-compact="true"] { height:auto; min-height:64px; flex-wrap:wrap; }
+  .toolbar[data-compact="true"] .brand { flex:1; }
+  .toolbar[data-compact="true"] .pageTabs { order:3; flex-basis:100%; max-width:none; }
+  .toolbar[data-recording-page="true"] { flex-wrap:wrap; padding:12px; gap:12px; }
+  .toolbar[data-recording-page="true"] .brand { flex-basis:100%; }
+  .toolbar[data-recording-page="true"] .pageTabs { flex-basis:100%; }
+  .toolbar[data-recording-page="true"] .actions { justify-content:flex-start; gap:6px; width:100%; }
+  .toolbar[data-recording-page="true"] .title { font-size:18px; }
+  .toolbar[data-recording-page="true"] .logo { width:30px; height:30px; }
+}
 @media (max-width: 390px) {
   .toolbar[data-compact="true"] { padding: 8px 10px; gap: 6px; }
   .toolbar[data-compact="true"] .logo { width: 28px; height: 28px; }

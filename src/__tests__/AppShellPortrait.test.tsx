@@ -53,7 +53,8 @@ describe('AppShell toolbar density', () => {
     expect(screen.queryByText('导入音频')).toBeNull()
     expect(screen.getByRole('navigation', { name: '页面切换' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '音高参考' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: '声音分析' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '实时分析' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '录音统计' })).toBeTruthy()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('true')
   })
 

@@ -12,11 +12,12 @@ interface ToolbarProps {
   moreMenu?: ReactNode
   recordButtonRef?: Ref<HTMLButtonElement>
   helpButtonRef?: Ref<HTMLButtonElement>
+  recordingPage?: boolean
 }
 
-export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recordButtonRef, helpButtonRef }: ToolbarProps) {
+export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recordButtonRef, helpButtonRef, recordingPage }: ToolbarProps) {
   return (
-    <header className={styles.toolbar} data-compact={moreMenu ? 'true' : 'false'}>
+    <header className={styles.toolbar} data-compact={moreMenu ? 'true' : 'false'} data-recording-page={recordingPage || undefined}>
       <div className={styles.brand}>
         <img src={logo} className={styles.logo} alt="" aria-hidden="true" />
         <span className={styles.title}>在线声音训练</span>
