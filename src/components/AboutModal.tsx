@@ -3,8 +3,6 @@ import styles from "./AboutModal.module.css";
 import bilibiliIcon from "../../assets/Bilibili.svg";
 import githubIcon from "../../assets/GitHub_Invertocat_Black.svg";
 import pkg from "../../package.json";
-import { useSyncExternalStore } from 'react';
-import { getAnalyticsDisabled, isAnalyticsStorageAvailable, setAnalyticsDisabled, subscribeAnalyticsPreference } from '../analytics/analytics';
 
 interface AboutModalProps {
   open: boolean;
@@ -12,9 +10,6 @@ interface AboutModalProps {
 }
 
 export function AboutModal({ open, onClose }: AboutModalProps) {
-  const analyticsDisabled = useSyncExternalStore(subscribeAnalyticsPreference, getAnalyticsDisabled);
-  const storageAvailable = useSyncExternalStore(subscribeAnalyticsPreference, isAnalyticsStorageAvailable);
-  const doNotTrack = navigator.doNotTrack === '1';
   const changeLogs = [
     "v1.1.0: 架构更新",
     "v1.0.0: 项目上线, 主要功能实时显示基频共振峰",
@@ -25,19 +20,6 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
         <h4>项目信息</h4>
         <p>名称：在线声音训练「看见自己的声音」</p>
         <p>版本：{pkg.version}</p>
-      </section>
-
-      <section className={styles.section}>
-        <h4>使用统计</h4>
-        <p id="analytics-description">用于了解页面访问和功能使用情况。录音和声音分析数据只在本机处理，不发送给统计服务。过渡期使用 Umami 和 Vercel Analytics。</p>
-        <p>统计包含浏览器、设备、语言、屏幕尺寸及粗略地区等访问信息。</p>
-        <label className={styles.analyticsControl}>
-          <input type="checkbox" checked={!analyticsDisabled && !doNotTrack} disabled={doNotTrack}
-            aria-describedby="analytics-description" onChange={event => setAnalyticsDisabled(!event.currentTarget.checked)} />
-          <span>匿名使用统计</span>
-        </label>
-        <p>{doNotTrack ? '浏览器的 Do Not Track 设置已关闭统计。' : '开关立即生效，关闭不会影响当前录音。'}</p>
-        {!storageAvailable && <p role="status">当前浏览器无法保存偏好，本次设置已生效，刷新后可能需要重新设置。</p>}
       </section>
 
       <section className={styles.section}>

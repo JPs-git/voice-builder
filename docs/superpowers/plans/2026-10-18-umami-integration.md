@@ -10,6 +10,10 @@
 
 **Spec:** 本文“接入范围与统计口径”章节，依据本对话中的可行性分析及用户“制定接入计划”的要求；用户已授权按此计划开始实施。
 
+## 最新范围约束
+
+用户后续要求：不进行任何 UI 修改；PR #52 已按要求关闭。关于弹窗、样式及新增设置入口均撤回，后续修改只保留在本地分支，不重新开启或新建 PR。保留六类后台事件、环境和域名隔离、DNT、数据过滤、内部停用及录音参与度统计。以下规范以此约束为准。
+
 ## 基线与工作区
 
 - 日期：2026-10-18，Asia/Shanghai。
@@ -17,7 +21,7 @@
 - 文档分支：`docs/umami-integration-plan`。
 - 文档 worktree：`C:/Users/Administrator/Projects/voice-builder/.worktrees/docs/umami-integration-plan`。
 - 实施时从最新 master 创建 `feat/umami-analytics`，worktree 使用 `.worktrees/feat/umami-analytics`；将本计划复制到该 worktree 的相同仓库相对路径，随功能 PR 保存。一个功能分支对应一个 PR，base 为 master，建议标题 `feat(analytics): add lightweight Umami tracking`。
-- 实施基线：2c84ad6，版本 1.17.1；2026-10-18 已获取最新 origin/master 并创建 feat/umami-analytics worktree。Tasks 1–4 的代码与自动验证已完成；578 项测试、生产构建和类型检查通过，账户配置与生产验收尚未执行。
+- 实施基线：2c84ad6，版本 1.17.1；2026-10-18 已获取最新 origin/master 并创建 feat/umami-analytics worktree。后台埋点已完成；撤回 UI 后 573 项测试、生产构建、类型检查及 diff 检查通过。关于弹窗与样式相对基线零差异，账户配置与生产验收尚未执行。
 
 ## Global Constraints
 
@@ -26,7 +30,7 @@
 - 不发送录音、音频片段、文件名、原始错误消息、堆栈、F0/F1/F2、命中率、声区、训练目标或用户身份信息。
 - 浏览器、设备、语言、屏幕和粗略地区等 Umami 默认技术维度需在统计说明中披露；不宣称“完全没有向第三方发送数据”。
 - 只有生产构建、显式开关开启、精确域名匹配且用户未关闭统计时才允许采集；Preview 不配置开启开关。
-- 同一个“匿名使用统计”开关同时控制 Umami 和现有 Vercel Analytics；关闭后不再发送新的统计请求，已经发出的请求无法撤回。
+- 内部停用接口同时控制 Umami 和现有 Vercel Analytics；关闭后不再发送新的统计请求，已经发出的请求无法撤回。
 - 统计脚本、存储或网络失败不得改变录音、分析、导入、播放的结果，不 await 上报，不显示统计错误 Toast。
 - 页面浏览由 Umami 自动记录；不在 React effect 中重复调用无参 `track()`；初始化在 StrictMode 树外且幂等。
 - 主 checkout 常驻干净 master；分支、worktree、PR 和 Squash 合并遵守 AGENTS.md。合并前必须 `npm test`、`npm run build`、`npx tsc --noEmit` 全过。
@@ -67,8 +71,8 @@
 - 正式部署显式将全局开关、过渡期 Vercel 开关设为 true；Umami ID 从账户获得，不在计划中编造。域名清单使用逗号分隔、去空格后精确比较，不允许通配符、后缀匹配、localhost、127.0.0.1。需要增加正式域名时显式配置。
 - Umami 脚本地址固定为该 Cloud 网站官方 Tracking code 中的 HTTPS 地址，在实施时核对；不提供任意脚本地址输入框或通用插件系统。
 - `VITE_*` 是公开构建配置，Website ID 不是管理凭证；前端绝不能包含 Cloud API key、账户密码或数据库凭证。本地 `.env.local`/`.env.*.local` 加入忽略规则，保留 `.env.example`。
-- 用户偏好键 `voicebuilder-analytics-disabled`，值 `'true'` 表示关闭；默认开启但仍服从配置、环境和 DNT。初始化读取一次并保存内存状态；读取存储失败时关闭采集。后续切换先更新内存状态，写入失败时当前文档仍立即应用，并说明偏好可能无法跨刷新保存。监听 storage 事件同步同源标签页。重新开启时幂等调用 initAnalytics，无需刷新；本次文档已加载失败的脚本仍不自动重试。
-- 尊重 navigator.doNotTrack === '1'；DNT 开启时不加载两个脚本，界面说明由浏览器设置关闭，不能用界面开关覆盖。
+- 用户偏好键 `voicebuilder-analytics-disabled`，值 `'true'` 表示关闭；默认开启但仍服从配置、环境和 DNT。初始化读取一次并保存内存状态；读取存储失败时关闭采集。后续切换先更新内存状态，写入失败时当前文档仍立即应用，偏好可能无法跨刷新保存。监听 storage 事件同步同源标签页。重新开启时幂等调用 initAnalytics，无需刷新；本次文档已加载失败的脚本仍不自动重试。
+- 尊重 navigator.doNotTrack === '1'；DNT 开启时不加载两个统计脚本，不增加界面设置。
 - 初始化前注册 `window.voiceBuilderAnalyticsBeforeSend`，用 Umami `data-before-send` 再检查当前偏好并清理 payload；设置 `data-domains`、`data-do-not-track="true"`、`data-exclude-hash="true"`。不开启 data-exclude-search，因为需要保留经过白名单清理的 UTM。
 - URL 仅保留 `/`、`/practice` 与 `utm_source`、`utm_medium`、`utm_campaign`、`utm_content`。UTM 值只接受 `/^[a-z0-9_-]{1,64}$/i`；丢弃其他查询参数和 hash。站内 referrer 同样清理；站外 referrer 只保留 origin；title 固定为项目现有标题。未知页面不发送，不退化为原始 URL。
 - 业务属性通过事件类型约束并在运行时按白名单重新构造；不得展开 error、File、store 或音频对象。Vercel 通过现有包的 beforeSend 同步检查偏好并清理 URL。
@@ -78,8 +82,7 @@
 
 ### 展示与分析
 
-- 关于弹窗加入“匿名使用统计”复选框和短说明：“用于了解页面访问和功能使用情况。录音和声音分析数据只在本机处理，不发送给统计服务。过渡期使用 Umami 和 Vercel Analytics。”
-- 提示开关立即生效；DNT 或存储限制时给出简短状态说明。关闭统计不能清空录音、重新挂载 App 或刷新页面。
+- 不增加任何 UI 控件或说明；后台停用不清空录音、不重新挂载 App、不刷新页面。
 - 首期看“进入网站 → 成功录音 → 累计录音 30 秒”的漏斗、回放/导入的使用覆盖、录音错误原因，以及来源与设备差异。
 - 转化率使用同一时间范围、同一匿名访客口径的漏斗人数，不能用事件次数相除。30 天访客数不直接命名为有效练习 MAU；默认匿名标识按月轮换，不承诺精确跨月留存或跨设备人数。
 - 新的 B 站分发链接使用 `utm_source=bilibili&utm_medium=comment&utm_campaign=voice_training`；可加 `utm_content=bv14zgh6uedv` 区分投放位置。这里只约定格式，不代发评论。
@@ -89,7 +92,7 @@
 - 当前 Vercel 脚本单独读取 document.referrer，其 beforeSend 不能修改该字段：仅在原始 referrer 已符合清理规则时启用 Vercel，否则该文档仅使用 Umami。代价是 Vercel 对这类来源的访问漏计；不以放宽隐私约束换取完整计数。
 - index.html 提前设置 referrer=origin，防止同源请求的 HTTP Referer 头携带当前页路径和查询参数。已用真实浏览器的生产资源请求验证，不只检查 payload。
 - 当前 Umami Cloud 脚本未监听 popstate：保留自动页面统计，增加同 URL、同 state 的 replaceState 补偿，同步 SDK 内部路由缓存且不新增历史条目。供应商脚本更新后需要复查此行为。
-- 新增六项回归用例，观察失败后修复；最终 578 项测试、默认关闭/显式开启两种生产构建和类型检查通过。本地浏览器已验证偏好保留、键盘操作及来源头。
+- 新增六项回归用例，观察失败后修复；最终 578 项测试、默认关闭/显式开启两种生产构建和类型检查通过。前一版曾验证偏好控件和来源头；后续已撤回 UI，当前仅保留来源头验证结论。
 - 无延后的次要代码问题。Cloud 账户、生产部署、看板入库和大陆网络稳定性仍待正式配置与上线后验收；目前不提供生产效果保证。
 
 ## 文件职责
@@ -101,7 +104,7 @@
 | 修改 `src/main.tsx`、`src/vite-env.d.ts`、`index.html` | 在挂载前接入初始化；补齐环境变量和 window 类型 |
 | 修改 `src/hooks/useAnalysis.ts`、`src/hooks/usePlayback.ts` | 在既有业务边界调用事件与累计器 |
 | 修改 `src/routes/AppShell.tsx` | 在统一 openHelp 入口记录帮助打开 |
-| 修改 `src/components/AboutModal.tsx`、其 CSS Module | 说明和关闭统计入口 |
+| 新增 `src/__tests__/analyticsRecording.test.ts` | 无 UI 的内部停用与录音连续性回归 |
 | 新增 `.env.example`、`docs/analytics.md`；修改 `.gitignore`、`README.md` | 配置、事件字典、指标口径、上线/关闭/回滚操作 |
 | 新增/扩展下列任务中的测试 | 验证真实失败模式与业务结果，不做逐行镜像测试 |
 
@@ -170,18 +173,16 @@ expect(reached).toHaveBeenCalledTimes(1)
 - [x] 补足 Review Focus 4/5 的集成断言：10 秒窗口反复覆盖仍能累计到 30 秒；暂停/清空继续、路由切换后不重复；WAV 和压缩音频各一条 success；too_long 分类；取消文件选择零事件；空回放零事件；横竖屏各帮助入口每次打开恰好一条且保留正确 topic。
 - [x] 同一测试命令及 `npx tsc --noEmit` 通过后提交 `feat(analytics): instrument recording playback import and help`。
 
-## Task 4: 用户控制、运营文档与发布验收
+## Task 4: 后台控制、运营文档与本地验收
 
-**Files:** Modify `src/components/AboutModal.tsx`, `src/components/AboutModal.module.css`, `README.md`; create `src/__tests__/AboutModal.test.tsx`, `docs/analytics.md`。
+**Files:** Modify `README.md`; create `src/__tests__/analyticsRecording.test.ts`, `docs/analytics.md`。原关于弹窗及样式恢复为实施基线；删除本次新增的 AboutModal UI 测试。
 
-**Interfaces:** 关于弹窗通过 Task 1 的偏好接口订阅状态；不新增全局应用 store，不把偏好写入 voicebuilder-presets。
+**Interfaces:** 保留内部停用与环境控制接口；不向 UI 暴露统计设置，不改变任何页面布局、文案或交互。
 
-- [x] 先写可访问性与状态测试：带“匿名使用统计”标签的复选框可用键盘切换；切换调用 setAnalyticsDisabled；重开弹窗保留状态；storage 事件更新界面；DNT 和存储失败显示对应说明。运行 `npx vitest run --project unit src/__tests__/AboutModal.test.tsx` 确认缺功能失败。
-- [x] 实现本文确定的说明和复选框；关闭立即清待发队列并阻止后续 Umami 与 Vercel 请求，不关闭录音、不清空数据、不触发刷新。录音中关闭的行为加入业务集成测试，验证 startCapture/stopCapture 调用次数与原音频结果保持一致。
-- [x] 同一测试命令通过；docs/analytics.md 记录事件字典、30 秒口径、匿名身份局限、来源链接约定、配置步骤、关闭偏好、失败降级、六个月保留与定期导出、回滚方案。README 链接该文档，说明自行部署默认不采集。
-- [x] 实施者按顺序运行 `npm test`、`npm run build`、`npx tsc --noEmit`、`git diff --check`，均通过后提交 `feat(analytics): add privacy controls and setup documentation`。
-- [x] 已创建草稿 PR [#52](https://github.com/JPs-git/voice-builder/pull/52)，附上测试与手工验收记录，base master；后续仅以 Squash 合并。生产开关保持关闭，待正式配置与上线授权。
-
+- [x] 将录音中停用的核心回归移入 analyticsRecording.test.ts，不依赖 UI 控件。
+- [x] 在 docs/analytics.md 记录后台配置、事件字典、隐私边界、统计口径及回滚方法。
+- [x] 本次撤回后 npm test（573 项）、npm run build、npx tsc --noEmit、git diff --check 均通过；AboutModal.tsx 及样式相对基线零差异。
+- [x] PR #52 已按用户要求关闭。保留本地分支及 worktree，后续修改不推送，不创建或重新开启 PR。
 ## 账户配置与生产验收清单
 
 以下为执行阶段清单。本轮不创建账户、不更改 Vercel 配置、不发布。
