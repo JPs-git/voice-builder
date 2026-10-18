@@ -35,7 +35,7 @@ export function summarizePitch(input:readonly PitchFrame[],duration:number):{fra
   for(const i of excluded) {frames[i].f0=null;frames[i].exclusion='isolated-jump'}
   const valid=frames.filter(f=>f.f0!=null)
   const sorted=valid.map(f=>f.f0!).sort((a,b)=>a-b)
-  const minimum=sorted[0]??null,maximum=sorted.at(-1)??null
+  const minimum=sorted[0]??null,maximum=sorted[sorted.length-1]??null
   const weight=(f:PitchFrame)=>Math.max(0,Math.min(f.duration,duration-f.start))
   const validDuration=valid.reduce((sum,f)=>sum+weight(f),0)
   const bins=new Map<number,HistogramBin>()

@@ -38,7 +38,7 @@ describe('whole-clip pitch statistics',()=>{
   })
   it('chooses first equal extremum and includes 1000Hz in the last bin',()=>{
     const s=summarizePitch(frames([200,200,1000,1000,1000]),1).summary
-    expect(s.minTime).toBe(.025); expect(s.histogram.at(-1)?.count).toBe(3)
-    expect(s.histogram.at(-1)?.to).toBe(1000)
+ expect(s.minTime).toBe(.025); expect(s.histogram[s.histogram.length-1]?.count).toBe(3)
+ expect(s.histogram[s.histogram.length-1]?.to).toBe(1000)
   })
 })

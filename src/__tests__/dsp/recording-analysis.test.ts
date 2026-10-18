@@ -6,7 +6,7 @@ it('analyzes low-volume speech-like periodic input without a 10 second window',(
  expect(result.summary.median).toBeCloseTo(200,0)
  expect(result.summary.validDuration).toBeGreaterThan(10)
  expect(result.frames[0].time).toBe(.025)
- expect(result.frames.at(-1)!.time).toBeLessThanOrEqual(11)
+ expect(result.frames[result.frames.length-1].time).toBeLessThanOrEqual(11)
  expect(result.settings.f0Range).toEqual([60,1000])
 })
 it('does not invent pitch in silence or short zero-padded tails',()=>{
@@ -23,6 +23,6 @@ it('handles 48kHz input with bounded valid duration and actual window times',()=
  const result=analyzeClip(tone(48000,1),48000)
  expect(result.summary.median).toBeCloseTo(200,0)
  expect(result.summary.validDuration).toBeLessThanOrEqual(1)
- expect(result.frames.at(-1)!.time).toBeLessThanOrEqual(1)
+ expect(result.frames[result.frames.length-1].time).toBeLessThanOrEqual(1)
 })
 

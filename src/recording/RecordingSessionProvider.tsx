@@ -1,25 +1,34 @@
-import {createContext,useContext,useEffect,useRef,useState,useSyncExternalStore} from 'react'
+import {createContext,useContext,useEffect,useRef,useState,useSyncExternalStore,useCallback} from 'react'
 import type {ReactNode} from 'react'
 import {getAudioEngine} from '../ts'
 import {RecordingSessionController} from './sessionController'
 import {runClipAnalysis} from './workerClient'
 import {importRecordingFile} from './importClip'
 
-const Context=createContext<RecordingSessionController|null>(null)
+export interface RecordingPreferences {
+ mode:'reading'|'free';materialId:string;fontSize:number;promptIndex:number;promptVisible:boolean
+}
+const Context=createContext<{controller:RecordingSessionController;preferences:RecordingPreferences;
+ updatePreferences:(patch:Partial<RecordingPreferences>)=>void}|null>(null)
 export function RecordingSessionProvider({children,controller:provided}:{children:ReactNode;controller?:RecordingSessionController}){
  const [controller]=useState(()=>provided??new RecordingSessionController({
   engine:getAudioEngine(),analyze:runClipAnalysis,importClip:importRecordingFile,now:()=>new Date(),
  }))
  const lifecycle=useRef(0)
+ const [preferences,setPreferences]=useState<RecordingPreferences>({
+  mode:'reading',materialId:'after-rain-v1',fontSize:22,promptIndex:0,promptVisible:true,
+ })
+ const updatePreferences=useCallback((patch:Partial<RecordingPreferences>)=>setPreferences(old=>({...old,...patch})),[])
  useEffect(()=>{
   const generation=++lifecycle.current
   return()=>{queueMicrotask(()=>{if(lifecycle.current===generation)controller.destroy()})}
  },[controller])
- return <Context.Provider value={controller}>{children}</Context.Provider>
+ return <Context.Provider value={{controller,preferences,updatePreferences}}>{children}</Context.Provider>
 }
 export function useRecordingSession(){
- const controller=useContext(Context)
- if(!controller)throw new Error('RecordingSessionProvider is required')
+ const value=useContext(Context)
+ if(!value)throw new Error('RecordingSessionProvider is required')
+ const {controller}=value
  const snapshot=useSyncExternalStore(controller.subscribe,controller.getSnapshot,controller.getSnapshot)
- return {controller,snapshot}
+ return {...value,snapshot}
 }
