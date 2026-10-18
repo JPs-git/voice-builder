@@ -127,6 +127,8 @@ function AppShellContent() {
   return (
     <>
       <Toolbar
+        compactActions={!isPortrait}
+        moreButtonRef={moreButtonRef}
         recordingPage={isRecording}
         recordButtonRef={recordButtonRef}
         helpButtonRef={helpButtonRef}

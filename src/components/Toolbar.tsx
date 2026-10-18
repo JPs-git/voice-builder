@@ -1,8 +1,9 @@
-import type { ReactNode, Ref } from 'react'
+import type { ReactNode, Ref, RefObject } from 'react'
 import logo from '../../assets/logo.png'
 import { Button } from './Button'
 import styles from './Toolbar.module.css'
 import type { ToolItem } from '../hooks/useToolbar'
+import { MobileMoreMenu } from './mobile/MobileMoreMenu'
 
 interface ToolbarProps {
   toolItems: ToolItem[]
@@ -13,9 +14,14 @@ interface ToolbarProps {
   recordButtonRef?: Ref<HTMLButtonElement>
   helpButtonRef?: Ref<HTMLButtonElement>
   recordingPage?: boolean
+  compactActions?: boolean
+  moreButtonRef?: RefObject<HTMLButtonElement | null>
 }
 
-export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recordButtonRef, helpButtonRef, recordingPage }: ToolbarProps) {
+export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recordButtonRef, helpButtonRef, recordingPage, compactActions, moreButtonRef }: ToolbarProps) {
+  const primaryIds = new Set(['record', 'cancel', 'import', 'playback'])
+  const visibleItems = compactActions ? toolItems.filter(item => primaryIds.has(item.id)) : toolItems
+  const secondaryItems = compactActions ? toolItems.filter(item => !primaryIds.has(item.id)) : []
   return (
     <header className={styles.toolbar} data-compact={moreMenu ? 'true' : 'false'} data-recording-page={recordingPage || undefined}>
       <div className={styles.brand}>
@@ -34,11 +40,13 @@ export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recor
 
       {moreMenu ?? (
         <div className={styles.actions}>
-          {toolItems.map(item => (
+          {visibleItems.map(item => (
             <Button
               ref={item.id === 'record' ? recordButtonRef : item.id === 'help' ? helpButtonRef : undefined}
               key={item.id}
               id={item.id}
+              aria-label={item.label}
+              title={item.label}
               variant={item.variant}
               icon={item.icon}
               label={item.label}
@@ -47,6 +55,7 @@ export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recor
               onClick={() => onToolClick(item.id)}
             />
           ))}
+          {secondaryItems.length > 0 && <MobileMoreMenu variant="desktop" items={secondaryItems} onSelect={onToolClick} triggerButtonRef={moreButtonRef} />}
         </div>
       )}
     </header>

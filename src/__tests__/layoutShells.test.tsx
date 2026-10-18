@@ -285,12 +285,12 @@ describe('portrait analysis structure', () => {
     expect(main?.className).toContain('portraitMain')
   })
 
-  it('omits the dock in landscape while keeping the flat toolbar', () => {
+  it('omits the dock in landscape while keeping frequent toolbar actions', () => {
     setMatchMedia(false)
     renderInsideShell(<AnalysisPage />)
     expect(pageLayout()).toBe('landscape')
     expect(document.querySelector('[data-portrait-dock="true"]')).toBeNull()
-    expect(document.querySelectorAll('header button[id]').length).toBe(7)
+    expect(document.querySelectorAll('header button[id]').length).toBe(3)
   })
 
   it('preserves the same frame and register across responsive layouts', () => {

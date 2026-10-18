@@ -107,9 +107,7 @@ describe('first-use help integration', () => {
     view.rerender(<TestApp />)
     resizeLayout(!portrait)
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.activeElement).toBe(portrait
-      ? screen.getByRole('button', { name: /帮助/ })
-      : screen.getByRole('button', { name: '更多操作' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
     expect(audio).not.toHaveBeenCalled()
   })
 

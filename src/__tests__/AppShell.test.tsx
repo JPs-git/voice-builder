@@ -83,7 +83,8 @@ describe('AppShell', () => {
     audioState.playing = mode === 'playing'
     renderApp('/')
     expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /帮助/ }))
+    fireEvent.click(screen.getByRole('button', { name: '更多操作' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /帮助/ }))
     expect(screen.getByRole('button', { name: '快速上手' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
     expect(audioAction).not.toHaveBeenCalled()

@@ -11,9 +11,9 @@
   border-radius: 999px;
   background: #eef3fb;
 }
-.desktop { border-radius:6px; border:1px solid #e4e7ec; background:#fff; padding:2px; }
-.desktop .tab { border-radius:5px; font-size:13px; padding:0 14px; }
-.desktop .active { background:#fff0f3; color:#e23e57; box-shadow:none; }
+.desktop { border-radius:0; background:transparent; padding:0; gap:24px; height:50px; }
+.desktop .tab { border-radius:0; font-size:14px; padding:0 4px; height:50px; box-sizing:border-box; border-bottom:2px solid transparent; }
+.desktop .active { background:transparent; color:#e23e57; box-shadow:none; border-bottom-color:#e23e57; }
 
 .tab {
   display: flex;
