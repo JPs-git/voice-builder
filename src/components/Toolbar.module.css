@@ -90,8 +90,6 @@
 .toolbar[data-compact="true"] .title { font-size: 18px; line-height: 26px; color: #0a2344; letter-spacing: .6px; white-space: nowrap; }
 .toolbar[data-compact="true"] .brand { gap: 6px; }
 .toolbar[data-compact="true"] .pageTabs { max-width: 330px; }
-.toolbar[data-recording-page="true"] .subtitle { display:none; }
-.toolbar[data-recording-page="true"] .logo { width:36px; height:36px; }
 @media (max-width:1100px) and (min-width:769px) {
   .toolbar { flex-wrap:wrap; gap:10px 20px; }
   .toolbar .actions { margin-left:auto; }
