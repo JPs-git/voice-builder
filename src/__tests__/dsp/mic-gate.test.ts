@@ -42,22 +42,27 @@ describe('microphone gate', () => {
     expect(vad.compute(level(0), 10).voiced).toBe(false)
   })
 
-  it('keeps the default file gate fixed with no hold', () => {
-    const vad = new VoiceActivityDetector()
-    expect(vad.compute(level(0.06)).voiced).toBe(true)
-    expect(vad.compute(level(0.02)).voiced).toBe(false)
-    expect(vad.compute(level(0)).voiced).toBe(false)
+  it('vetoes noise immediately and does not let it extend the internal hold', () => {
+    const vad = new VoiceActivityDetector(micOptions)
+    expect(vad.compute(level(0.01), 10, true).voiced).toBe(true)
+    expect(vad.compute(level(0.006), 50, false).voiced).toBe(false)
+    // A brief noise gap must not erase the hysteresis for actual quiet speech.
+    expect(vad.compute(level(0.006), 10, true).voiced).toBe(true)
+    expect(vad.compute(level(0.02), 100, false).voiced).toBe(false)
+    expect(vad.compute(level(0.006), 10, true).voiced).toBe(false)
   })
 
-  it('analyzes quiet microphone tones while preserving default file behavior', () => {
+  it('analyzes quiet tones with the same default gate for microphone and file input', () => {
     const samples = tone(0.02)
     const frames: SmootherFrame[] = []
-    const mic = new AnalysisPipeline({ vadOptions: micOptions, onFrame: f => frames.push(f) })
+    const mic = new AnalysisPipeline({ onFrame: f => frames.push(f) })
     mic.pushChunk(samples, 16000)
     expect(frames.length).toBe(96)
     expect(frames.every(f => f.voiced && f.f0 === 200)).toBe(true)
     expect(frames[0].rms).toBeCloseTo(0.014142, 5)
-    expect(AnalysisPipeline.analyze(samples, 16000, 'hybrid').every(f => !f.voiced && f.f0 === null)).toBe(true)
+    const file = AnalysisPipeline.analyze(samples, 16000, 'hybrid')
+    expect(file.slice(0, frames.length)).toEqual(frames)
+    expect(file.some(f => f.f0 === 200)).toBe(true)
   })
 
   it('does not invent pitch during silence and resets pipeline gate history', () => {
@@ -68,7 +73,7 @@ describe('microphone gate', () => {
     mic.pushChunk(new Float32Array(2400), 16000)
     const silence = frames.filter(f => f.rms === 0)
     expect(silence.length).toBeGreaterThan(10)
-    expect(silence[0].voiced).toBe(true)
+    expect(silence[0].voiced).toBe(false)
     expect(silence.every(f => f.f0 === null && f.f1 === null && f.f2 === null)).toBe(true)
     expect(silence[silence.length - 1].voiced).toBe(false)
     mic.reset()

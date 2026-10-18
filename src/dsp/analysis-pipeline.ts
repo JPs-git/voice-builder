@@ -5,7 +5,8 @@ import { fftMagnitudes } from './fft'
 import { detectPitch, extractFormants, isHarmonicLocked } from './lpc'
 import type { FormantPeak } from './lpc'
 import { extractFormantsCepstral } from './cepstral'
-import { VoiceActivityDetector } from './vad'
+import { VoiceActivityDetector, DEFAULT_VAD_OPTIONS } from './vad'
+import { hasSpeechSpectrum } from './speech-spectrum'
 import type { VadOptions } from './vad'
 import { FormantSmoother } from './formant-smoother'
 import type { SmootherFrame } from './formant-smoother'
@@ -14,6 +15,7 @@ import { RegisterDetector } from './register-detector'
 const TARGET_RATE = 16000
 const FRAME_SIZE = 800
 const HOP_SIZE = 160
+const MIN_ANALYSIS_SAMPLES = FRAME_SIZE / 2
 
 export type FormantMethodValue = 'hybrid' | 'lpc' | 'cepstral'
 
@@ -37,6 +39,7 @@ export class AnalysisPipeline {
   private _prevGoodF1: number | null = null
   private _smoother: FormantSmoother | null
   private _registerDetector: RegisterDetector
+  private _inputSampleCount = 0
 
   constructor({
     onFrame,
@@ -47,7 +50,13 @@ export class AnalysisPipeline {
     formantSmoothing = true,
   }: PipelineOptions = {}) {
     this._frameOffset = frameOffset
-    this._vad = new VoiceActivityDetector({ ...vadOptions, threshold: vadThreshold ?? vadOptions?.threshold })
+    const threshold = vadThreshold ?? vadOptions?.threshold ?? DEFAULT_VAD_OPTIONS.threshold
+    this._vad = new VoiceActivityDetector({
+      threshold,
+      // A legacy opening-threshold override must not put release above opening.
+      releaseThreshold: Math.min(threshold, vadOptions?.releaseThreshold ?? DEFAULT_VAD_OPTIONS.releaseThreshold),
+      holdMs: vadOptions?.holdMs ?? DEFAULT_VAD_OPTIONS.holdMs,
+    })
     this._formantMethod = formantMethod
     this._smoother = formantSmoothing ? new FormantSmoother() : null
     this._registerDetector = new RegisterDetector()
@@ -64,16 +73,26 @@ export class AnalysisPipeline {
         hopSize: HOP_SIZE,
       })
       this._frameProcessor.onFrame = (frame: FrameData) => {
-        const { voiced, rms } = this._vad.compute(frame.samples, HOP_SIZE / TARGET_RATE * 1000)
+        // Only real samples can provide speech evidence. Synthetic flush
+        // padding must not change noise into a structured spectrum. At least
+        // half the 50ms window is needed for a tail's pitch/formant estimates.
+        const realLength = Math.max(0, Math.min(FRAME_SIZE, this._inputSampleCount - this._frameCount * HOP_SIZE))
+        const analysisSamples = frame.samples.subarray(0, realLength)
+        const enoughSamples = realLength >= MIN_ANALYSIS_SAMPLES
+        const magnitudes = fftMagnitudes(enoughSamples ? analysisSamples : frame.samples, 2048)
+        const { voiced, rms } = this._vad.compute(
+          analysisSamples, HOP_SIZE / TARGET_RATE * 1000,
+          enoughSamples && hasSpeechSpectrum(magnitudes, frame.sampleRate),
+        )
         let f0: number | null = null
         let formants: (FormantPeak | null)[] = []
         if (voiced) {
-          f0 = detectPitch(frame.samples, frame.sampleRate)
+          f0 = detectPitch(analysisSamples, frame.sampleRate)
           if (this._formantMethod === 'cepstral') {
-            const result = extractFormantsCepstral(frame.samples, frame.sampleRate, 2, f0)
+            const result = extractFormantsCepstral(analysisSamples, frame.sampleRate, 2, f0)
             formants = result.formants
           } else if (this._formantMethod === 'lpc') {
-            const result = extractFormants(frame.samples, frame.sampleRate, 2, f0)
+            const result = extractFormants(analysisSamples, frame.sampleRate, 2, f0)
             const fmts: (FormantPeak | null)[] = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               if (fmts[0] && isHarmonicLocked(result.f0, fmts[0].freq, fmts[0].bw)) {
@@ -82,12 +101,12 @@ export class AnalysisPipeline {
             }
             formants = fmts
           } else {
-            let result = extractFormants(frame.samples, frame.sampleRate, 2, f0)
+            let result = extractFormants(analysisSamples, frame.sampleRate, 2, f0)
             let fmts: (FormantPeak | null)[] = result.formants
             if (fmts[1] && fmts[1].freq > 0) {
               const f1Jump = this._prevGoodF1 != null ? Math.abs(fmts[0]!.freq - this._prevGoodF1) : 0
               if (f1Jump > 300 && fmts[0]!.freq > 600) {
-                const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2, f0)
+                const cepResult = extractFormantsCepstral(analysisSamples, frame.sampleRate, 2, f0)
                 const cepFormants: (FormantPeak | null)[] = cepResult.formants
                 if (cepFormants[1] && cepFormants[1].freq > 0) {
                   if (cepFormants[0] && isHarmonicLocked(cepResult.f0, cepFormants[0].freq, cepFormants[0].bw)) {
@@ -105,7 +124,7 @@ export class AnalysisPipeline {
                 }
               }
             } else {
-              const cepResult = extractFormantsCepstral(frame.samples, frame.sampleRate, 2, f0)
+              const cepResult = extractFormantsCepstral(analysisSamples, frame.sampleRate, 2, f0)
               const cepFormants: (FormantPeak | null)[] = cepResult.formants
               if (cepFormants[1] && cepFormants[1].freq > 0) {
                 if (cepFormants[0] && isHarmonicLocked(cepResult.f0, cepFormants[0].freq, cepFormants[0].bw)) {
@@ -118,7 +137,6 @@ export class AnalysisPipeline {
             formants = fmts
           }
         }
-        const magnitudes = fftMagnitudes(frame.samples, 2048)
         this._frameCount++
         let output: SmootherFrame = {
           f0,
@@ -150,6 +168,7 @@ export class AnalysisPipeline {
     }
     const data = this._resampler ? this._resampler.process(samples) : samples
     if (data.length > 0) {
+      this._inputSampleCount += data.length
       this._frameProcessor.push(data)
     }
   }
@@ -161,6 +180,7 @@ export class AnalysisPipeline {
   }
 
   reset(): void {
+    this._inputSampleCount = 0
     this._vad.reset()
     if (this._resampler) this._resampler.reset()
     if (this._frameProcessor) this._frameProcessor.reset()

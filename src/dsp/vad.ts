@@ -1,4 +1,4 @@
-export const DEFAULT_VAD_THRESHOLD = 0.05
+export const DEFAULT_VAD_THRESHOLD = 0.008
 
 export interface VadOptions {
   threshold?: number
@@ -6,10 +6,9 @@ export interface VadOptions {
   holdMs?: number
 }
 
-// Live capture needs to accept quiet, unprocessed microphone input.
-// File analysis keeps the original fixed threshold unless explicitly configured.
-export const MIC_VAD_OPTIONS: Readonly<VadOptions> = {
-  threshold: 0.008,
+// Shared by streaming capture and file analysis.
+export const DEFAULT_VAD_OPTIONS: Readonly<Required<VadOptions>> = {
+  threshold: DEFAULT_VAD_THRESHOLD,
   releaseThreshold: 0.005,
   holdMs: 100,
 }
@@ -28,22 +27,24 @@ export class VoiceActivityDetector {
   }
 
   // elapsedMs is the hop duration, not the duration of the overlapping window.
-  compute(samples: Float32Array, elapsedMs = 10): { voiced: boolean; rms: number } {
+  compute(samples: Float32Array, elapsedMs = 10, hasSpeechEvidence = true): { voiced: boolean; rms: number } {
     let sumSq = 0
     for (let i = 0; i < samples.length; i++) {
       sumSq += samples[i] * samples[i]
     }
     const rms = samples.length ? Math.sqrt(sumSq / samples.length) : 0
     if (!this._voiced) {
-      this._voiced = rms >= this._threshold
+      this._voiced = hasSpeechEvidence && rms >= this._threshold
       this._belowThresholdMs = 0
-    } else if (rms >= this._releaseThreshold) {
+    } else if (hasSpeechEvidence && rms >= this._releaseThreshold) {
       this._belowThresholdMs = 0
     } else {
       this._belowThresholdMs += elapsedMs
       if (this._belowThresholdMs >= this._holdMs) this._voiced = false
     }
-    return { voiced: this._voiced, rms }
+    // Hold the internal gate across brief dips, but never publish known noise
+    // as voiced or let it restart the hold timer.
+    return { voiced: this._voiced && hasSpeechEvidence, rms }
   }
 
   reset(): void {

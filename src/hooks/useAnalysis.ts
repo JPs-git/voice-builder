@@ -4,7 +4,6 @@ import { useToastStore } from '../store/toastStore'
 import { getAudioEngine } from '../ts'
 import { recordingBuffer } from '../audio/recordingBuffer'
 import { AnalysisPipeline, parseWav, isWavFile, Resampler } from '../dsp'
-import { MIC_VAD_OPTIONS } from '../dsp/vad'
 import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuration } from '../audio/audioDecoder'
 import type { AnalysisFrame } from '../types'
 import { AUDIO_WINDOW_SECONDS } from '../config/audioLimits'
@@ -127,7 +126,6 @@ export function useAnalysis() {
 
       // Only create pipeline AFTER capture succeeds
       pipelineRef.current = new AnalysisPipeline({
-        vadOptions: MIC_VAD_OPTIONS,
         onFrame: (frame: AnalysisFrame) => {
           useAppStore.getState().appendFrame(frame)
         },
