@@ -180,7 +180,7 @@ expect(reached).toHaveBeenCalledTimes(1)
 - [x] 实现本文确定的说明和复选框；关闭立即清待发队列并阻止后续 Umami 与 Vercel 请求，不关闭录音、不清空数据、不触发刷新。录音中关闭的行为加入业务集成测试，验证 startCapture/stopCapture 调用次数与原音频结果保持一致。
 - [x] 同一测试命令通过；docs/analytics.md 记录事件字典、30 秒口径、匿名身份局限、来源链接约定、配置步骤、关闭偏好、失败降级、六个月保留与定期导出、回滚方案。README 链接该文档，说明自行部署默认不采集。
 - [x] 实施者按顺序运行 `npm test`、`npm run build`、`npx tsc --noEmit`、`git diff --check`，均通过后提交 `feat(analytics): add privacy controls and setup documentation`。
-- [ ] 创建 PR 并附上测试与手工验收记录，base master，Squash 合并；生产开关仍保持关闭直到准备好 Cloud 配置和上线授权。
+- [x] 已创建草稿 PR [#52](https://github.com/JPs-git/voice-builder/pull/52)，附上测试与手工验收记录，base master；后续仅以 Squash 合并。生产开关保持关闭，待正式配置与上线授权。
 
 ## 账户配置与生产验收清单
 
