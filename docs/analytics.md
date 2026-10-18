@@ -34,9 +34,13 @@ Umami 默认采集的技术维度包含浏览器、系统、设备、语言、�
 
 URL 只允许 `/`、`/practice` 及 `utm_source`、`utm_medium`、`utm_campaign`、`utm_content`，UTM 值仅保留 1–64 个英文字母、数字、下划线、连字符。其他参数、hash、动态标题和未声明的事件属性不会发送。站外 referrer 只保留 origin，站内 referrer 也经过 URL 过滤。未知页面跳过统计。
 
+Vercel 脚本另外读取原始 document.referrer，无法通过其 beforeSend 修改。因此，来源地址包含不允许的路径或参数时，本次文档完全跳过 Vercel，仅由 Umami 发送清理后的来源。页面设置 origin 来源策略，避免同源统计请求的 HTTP Referer 头携带当前页路径或查询参数。
+
 ## 事件字典
 
 页面浏览由 Umami 自动记录首次加载与路由导航，不手工重复发送。下面六类业务事件均带 `page: analysis | practice`，只附带表内白名单属性。
+
+当前 Cloud 脚本只观察 pushState/replaceState；应用对浏览器前进、后退增加 popstate 补偿，通过同 URL、同 state 的 replaceState 同步 SDK 的路由缓存，不新增历史条目。更新供应商脚本后应回归“进入音高参考 → 后退 → 再进入”，确认每步各一条浏览。
 
 | 事件 | 统计含义 | 额外属性 |
 |---|---|---|

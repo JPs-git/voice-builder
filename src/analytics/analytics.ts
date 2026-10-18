@@ -119,6 +119,16 @@ function cleanReferrer(value: unknown): string {
   } catch { return '' }
 }
 
+function isVercelReferrerSafe(): boolean {
+  if (!document.referrer) return true
+  const safe = cleanReferrer(document.referrer)
+  if (!safe) return false
+  try {
+    // Vercel reads document.referrer separately; its beforeSend cannot replace that field.
+    return new URL(document.referrer, location.origin).href === new URL(safe, location.origin).href
+  } catch { return false }
+}
+
 function eventData(name: string, value: unknown): Record<string, string> | null {
   if (!value || typeof value !== 'object') return null
   const data = value as Record<string, unknown>
@@ -193,11 +203,11 @@ export function initAnalytics(): void {
   initializePreference()
   window.voiceBuilderAnalyticsBeforeSend = filterUmamiPayload
   if (!isAnalyticsAllowed()) return
-  if (!vercelInitialized && import.meta.env.VITE_VERCEL_ANALYTICS_ENABLED === 'true') {
+  if (!vercelInitialized && import.meta.env.VITE_VERCEL_ANALYTICS_ENABLED === 'true' && isVercelReferrerSafe()) {
     vercelInitialized = true
     try {
       inject({ beforeSend: event => {
-        if (!isAnalyticsAllowed() || event.type !== 'pageview') return null
+        if (!isAnalyticsAllowed() || event.type !== 'pageview' || !isVercelReferrerSafe()) return null
         const url = cleanUrl(event.url)
         return url ? { ...event, url: location.origin + url } : null
       } })
@@ -206,6 +216,14 @@ export function initAnalytics(): void {
   const websiteId = import.meta.env.VITE_UMAMI_WEBSITE_ID ?? ''
   if (trackerState !== 'idle' || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(websiteId)) return
   trackerState = 'loading'
+  window.addEventListener('popstate', () => {
+    if (trackerState !== 'ready' || !window.umami) return
+    try {
+      // Cloud's tracker observes replaceState but currently misses popstate. Resync its
+      // URL cache without adding an entry or changing React Router's existing state.
+      history.replaceState(history.state, '', location.href)
+    } catch { /* Browser history restrictions must not interrupt navigation. */ }
+  })
   const script = document.createElement('script')
   script.src = 'https://cloud.umami.is/script.js'
   script.defer = true

@@ -6,6 +6,7 @@ vi.mock('@vercel/analytics', () => ({ inject }))
 const websiteId = '94db1cb1-74f4-4a40-ad6c-962362670409'
 const preferenceKey = 'voicebuilder-analytics-disabled'
 let storageListener: (event: StorageEvent) => void
+let navigationListeners: EventListenerOrEventListenerObject[] = []
 
 function navigate(path = '/', host = 'voice.starbow.top') {
   vi.stubGlobal('location', new URL(`https://${host}${path}`))
@@ -41,13 +42,18 @@ beforeEach(() => {
   vi.stubEnv('VITE_UMAMI_DOMAINS', 'voice.starbow.top')
   vi.stubGlobal('navigator', { doNotTrack: null })
   navigate()
+  navigationListeners = []
   const original = window.addEventListener.bind(window)
   vi.spyOn(window, 'addEventListener').mockImplementation((type, listener, options) => {
     if (type === 'storage') storageListener = listener as (event: StorageEvent) => void
-    else original(type, listener, options)
+    else {
+      original(type, listener, options)
+      if (type === 'popstate') navigationListeners.push(listener)
+    }
   })
 })
 afterEach(() => {
+  navigationListeners.forEach(listener => window.removeEventListener('popstate', listener))
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   vi.unstubAllEnvs()
@@ -99,6 +105,53 @@ describe('analytics initialization and privacy', () => {
     analytics.initAnalytics()
     expect(script()).toBeNull()
     expect(inject).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    'https://external.example/private/path?token=private',
+    'https://voice.starbow.top/?token=private',
+    'https://external.example/?private=1',
+  ])('does not initialize Vercel when its unfilterable referrer would expose %s', async referrer => {
+    vi.spyOn(document, 'referrer', 'get').mockReturnValue(referrer)
+    const analytics = await import('../analytics/analytics')
+    analytics.initAnalytics()
+    expect(inject).not.toHaveBeenCalled()
+    expect(script()).not.toBeNull()
+    const sent = loadTracker()
+    analytics.track('record_start', { page: 'analysis' })
+    expect(sent.mock.calls[0][0].referrer).toBe(referrer.startsWith(location.origin) ? '/' : 'https://external.example')
+  })
+
+  it.each(['https://external.example/', 'https://voice.starbow.top/practice'])('keeps Vercel on an already-safe source %s', async referrer => {
+    vi.spyOn(document, 'referrer', 'get').mockReturnValue(referrer)
+    const analytics = await import('../analytics/analytics')
+    analytics.initAnalytics()
+    expect(inject).toHaveBeenCalledTimes(1)
+  })
+
+  it('resynchronizes the SDK history cache on Back before navigating to the same route again', async () => {
+    const analytics = await import('../analytics/analytics')
+    analytics.initAnalytics()
+    analytics.initAnalytics()
+    loadTracker()
+    const historyState = { idx: 2, key: 'router-key', usr: { keep: true } }
+    vi.spyOn(history, 'state', 'get').mockReturnValue(historyState)
+    let vendorCurrentPath = '/'
+    const pageviews = ['/']
+    const replace = vi.spyOn(history, 'replaceState').mockImplementation((_state, _title, url) => {
+      const path = new URL(String(url), location.origin).pathname
+      if (path !== vendorCurrentPath) { vendorCurrentPath = path; pageviews.push(path) }
+    })
+    navigate('/practice')
+    history.replaceState(historyState, '', location.href)
+    navigate('/')
+    window.dispatchEvent(new PopStateEvent('popstate', { state: historyState }))
+    expect(replace).toHaveBeenLastCalledWith(historyState, '', 'https://voice.starbow.top/')
+    expect(location.href).toBe('https://voice.starbow.top/')
+    navigate('/practice')
+    history.replaceState(historyState, '', location.href)
+    expect(pageviews).toEqual(['/', '/practice', '/', '/practice'])
+    expect(replace).toHaveBeenCalledTimes(3)
   })
 
   it('honors an existing opt-out and DNT without loading scripts', async () => {

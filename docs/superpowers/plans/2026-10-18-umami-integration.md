@@ -17,7 +17,7 @@
 - 文档分支：`docs/umami-integration-plan`。
 - 文档 worktree：`C:/Users/Administrator/Projects/voice-builder/.worktrees/docs/umami-integration-plan`。
 - 实施时从最新 master 创建 `feat/umami-analytics`，worktree 使用 `.worktrees/feat/umami-analytics`；将本计划复制到该 worktree 的相同仓库相对路径，随功能 PR 保存。一个功能分支对应一个 PR，base 为 master，建议标题 `feat(analytics): add lightweight Umami tracking`。
-- 实施基线：2c84ad6，版本 1.17.1；2026-10-18 已获取最新 origin/master 并创建 feat/umami-analytics worktree。Tasks 1–4 的代码与自动验证已完成；572 项测试、生产构建和类型检查通过，账户配置与生产验收尚未执行。
+- 实施基线：2c84ad6，版本 1.17.1；2026-10-18 已获取最新 origin/master 并创建 feat/umami-analytics worktree。Tasks 1–4 的代码与自动验证已完成；578 项测试、生产构建和类型检查通过，账户配置与生产验收尚未执行。
 
 ## Global Constraints
 
@@ -84,13 +84,21 @@
 - 转化率使用同一时间范围、同一匿名访客口径的漏斗人数，不能用事件次数相除。30 天访客数不直接命名为有效练习 MAU；默认匿名标识按月轮换，不承诺精确跨月留存或跨设备人数。
 - 新的 B 站分发链接使用 `utm_source=bilibili&utm_medium=comment&utm_campaign=voice_training`；可加 `utm_content=bv14zgh6uedv` 区分投放位置。这里只约定格式，不代发评论。
 
+## 独立审查后的兼容修正
+
+- 当前 Vercel 脚本单独读取 document.referrer，其 beforeSend 不能修改该字段：仅在原始 referrer 已符合清理规则时启用 Vercel，否则该文档仅使用 Umami。代价是 Vercel 对这类来源的访问漏计；不以放宽隐私约束换取完整计数。
+- index.html 提前设置 referrer=origin，防止同源请求的 HTTP Referer 头携带当前页路径和查询参数。已用真实浏览器的生产资源请求验证，不只检查 payload。
+- 当前 Umami Cloud 脚本未监听 popstate：保留自动页面统计，增加同 URL、同 state 的 replaceState 补偿，同步 SDK 内部路由缓存且不新增历史条目。供应商脚本更新后需要复查此行为。
+- 新增六项回归用例，观察失败后修复；最终 578 项测试、默认关闭/显式开启两种生产构建和类型检查通过。本地浏览器已验证偏好保留、键盘操作及来源头。
+- 无延后的次要代码问题。Cloud 账户、生产部署、看板入库和大陆网络稳定性仍待正式配置与上线后验收；目前不提供生产效果保证。
+
 ## 文件职责
 
 | 文件 | 职责 |
 |---|---|
 | 新增 `src/analytics/analytics.ts` | 事件类型、初始化、配置门禁、偏好、过滤、有界发送；封装现有 Vercel inject |
 | 新增 `src/analytics/practiceProgress.ts` | 纯采样时长累计器及文档生命周期实例 |
-| 修改 `src/main.tsx`、`src/vite-env.d.ts` | 在挂载前接入初始化；补齐环境变量和 window 类型 |
+| 修改 `src/main.tsx`、`src/vite-env.d.ts`、`index.html` | 在挂载前接入初始化；补齐环境变量和 window 类型 |
 | 修改 `src/hooks/useAnalysis.ts`、`src/hooks/usePlayback.ts` | 在既有业务边界调用事件与累计器 |
 | 修改 `src/routes/AppShell.tsx` | 在统一 openHelp 入口记录帮助打开 |
 | 修改 `src/components/AboutModal.tsx`、其 CSS Module | 说明和关闭统计入口 |
