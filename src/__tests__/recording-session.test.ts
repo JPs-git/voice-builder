@@ -1,7 +1,8 @@
-import {it,expect,vi} from 'vitest'
+import {it,expect,vi,afterEach} from 'vitest'
 import {RecordingSessionController} from '../recording/sessionController'
 import type {ClipAnalysis,AudioClip} from '../recording/types'
 import {analyzeClip} from '../recording/analyzeClip'
+afterEach(()=>vi.useRealTimers())
 function setup(){
  let chunk!:(data:Float32Array,rate:number)=>void
  const engine={startCapture:vi.fn(async cb=>{chunk=cb}),stopCapture:vi.fn()}
@@ -61,5 +62,29 @@ it('finishes on leave and cancels pending permission',async()=>{
  s.engine.startCapture.mockImplementationOnce(()=>new Promise<void>(r=>{resolve=r}))
  const pending=s.controller.start(options);s.controller.leave();resolve();await pending
  expect(s.controller.getSnapshot().phase).toBe('ready')
+})
+it('stops a capture that never supplies an initial chunk after permission succeeds',async()=>{
+ vi.useFakeTimers();const s=setup();await s.controller.start(options)
+ await vi.advanceTimersByTimeAsync(5000)
+ expect(s.controller.getSnapshot().phase).toBe('prepared')
+ expect(s.controller.getSnapshot().error).toMatch(/没有收到音频/)
+ expect(s.engine.stopCapture).toHaveBeenCalled()
+})
+it('analyzes preserved PCM on interruption and ignores stale interruption events',async()=>{
+ const s=setup();const interruptions:Array<()=>void>=[]
+ s.engine.startCapture.mockImplementation(async(cb:any,_signal?:any,onInterrupted?:any)=>{interruptions.push(onInterrupted)})
+ await s.controller.start(options)
+ interruptions[0]?.()
+ expect(s.controller.getSnapshot().error).toMatch(/没有收到音频/)
+ await s.controller.start(options)
+ interruptions[0]?.()
+ expect(s.controller.getSnapshot().phase).toBe('requesting')
+ // Restore the normal audio callback while retaining the interruption callback.
+ s.controller.cancel();s.engine.startCapture.mockReset()
+ s.engine.startCapture.mockImplementation(async(cb:any,_signal?:any,onInterrupted?:any)=>{interruptions.push(onInterrupted);(s as any).feed=cb})
+ await s.controller.start(options);(s as any).feed(new Float32Array(16000),16000)
+ interruptions[interruptions.length-1]?.();await settle()
+ expect(s.controller.getSnapshot().phase).toBe('ready')
+ expect(s.controller.getSnapshot().report!.clip.duration).toBe(1)
 })
 

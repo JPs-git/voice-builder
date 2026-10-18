@@ -11,6 +11,7 @@ export function RecordingReport({report}:{report:ReportData}){
  const titleRef=useRef<HTMLHeadingElement>(null)
  useEffect(()=>{if(document.visibilityState!=='hidden')titleRef.current?.focus()},[report.id])
  const seek=useCallback((seconds:number)=>playback.seek(seconds),[playback])
+ const locate=useCallback((seconds:number)=>{playback.pause();playback.seek(seconds)},[playback])
  const enough=s.validDuration+1e-9>=3,limited=enough&&s.validDuration<10-1e-9
  const value=(v:number|null)=>enough?formatHz(v):'—'
  return <section className={styles.report}>
@@ -25,10 +26,10 @@ export function RecordingReport({report}:{report:ReportData}){
   {limited&&<p className={styles.notice}>有效音高样本较少，结果仅供本段参考</p>}
   <div className={styles.stats}>
    <div className={styles.stat} data-testid="stat-median"><span>典型 F0</span><strong>{value(s.median)} <small>{enough?'Hz':''}</small></strong><p>这段话通常使用的音高</p></div>
-   <button type="button" className={styles.stat} disabled={!enough} aria-label="定位最高 F0" onClick={()=>seek(s.maxTime??0)}>
+   <button type="button" className={styles.stat} disabled={!enough} aria-label="定位最高 F0" onClick={()=>locate(s.maxTime??0)}>
     <span>最高 F0 <span className={styles.linkHint}>定位 ↗</span></span><strong>{value(s.maximum)} <small>{enough?'Hz':''}</small></strong>
     <p>{enough&&s.maxTime!=null?'出现在 '+s.maxTime.toFixed(2)+' 秒':'本段检测到的最高值'}</p></button>
-   <button type="button" className={styles.stat} disabled={!enough} aria-label="定位最低 F0" onClick={()=>seek(s.minTime??0)}>
+   <button type="button" className={styles.stat} disabled={!enough} aria-label="定位最低 F0" onClick={()=>locate(s.minTime??0)}>
     <span>最低 F0 <span className={styles.linkHint}>定位 ↗</span></span><strong>{value(s.minimum)} <small>{enough?'Hz':''}</small></strong>
     <p>{enough&&s.minTime!=null?'出现在 '+s.minTime.toFixed(2)+' 秒':'本段检测到的最低值'}</p></button>
    <div className={styles.stat}><span>F0 变化幅度</span><strong>{value(s.range)} <small>{enough?'Hz':''}</small></strong>
@@ -41,7 +42,7 @@ export function RecordingReport({report}:{report:ReportData}){
    <Button label="回听此处" icon="↺" aria-label="回听此处" onClick={()=>playback.playAround(p.position)}/>
   </div>
   {p.error&&<p role="alert" className={styles.error}>{p.error}</p>}
-  {s.validDuration>0?<RecordingCharts analysis={analysis} duration={clip.duration} position={p.position} onSeek={seek}/>
+  {s.validDuration>0?<RecordingCharts analysis={analysis} duration={clip.duration} position={p.position} onSeek={locate}/>
    :<div className={styles.empty}>未检测到有效音高。可以先回听原音频，检查收音或换一段录音。</div>}
   <div className={styles.commonRange}>常用音高范围：<strong>{enough?formatHz(s.p10)+'–'+formatHz(s.p90)+' Hz':'—'}</strong>
    <span className={styles.muted}>（P10–P90）</span></div>

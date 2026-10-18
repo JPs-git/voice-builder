@@ -1,11 +1,12 @@
 import {useEffect} from 'react'
 import {useECharts} from '../hooks/useECharts'
 import type {ClipAnalysis} from './types'
-import {buildPitchOption,buildDistributionOption} from './chartOptions'
+import {buildPitchOption,buildDistributionOption,buildPitchCursorOption} from './chartOptions'
 import styles from './RecordingPage.module.css'
 export function RecordingCharts({analysis,duration,position,onSeek}:{analysis:ClipAnalysis;duration:number;position:number;onSeek:(seconds:number)=>void}){
  const pitch=useECharts(),distribution=useECharts()
- useEffect(()=>{pitch.setOption(buildPitchOption(analysis.frames,analysis.summary,duration,position),{notMerge:true})},[analysis,duration,position,pitch.setOption])
+ useEffect(()=>{pitch.setOption(buildPitchOption(analysis.frames,analysis.summary,duration,0),{notMerge:true})},[analysis,duration,pitch.setOption])
+ useEffect(()=>{pitch.setOption(buildPitchCursorOption(analysis.summary,position))},[analysis,position,pitch.setOption])
  useEffect(()=>{distribution.setOption(buildDistributionOption(analysis.summary),{notMerge:true})},[analysis,distribution.setOption])
  useEffect(()=>{
   const chart=pitch.getInstance();if(!chart)return

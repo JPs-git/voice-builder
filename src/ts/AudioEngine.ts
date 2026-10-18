@@ -11,6 +11,7 @@ export class AudioEngine {
   private _sampleRate: number
   private _isCapturing: boolean = false
   private _captureGeneration = 0
+  private _captureListeners: Array<() => void> = []
 
   constructor(options: AudioEngineOptions = {}) {
     this._sampleRate = options.sampleRate ?? 16000
@@ -25,7 +26,7 @@ export class AudioEngine {
     return this._audioContext
   }
 
-  async startCapture(onChunk: (chunk: Float32Array, rate: number) => void, signal?: AbortSignal): Promise<void> {
+  async startCapture(onChunk: (chunk: Float32Array, rate: number) => void, signal?: AbortSignal, onInterrupted?: () => void): Promise<void> {
     if (this._isCapturing) return
     if (signal?.aborted) throw new DOMException('已取消', 'AbortError')
     const generation = ++this._captureGeneration
@@ -55,6 +56,15 @@ export class AudioEngine {
       silentGain.connect(ctx.destination)
       this._silentGain = silentGain
       this._isCapturing = true
+      for (const track of stream.getTracks()) {
+        const ended = () => {
+          if (!current()) return
+          this.stopCapture()
+          onInterrupted?.()
+        }
+        track.addEventListener?.('ended', ended)
+        this._captureListeners.push(() => track.removeEventListener?.('ended', ended))
+      }
     } catch (error) {
       stream?.getTracks().forEach(track => track.stop())
       if (generation === this._captureGeneration) this.stopCapture()
@@ -67,6 +77,8 @@ export class AudioEngine {
   stopCapture(): void {
     this._captureGeneration++
     this._isCapturing = false
+    this._captureListeners.forEach(remove => remove())
+    this._captureListeners = []
     if (this._processor) {
       this._processor.disconnect()
       this._processor = null

@@ -1,6 +1,6 @@
 # 录音统计页 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 实现独立的 60 秒自然说话录音统计页，采集时专注朗读，录后查看 F0 概览并定位回听。
 
@@ -68,7 +68,7 @@
 
 **Interfaces:** 产出 `summarizePitch(frames: readonly PitchFrame[], duration: number): { frames: PitchFrame[]; summary: PitchSummary }`；输入不变，先一次性标记跳点，再从报告有效帧计算全部摘要。
 
-- [ ] 写失败测试：奇偶中位数、P10/P90、极值最早时间、空集、常量、无声、非有限值、10ms 覆盖时长、10Hz 分箱和边界 1000Hz。
+- [x] 写失败测试：奇偶中位数、P10/P90、极值最早时间、空集、常量、无声、非有限值、10ms 覆盖时长、10Hz 分箱和边界 1000Hz。
   ```ts
   expect(summary.median).toBe(200)
   expect(summary.p10).toBe(120)
@@ -77,10 +77,10 @@
   expect(summary.semitoneRange).toBeCloseTo(19.01955)
   ```
   上述使用 [100,200,300] 的有效帧；报告展示门槛另测。跳点测试覆盖稳定 200Hz 中的 1/2 帧 400Hz、3 帧持续变化、缺失锚点、停顿、非迭代判定。
-- [ ] 运行 `npm test -- --project dsp src/__tests__/dsp/recording-statistics.test.ts`，确认缺失模块/断言失败。
-- [ ] 定义类型与常量，按规格实现统计和跳点规则；duration 必须限制覆盖累计，不累加 50ms 重叠窗。
-- [ ] 同一命令通过；确认输入数组及 rawF0 未改写，计算未依赖目标区间。
-- [ ] 提交：`feat(recording): add pitch summary and conservative outlier rules`。
+- [x] 运行 `npm test -- --project dsp src/__tests__/dsp/recording-statistics.test.ts`，确认缺失模块/断言失败。
+- [x] 定义类型与常量，按规格实现统计和跳点规则；duration 必须限制覆盖累计，不累加 50ms 重叠窗。
+- [x] 同一命令通过；确认输入数组及 rawF0 未改写，计算未依赖目标区间。
+- [x] 提交：`feat(recording): add pitch summary and conservative outlier rules`。
 
 ## Task 2：仅 F0 分析、Worker 与 60 秒导入
 
@@ -90,13 +90,13 @@
 
 共享门控工具固定为 `VoicedFrameAnalyzer`：构造参数 `vadOptions?: VadOptions`，方法 `analyze(frameSamples: Float32Array, realLength: number, sampleRate: number, elapsedMs: number): {samples: Float32Array; magnitudes: Float32Array; voiced: boolean; rms: number}` 与 `reset(): void`。samples 是真实样本视图；保留旧管线对不足半窗时频谱的行为，但该尾帧不发布为有声。
 
-- [ ] 写失败测试：60 秒上限的元数据及实际 PCM 兜底、选择取消/解码失败不产生片段、多声道第 0 声道、真实尾部中心时间、纯静音/噪声、轻声、原算法 60–1000Hz 范围。
-- [ ] 运行三组目标测试，确认失败。
-- [ ] 抽取“真实样本频谱+共享门控”的最小共用工具，避免改变旧 AnalysisPipeline 输出时间。新分析器独立计算窗中心，25ms 以下真实尾部不估计；不调用共振峰/声区/平滑器。
-- [ ] 实现 Worker 的 `{id,type:'analyze',samples,sampleRate}` 请求及同 ID 的 progress/result/error 消息；取消终止 Worker。保留会话 PCM，禁止传输导致回放缓冲被 detach。
-- [ ] 实现导入探针与解码，复用现有 decoder/parser/resampler，独立应用 60 秒限制；解码不可取消时检查 signal 并清理资源。
-- [ ] 运行目标测试与现有 gate/resampler/praat 回归。验证各采样率内部的整段/分块一致性，跨采样率仅要求统计精度与时间对齐。
-- [ ] 提交：`feat(recording): analyze complete clips in a cancellable worker`。
+- [x] 写失败测试：60 秒上限的元数据及实际 PCM 兜底、选择取消/解码失败不产生片段、多声道第 0 声道、真实尾部中心时间、纯静音/噪声、轻声、原算法 60–1000Hz 范围。
+- [x] 运行三组目标测试，确认失败。
+- [x] 抽取“真实样本频谱+共享门控”的最小共用工具，避免改变旧 AnalysisPipeline 输出时间。新分析器独立计算窗中心，25ms 以下真实尾部不估计；不调用共振峰/声区/平滑器。
+- [x] 实现 Worker 的 `{id,type:'analyze',samples,sampleRate}` 请求及同 ID 的 progress/result/error 消息；取消终止 Worker。保留会话 PCM，禁止传输导致回放缓冲被 detach。
+- [x] 实现导入探针与解码，复用现有 decoder/parser/resampler，独立应用 60 秒限制；解码不可取消时检查 signal 并清理资源。
+- [x] 运行目标测试与现有 gate/resampler/praat 回归。验证各采样率内部的整段/分块一致性，跨采样率仅要求统计精度与时间对齐。
+- [x] 提交：`feat(recording): analyze complete clips in a cancellable worker`。
 
 ## Task 3：音频授权取消与旧会话暂停契约
 
@@ -104,13 +104,13 @@
 
 **Interfaces:** `AudioEngine.startCapture(onChunk, signal?: AbortSignal): Promise<void>` 保持旧调用兼容；`createPlaybackSource(samples, sampleRate?: number)` 默认仍 16000Hz；useAnalysis/useToolbar 新增显式 `suspend(): void`，保留数据与 frameOffset。
 
-- [ ] 写失败测试：授权期间 stop/abort 后晚返回的流关闭；旧 start/resume 不能覆盖新采集；采集初始化失败释放流；48000Hz 片段按其采样率建立回放缓冲。
-- [ ] 写 suspend 测试：停止采集、取消等待中的授权、停止旧播放，但不清空 frames/buffer/目标；再次实时录音保留时间偏移。
-- [ ] 运行对应测试确认失败。
-- [ ] 在 AudioEngine 使用请求代次与 abort 检查；旧请求只清理其自己的流，不停止新流。useAnalysis 对迟到成功/失败做请求代次检查，避免被取消后创建 pipeline 或提示旧错误。
-- [ ] 让 useToolbar.suspend 调用显式停止契约，禁止用 toggle 或 clear 代替；保留原有两个实时页面切换的连续性。
-- [ ] 运行目标测试及既有 AudioEngine/useAnalysis/usePlayback 回归通过。
-- [ ] 提交：`fix(audio): isolate cancelled capture requests and preserve sessions`。
+- [x] 写失败测试：授权期间 stop/abort 后晚返回的流关闭；旧 start/resume 不能覆盖新采集；采集初始化失败释放流；48000Hz 片段按其采样率建立回放缓冲。
+- [x] 写 suspend 测试：停止采集、取消等待中的授权、停止旧播放，但不清空 frames/buffer/目标；再次实时录音保留时间偏移。
+- [x] 运行对应测试确认失败。
+- [x] 在 AudioEngine 使用请求代次与 abort 检查；旧请求只清理其自己的流，不停止新流。useAnalysis 对迟到成功/失败做请求代次检查，避免被取消后创建 pipeline 或提示旧错误。
+- [x] 让 useToolbar.suspend 调用显式停止契约，禁止用 toggle 或 clear 代替；保留原有两个实时页面切换的连续性。
+- [x] 运行目标测试及既有 AudioEngine/useAnalysis/usePlayback 回归通过。
+- [x] 提交：`fix(audio): isolate cancelled capture requests and preserve sessions`。
 
 ## Task 4：常驻录音会话控制器
 
@@ -120,13 +120,13 @@
 
 `RecordingOptions = {mode: 'reading'|'free'; material: MaterialSnapshot|null; prompt: string|null}`；`RecordingSessionDependencies = {engine: Pick<AudioEngine, 'startCapture'|'stopCapture'>; analyze: typeof runClipAnalysis; importClip: typeof importRecordingFile; now: ()=>Date}`。这些类型与控制器位于同一模块，Provider 负责组装真实依赖。
 
-- [ ] 写失败测试：采集不调用分析；无首块前不累计时长；复制输入块；跨 60 秒块只保留剩余样本；finish 与自动上限同时触发只提交一次。
-- [ ] 写竞争测试：取消/失败恢复上一报告，新结果原子替换；旧 Worker/解码返回不能覆盖新任务；取消授权与 leave 释放设备；分析失败保留 PCM 支持 retry。
-- [ ] 运行 `npm test -- --project unit src/__tests__/recording-session.test.ts` 确认失败。
-- [ ] 实现独立 PCM 块集合、请求代次、AbortController、稳定快照订阅和事务式结果提交。React 状态只更新必要元数据，不能每次 tick 拼接全量 PCM。
-- [ ] leave 在录音时按 finish 收尾，分析中允许后台完成；destroy 释放全部资源。Provider 在 AppShell 生命周期内常驻，禁止页面卸载时销毁报告。
-- [ ] 运行控制器和跨阶段错误测试全部通过。
-- [ ] 提交：`feat(recording): manage complete recording sessions and task cancellation`。
+- [x] 写失败测试：采集不调用分析；无首块前不累计时长；复制输入块；跨 60 秒块只保留剩余样本；finish 与自动上限同时触发只提交一次。
+- [x] 写竞争测试：取消/失败恢复上一报告，新结果原子替换；旧 Worker/解码返回不能覆盖新任务；取消授权与 leave 释放设备；分析失败保留 PCM 支持 retry。
+- [x] 运行 `npm test -- --project unit src/__tests__/recording-session.test.ts` 确认失败。
+- [x] 实现独立 PCM 块集合、请求代次、AbortController、稳定快照订阅和事务式结果提交。React 状态只更新必要元数据，不能每次 tick 拼接全量 PCM。
+- [x] leave 在录音时按 finish 收尾，分析中允许后台完成；destroy 释放全部资源。Provider 在 AppShell 生命周期内常驻，禁止页面卸载时销毁报告。
+- [x] 运行控制器和跨阶段错误测试全部通过。
+- [x] 提交：`feat(recording): manage complete recording sessions and task cancellation`。
 
 ## Task 5：独立片段回放与极值定位
 
@@ -134,12 +134,12 @@
 
 **Interfaces:** `RecordingPlaybackController` 暴露 `setClip(clip: AudioClip|null)`、`play(): void`、`pause(): void`、`seek(seconds:number): void`、`playAround(seconds:number): void`、`stop(): void`、subscribe/getSnapshot/destroy；快照含 position/playing/duration。复用 Task 3 可指定采样率的播放能力。
 
-- [ ] 写失败测试：seek 不播放；pause 保留位置；播放从当前位置继续；极值前后各 2 秒边界裁切；原采样率播放时间正确。
-- [ ] 写竞争测试：旧 onended/RAF 不影响新源；换 clip/离页停止旧音源；反复播放不累积资源。
-- [ ] 运行目标测试确认失败。
-- [ ] 实现按 AudioContext 时间计算位置与任务代次保护；局部回听使用显式 offset/duration，不更改报告统计范围。
-- [ ] 运行目标测试通过，并确认旧 usePlayback 测试不受影响。
-- [ ] 提交：`feat(recording): add clip playback and localized review`。
+- [x] 写失败测试：seek 不播放；pause 保留位置；播放从当前位置继续；极值前后各 2 秒边界裁切；原采样率播放时间正确。
+- [x] 写竞争测试：旧 onended/RAF 不影响新源；换 clip/离页停止旧音源；反复播放不累积资源。
+- [x] 运行目标测试确认失败。
+- [x] 实现按 AudioContext 时间计算位置与任务代次保护；局部回听使用显式 offset/duration，不更改报告统计范围。
+- [x] 运行目标测试通过，并确认旧 usePlayback 测试不受影响。
+- [x] 提交：`feat(recording): add clip playback and localized review`。
 
 ## Task 6：朗读与结果页面
 
@@ -149,14 +149,14 @@
 
 图表 props 固定为 `{analysis: ClipAnalysis; duration: number; position: number; onSeek: (seconds:number)=>void}`。报告数据类型以别名导入，避免与同名组件混淆。
 
-- [ ] 写失败测试：准备/授权/录音中不存在声学图表、F0/Hz/波形/电平/评分与旧报告；模式/材料锁定，字号仍可调整，自由说话提示可收起。
-- [ ] 写结果测试：有效时长 2.99/3/9.99/10 秒展示边界、无数据、恒定值、极值卡只定位、显式回听播放、原始时间范围；分布在 1000Hz 和重复分位边界正确。
-- [ ] 运行目标测试确认失败。
-- [ ] 实现设置条和居中阅读卡，使用规格三篇文本；实现样本不足与失败重试。
-- [ ] 实现四卡片、2:1 曲线/分布、说明折叠与回放。ECharts 使用现有 useECharts；无声断线，动态 Y 轴包含 >500Hz 极值，图表可抽样但统计数据不抽样。
-- [ ] 结果出现时仅在页面可见且当前会话匹配时聚焦标题；采集计时不逐秒 live 播报。
-- [ ] 运行目标测试通过；样式实现横屏间距、22px 默认正文、18/20/22/24/26 字号和 360px 重排。
-- [ ] 提交：`feat(recording): build quiet reading and pitch report views`。
+- [x] 写失败测试：准备/授权/录音中不存在声学图表、F0/Hz/波形/电平/评分与旧报告；模式/材料锁定，字号仍可调整，自由说话提示可收起。
+- [x] 写结果测试：有效时长 2.99/3/9.99/10 秒展示边界、无数据、恒定值、极值卡只定位、显式回听播放、原始时间范围；分布在 1000Hz 和重复分位边界正确。
+- [x] 运行目标测试确认失败。
+- [x] 实现设置条和居中阅读卡，使用规格三篇文本；实现样本不足与失败重试。
+- [x] 实现四卡片、2:1 曲线/分布、说明折叠与回放。ECharts 使用现有 useECharts；无声断线，动态 Y 轴包含 >500Hz 极值，图表可抽样但统计数据不抽样。
+- [x] 结果出现时仅在页面可见且当前会话匹配时聚焦标题；采集计时不逐秒 live 播报。
+- [x] 运行目标测试通过；样式实现横屏间距、22px 默认正文、18/20/22/24/26 字号和 360px 重排。
+- [x] 提交：`feat(recording): build quiet reading and pitch report views`。
 
 ## Task 7：路由、顶栏、帮助与资源互斥集成
 
@@ -164,25 +164,25 @@
 
 **Interfaces:** AppShell 常驻 Provider；按当前路由绑定工具栏模型和文件输入，旧用例继续消费原有 ShellContext；`/recording` 渲染 RecordingPage。
 
-- [ ] 写失败测试：三导航路由；录音统计页顶栏的开始/结束/取消/导入按会话状态变化；只有一个主按钮；窄屏不出现旧目标 Dock。
-- [ ] 写跨页测试：进入本页先 suspend 旧实时录音/播放且保留数据；离开本页停止播放、录音按 finish 分析；旧授权晚返回不能抢占；原有两个实时页之间仍可连续录音。
-- [ ] 写帮助回归：本页说明与焦点返回正确，不显示无关配置、目标和旧首次帮助条；帮助/关于不停止录音。
-- [ ] 运行目标测试确认失败。
-- [ ] 替换二选一页面按钮为三导航；抽出本页工具栏状态映射，避免继续扩大 AppShell 中的业务条件分支；状态忙碌时禁用导入，录音操作始终直接可达。
-- [ ] 接入路由进入/离开契约与报告常驻；不重挂载旧 useAnalysis，不重置其 frameOffset。
-- [ ] 运行导航、帮助、布局、旧页面与会话回归通过。
-- [ ] 提交：`feat(recording): integrate navigation and isolated audio ownership`。
+- [x] 写失败测试：三导航路由；录音统计页顶栏的开始/结束/取消/导入按会话状态变化；只有一个主按钮；窄屏不出现旧目标 Dock。
+- [x] 写跨页测试：进入本页先 suspend 旧实时录音/播放且保留数据；离开本页停止播放、录音按 finish 分析；旧授权晚返回不能抢占；原有两个实时页之间仍可连续录音。
+- [x] 写帮助回归：本页说明与焦点返回正确，不显示无关配置、目标和旧首次帮助条；帮助/关于不停止录音。
+- [x] 运行目标测试确认失败。
+- [x] 替换二选一页面按钮为三导航；抽出本页工具栏状态映射，避免继续扩大 AppShell 中的业务条件分支；状态忙碌时禁用导入，录音操作始终直接可达。
+- [x] 接入路由进入/离开契约与报告常驻；不重挂载旧 useAnalysis，不重置其 frameOffset。
+- [x] 运行导航、帮助、布局、旧页面与会话回归通过。
+- [x] 提交：`feat(recording): integrate navigation and isolated audio ownership`。
 
 ## Task 8：整体验证、视觉检查与文档
 
 **Files:** 更新 docs/ui-design.md、README.md 中的页面与时长说明；必要时补全上述测试；不改版本号或 release.yml。
 
-- [ ] 运行 `npm test`、`npm run build`、`npx tsc --noEmit`；全部退出 0 才能报告通过。
-- [ ] 在浏览器检查 1440×900、1920×1080、360px；覆盖准备、录音、取消、导入、分析、结果、错误、字号放大和跨页，截图对照选定设计。
-- [ ] 用可重复 PCM 输入验证 60 秒截断、Worker 取消、极值定位与回放；同时完成真人朗读/即兴说话核验。若没有真实麦克风验证条件，明确标为尚未实测，不用合成输入代替这项结论。
-- [ ] 全分支审查：按 Review Focus 核对异步竞态、音轨释放、统计边界、旧页回归和视觉；修复后只重跑相关测试及最终三项集成检查。
-- [ ] 更新当前实现文档，说明新页 60 秒与旧页 10 秒；规格标记实现状态，不修改已批准的统计口径。
-- [ ] 提交文档与最终修复，向用户交付工作分支、测试证据、预览和仍需真人核验的边界。PR/合并遵守 AGENTS.md，未获得相应请求前不自动合并。
+- [x] 运行 `npm test`、`npm run build`、`npx tsc --noEmit`；全部退出 0 才能报告通过。
+- [x] 在浏览器检查 1440×900、1920×1080、360px；覆盖准备、录音、取消、导入、分析、结果、错误、字号放大和跨页，截图对照选定设计。
+- [x] 用可重复 PCM 输入验证 60 秒截断、Worker 取消、极值定位与回放；同时完成真人朗读/即兴说话核验。若没有真实麦克风验证条件，明确标为尚未实测，不用合成输入代替这项结论。
+- [x] 全分支审查：按 Review Focus 核对异步竞态、音轨释放、统计边界、旧页回归和视觉；修复后只重跑相关测试及最终三项集成检查。
+- [x] 更新当前实现文档，说明新页 60 秒与旧页 10 秒；规格标记实现状态，不修改已批准的统计口径。
+- [x] 提交文档与最终修复，向用户交付工作分支、测试证据、预览和仍需真人核验的边界。PR/合并遵守 AGENTS.md，未获得相应请求前不自动合并。
 
 ## 计划自审
 
@@ -190,3 +190,7 @@
 - 纯统计、采集和 UI 接口只在本计划定义一次；旧实时数据与新完整 PCM 的边界明确。
 - 五项 Review Focus 均有归属测试；图像比对与真人说话属于 Task 8 实测，不伪装成单元测试已覆盖。
 - 不添加第二套门控、第三方声学模型、历史库或图像辅助。
+
+## 执行结果
+
+已完成实现及独立审查修复，最终 80 个测试文件 / 568 项通过，构建和类型检查通过。浏览器已验证导入、分析、结果、错误、回听、切页和三种视口；真实麦克风录制与低音量自然说话未实测，采集/取消状态使用自动测试验证。详细证据与边界见 `../verification/2026-10-18-recording-statistics.md`。

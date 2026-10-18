@@ -1,6 +1,12 @@
 import type {EChartsOption,LineSeriesOption} from 'echarts'
 import type {PitchFrame,PitchSummary} from './types'
 const grid={left:58,right:24,top:40,bottom:64}
+export function buildPitchCursorOption(summary:PitchSummary,position:number):EChartsOption {
+ const lines:NonNullable<NonNullable<LineSeriesOption['markLine']>['data']>=[]
+ if(summary.median!=null)lines.push({yAxis:summary.median,name:'典型 F0',lineStyle:{color:'#98a2b3',type:'dashed'},label:{formatter:'典型 F0'}})
+ if(position>0)lines.push({xAxis:position,lineStyle:{color:'#e23e57'},label:{show:false}})
+ return {series:[{id:'pitch',type:'line',markLine:{symbol:'none',silent:true,data:lines}}]}
+}
 export function buildPitchOption(frames:PitchFrame[],summary:PitchSummary,duration:number,position:number):EChartsOption {
  const minimum=summary.minimum??60,maximum=summary.maximum??400
  const padding=Math.max(20,(maximum-minimum)*.1)
@@ -14,7 +20,7 @@ export function buildPitchOption(frames:PitchFrame[],summary:PitchSummary,durati
   xAxis:{type:'value',min:0,max:duration,name:'时间（秒）',nameLocation:'middle',nameGap:32,splitLine:{show:false}},
   yAxis:{type:'value',min:Math.max(0,Math.floor((minimum-padding)/10)*10),max:Math.ceil((maximum+padding)/10)*10,name:'F0（Hz）',axisLabel:{formatter:'{value}'},splitLine:{lineStyle:{color:'#eef1f5'}}},
   dataZoom:[{type:'inside',filterMode:'none'},{type:'slider',height:14,bottom:6,filterMode:'none'}],
-  series:[{type:'line',name:'F0',data:frames.map(f=>[f.time,f.f0]),showSymbol:false,connectNulls:false,
+  series:[{id:'pitch',type:'line',name:'F0',data:frames.map(f=>[f.time,f.f0]),showSymbol:false,connectNulls:false,
    lineStyle:{color:'#e23e57',width:2},itemStyle:{color:'#e23e57'},
    markPoint:{data:markers,label:{show:false}},
    markLine:{symbol:'none',silent:true,data:lines}}],

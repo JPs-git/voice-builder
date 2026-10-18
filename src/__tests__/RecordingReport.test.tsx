@@ -5,6 +5,8 @@ import {summarizePitch} from '../recording/statistics'
 import type {RecordingReport as ReportData,PitchFrame} from '../recording/types'
 import {ANALYSIS_SETTINGS} from '../recording/constants'
 vi.mock('../hooks/useECharts',()=>({useECharts:()=>({chartRef:{current:null},getInstance:()=>null,setOption:()=>{}})}))
+const engine=vi.hoisted(()=>({audioContext:{currentTime:0},createPlaybackSource:vi.fn(()=>({source:{start:vi.fn(),stop:vi.fn(),onended:null}}))}))
+vi.mock('../ts',()=>({getAudioEngine:()=>engine}))
 afterEach(cleanup)
 function report(seconds:number):ReportData{
  const frames:PitchFrame[]=Array.from({length:Math.round(seconds*100)},(_,i)=>({start:i*.01,time:i*.01+.025,duration:.01,rawF0:200,f0:200,voiced:true,exclusion:null}))
@@ -29,4 +31,15 @@ it('identifies the imported file in the report',()=>{
  data.clip={...data.clip,source:'file',name:'自然说话.wav',mode:null,material:null}
  render(<RecordingReport report={data}/>)
  expect(screen.getByText(/自然说话\.wav/)).toBeTruthy()
+})
+it('pauses before locating an extremum during active playback',()=>{
+ vi.stubGlobal('requestAnimationFrame',vi.fn(()=>1));vi.stubGlobal('cancelAnimationFrame',vi.fn())
+ render(<RecordingReport report={report(4)}/>)
+ fireEvent.click(screen.getByRole('button',{name:'播放'}))
+ expect(screen.getByRole('button',{name:'暂停'})).toBeTruthy()
+ const sources=engine.createPlaybackSource.mock.calls.length
+ fireEvent.click(screen.getByRole('button',{name:'定位最高 F0'}))
+ expect(engine.createPlaybackSource.mock.calls.length).toBe(sources)
+ expect(screen.getByRole('button',{name:'播放'})).toBeTruthy()
+ cleanup();vi.unstubAllGlobals()
 })

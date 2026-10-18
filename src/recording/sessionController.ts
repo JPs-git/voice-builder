@@ -20,10 +20,21 @@ export class RecordingSessionController {
  private rate=0
  private options:RecordingOptions|null=null
  private working:AudioClip|null=null
+ private captureTimer:ReturnType<typeof setTimeout>|null=null
  constructor(private deps:RecordingSessionDependencies){}
  getSnapshot=()=>this.snapshot
  subscribe=(listener:()=>void)=>{this.listeners.add(listener);return()=>{this.listeners.delete(listener)}}
  private update(value:Partial<RecordingSnapshot>){this.snapshot={...this.snapshot,...value};this.listeners.forEach(f=>f())}
+ private clearCaptureTimer(){if(this.captureTimer!==null)clearTimeout(this.captureTimer);this.captureTimer=null}
+ private interrupted(id:number){
+  if(id!==this.id||!['requesting','recording'].includes(this.snapshot.phase))return
+  if(this.count){this.finish();return}
+  this.cancel();this.update({error:'没有收到音频，请检查麦克风后重试。'})
+ }
+ private watchCapture(id:number){
+  this.clearCaptureTimer()
+  this.captureTimer=setTimeout(()=>this.interrupted(id),5000)
+ }
  private begin(phase:RecordingSnapshot['phase']){
   this.abort.abort();this.abort=new AbortController();const id=++this.id
   this.update({phase,error:null,progress:0,elapsed:0});return id
@@ -40,6 +51,7 @@ export class RecordingSessionController {
      this.deps.engine.stopCapture();this.update({phase:'error',error:'录音采样率发生变化，请重新录音。'});return
     }
     this.rate=rate
+    if(input.length)this.watchCapture(id)
     const remaining=Math.max(0,Math.floor(rate*MAX_RECORDING_SECONDS)-this.count)
     const copy=input.slice(0,remaining)
     if(copy.length){this.chunks.push(copy);this.count+=copy.length}
@@ -47,15 +59,18 @@ export class RecordingSessionController {
     if(this.snapshot.phase!=='recording'||Math.floor(elapsed)!==Math.floor(this.snapshot.elapsed))
       this.update({phase:'recording',elapsed})
     if(this.count>=rate*MAX_RECORDING_SECONDS)this.finish()
-   },this.abort.signal)
+   },this.abort.signal,()=>this.interrupted(id))
+   if(id===this.id&&['requesting','recording'].includes(this.snapshot.phase))this.watchCapture(id)
   } catch(error){
    if(id!==this.id)return
+   this.clearCaptureTimer()
    this.deps.engine.stopCapture()
    this.update({phase:this.snapshot.report?'ready':'prepared',error:'无法启动录音，请检查麦克风权限或设备。'})
   }
  }
  finish():void{
   if(!['recording','requesting'].includes(this.snapshot.phase))return
+  this.clearCaptureTimer()
   this.deps.engine.stopCapture()
   if(!this.count||!this.rate){this.cancel();this.update({error:'没有收到音频，请检查麦克风后重试。'});return}
   const samples=new Float32Array(this.count)
@@ -98,6 +113,7 @@ export class RecordingSessionController {
   void this.analyze(id,clip)
  }
  cancel():void{
+  this.clearCaptureTimer()
   const capture=['requesting','recording'].includes(this.snapshot.phase)
   ++this.id;this.abort.abort()
   if(capture)this.deps.engine.stopCapture()

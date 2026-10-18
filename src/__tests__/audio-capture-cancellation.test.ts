@@ -38,4 +38,20 @@ it('creates playback at the actual clip sample rate',()=>{
  expect(result.totalDuration).toBe(1)
  expect(ctx.createBuffer).toHaveBeenCalledWith(1,48000,48000)
 })
+it('releases capture on track termination and ignores stale track events',async()=>{
+ const ctx=context(),tracks=[new EventTarget(),new EventTarget()] as any[]
+ for(const track of tracks)track.stop=vi.fn()
+ const get=vi.fn().mockResolvedValueOnce({getTracks:()=>[tracks[0]]}).mockResolvedValueOnce({getTracks:()=>[tracks[1]]})
+ vi.stubGlobal('navigator',{mediaDevices:{getUserMedia:get}})
+ vi.stubGlobal('AudioContext',vi.fn(function(){return ctx}))
+ const engine=new AudioEngine(),interrupted=vi.fn()
+ await engine.startCapture(()=>{},undefined,interrupted)
+ tracks[0].dispatchEvent(new Event('ended'))
+ expect(engine.isCapturing).toBe(false);expect(interrupted).toHaveBeenCalledTimes(1)
+ expect(tracks[0].stop).toHaveBeenCalled()
+ await engine.startCapture(()=>{},undefined,interrupted)
+ tracks[0].dispatchEvent(new Event('ended'))
+ expect(engine.isCapturing).toBe(true);expect(interrupted).toHaveBeenCalledTimes(1)
+ engine.stopCapture()
+})
 
