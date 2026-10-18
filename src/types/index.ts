@@ -8,6 +8,7 @@ export interface AnalysisFrame {
   f3?: number | null
   f4?: number | null
   voiced?: boolean
+  rms?: number
   magnitudes?: Float32Array
   register?: VoiceRegister | null
   registerConfidence?: number | null

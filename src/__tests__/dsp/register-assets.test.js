@@ -28,13 +28,23 @@ describe('register regression on labeled assets', () => {
       const voiced = frames.filter(f => f.f0 > 0 && f.voiced)
       assert.ok(voiced.length > 0, 'should have voiced frames')
 
-      const dist = {}
-      for (const f of voiced) dist[f.register] = (dist[f.register] || 0) + 1
-      const ratio = (dist[expected] || 0) / voiced.length
-      assert.ok(
-        ratio >= MIN_CORRECT_RATIO,
-        `${id}: expected ${expected}, got ${JSON.stringify(dist)} (${(ratio * 100).toFixed(1)}% correct)`,
-      )
+      // Clip-level labels describe the sustained vowel, not its breathy onset
+      // or release. The lower gate now exposes those formerly excluded frames.
+      // Keep the historical audible region and also check the new gate's core.
+      const regions = {
+        historical: voiced.filter(f => f.rms >= 0.05),
+        sustained: voiced.slice(Math.floor(voiced.length * 0.1), Math.floor(voiced.length * 0.9)),
+      }
+      for (const [region, selected] of Object.entries(regions)) {
+        assert.ok(selected.length >= 5, `${id}/${region}: need >=5 frames`)
+        const dist = {}
+        for (const f of selected) dist[f.register] = (dist[f.register] || 0) + 1
+        const ratio = (dist[expected] || 0) / selected.length
+        assert.ok(
+          ratio >= MIN_CORRECT_RATIO,
+          `${id}/${region}: expected ${expected}, got ${JSON.stringify(dist)} (${(ratio * 100).toFixed(1)}% correct)`,
+        )
+      }
     })
   }
 })

@@ -11,6 +11,7 @@ export interface SmootherFrame {
   f3?: number | null
   f4?: number | null
   voiced?: boolean
+  rms?: number
   magnitudes?: Float32Array
   register?: import('../types').VoiceRegister | null
   registerConfidence?: number | null

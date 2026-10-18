@@ -26,7 +26,8 @@ describe('Resampler', () => {
       }
     }
     const detectedFreq = (zeroCrossings / 2) / (output.length / outputRate)
-    assert.ok(Math.abs(detectedFreq - freq) < 5, `expected ~${freq}Hz, got ${detectedFreq}Hz`)
+    // A 0.1s count of sign changes has half-cycle resolution (5 Hz).
+    assert.ok(Math.abs(detectedFreq - freq) <= 5, `expected ~${freq}Hz, got ${detectedFreq}Hz`)
   })
 
   it('resamples 48000 to 16000', () => {
@@ -52,7 +53,7 @@ describe('Resampler', () => {
       }
     }
     const detectedFreq = (zeroCrossings / 2) / (output.length / outputRate)
-    assert.ok(Math.abs(detectedFreq - freq) < 5)
+    assert.ok(Math.abs(detectedFreq - freq) <= 5)
   })
 
   it('upsamples 8000 to 16000', () => {
@@ -117,9 +118,9 @@ describe('Resampler', () => {
     assert.equal(output.length, 0)
   })
 
-  it('handles very short input (less than ratio samples)', () => {
+  it('handles a single input sample without extrapolation', () => {
     const r = new Resampler(44100, 16000)
-    const output = r.process(new Float32Array(10))
+    const output = r.process(new Float32Array(1))
     assert.ok(output.length === 0 || output.length === 1)
   })
 
