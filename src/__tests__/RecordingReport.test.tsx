@@ -24,3 +24,9 @@ it('extremum selection locates without starting playback',()=>{
  expect(screen.getByLabelText('回放位置').getAttribute('value')).toBe('0.025')
  expect(screen.getByRole('button',{name:'播放'})).toBeTruthy()
 })
+it('identifies the imported file in the report',()=>{
+ const data=report(12)
+ data.clip={...data.clip,source:'file',name:'自然说话.wav',mode:null,material:null}
+ render(<RecordingReport report={data}/>)
+ expect(screen.getByText(/自然说话\.wav/)).toBeTruthy()
+})

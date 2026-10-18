@@ -12,7 +12,7 @@ export function buildPitchOption(frames:PitchFrame[],summary:PitchSummary,durati
  if(position>0)lines.push({xAxis:position,lineStyle:{color:'#e23e57'},label:{show:false}})
  return {animation:false,grid,tooltip:{trigger:'axis',valueFormatter:value=>value==null?'—':Number(value).toFixed(0)+' Hz'},
   xAxis:{type:'value',min:0,max:duration,name:'时间（秒）',nameLocation:'middle',nameGap:32,splitLine:{show:false}},
-  yAxis:{type:'value',min:Math.max(0,minimum-padding),max:maximum+padding,name:'F0（Hz）',splitLine:{lineStyle:{color:'#eef1f5'}}},
+  yAxis:{type:'value',min:Math.max(0,Math.floor((minimum-padding)/10)*10),max:Math.ceil((maximum+padding)/10)*10,name:'F0（Hz）',axisLabel:{formatter:'{value}'},splitLine:{lineStyle:{color:'#eef1f5'}}},
   dataZoom:[{type:'inside',filterMode:'none'},{type:'slider',height:14,bottom:6,filterMode:'none'}],
   series:[{type:'line',name:'F0',data:frames.map(f=>[f.time,f.f0]),showSymbol:false,connectNulls:false,
    lineStyle:{color:'#e23e57',width:2},itemStyle:{color:'#e23e57'},

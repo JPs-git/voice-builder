@@ -16,7 +16,7 @@ export function RecordingReport({report}:{report:ReportData}){
  return <section className={styles.report}>
   <header className={styles.reportHeader}>
    <div><h1 ref={titleRef} tabIndex={-1}>录音分析结果</h1><p className={styles.muted}>
-    {clip.source==='file'?'导入音频':clip.mode==='reading'?'朗读':'自由说话'} · {clip.material?.title??(clip.source==='file'?'材料未指定':clip.name)}
+    {clip.source==='file'?'导入音频 · '+clip.name:clip.mode==='reading'?'朗读':'自由说话'} · {clip.material?.title??(clip.source==='file'?'材料未指定':clip.name)}
    </p></div>
    <div className={styles.reportMeta}><span>录音时长 <strong>{clip.duration.toFixed(2)} 秒</strong></span>
     <span>有效 F0 <strong>{s.validDuration.toFixed(2)} 秒</strong> · {(s.coverage*100).toFixed(0)}%</span></div>
@@ -38,7 +38,7 @@ export function RecordingReport({report}:{report:ReportData}){
    <Button aria-label={p.playing?'暂停':'播放'} label={p.playing?'暂停':'播放'} icon={p.playing?'Ⅱ':'▶'} onClick={()=>p.playing?playback.pause():playback.play()}/>
    <span className={styles.playbackTime}>{formatClock(p.position)} / {formatClock(clip.duration)}</span>
    <input type="range" aria-label="回放位置" min={0} max={clip.duration} step={.001} value={p.position} onChange={e=>seek(Number(e.target.value))}/>
-   <Button label="回听此处" onClick={()=>playback.playAround(p.position)}/>
+   <Button label="回听此处" icon="↺" aria-label="回听此处" onClick={()=>playback.playAround(p.position)}/>
   </div>
   {p.error&&<p role="alert" className={styles.error}>{p.error}</p>}
   {s.validDuration>0?<RecordingCharts analysis={analysis} duration={clip.duration} position={p.position} onSeek={seek}/>

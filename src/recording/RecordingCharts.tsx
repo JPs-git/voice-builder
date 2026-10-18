@@ -16,7 +16,7 @@ export function RecordingCharts({analysis,duration,position,onSeek}:{analysis:Cl
    if(Number.isFinite(data?.[0]))onSeek(Math.max(0,Math.min(duration,data[0])))
   }
   chart.getZr().on('click',click)
-  return()=>{chart.getZr().off('click',click)}
+  return()=>{chart.getZr()?.off('click',click)}
  },[pitch.getInstance,onSeek,duration])
  return <div className={styles.charts}>
   <section className={styles.chartCard}><h2>音高随时间变化</h2>
