@@ -6,7 +6,7 @@ import { recordingBuffer } from '../audio/recordingBuffer'
 import { AnalysisPipeline, parseWav, isWavFile, Resampler } from '../dsp'
 import { MIC_VAD_OPTIONS } from '../dsp/vad'
 import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuration } from '../audio/audioDecoder'
-import type { AnalysisFrame, MicInput } from '../types'
+import type { AnalysisFrame } from '../types'
 import { AUDIO_WINDOW_SECONDS } from '../config/audioLimits'
 
 const STEREO_NOTICE = '该音频为双声道，仅使用第 0 声道进行分析'
@@ -41,7 +41,6 @@ export function useAnalysis() {
   const [dataSource, setDataSource] = useState<'mic' | 'file'>('mic')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isCapturing, setIsCapturing] = useState(false)
-  const [micInput, setMicInput] = useState<MicInput | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
 
@@ -62,7 +61,6 @@ export function useAnalysis() {
     }
     getAudioEngine().stopCapture()
     setIsCapturing(false)
-    setMicInput(null)
     setIsRequesting(false)
   }, [])
 
@@ -114,7 +112,6 @@ export function useAnalysis() {
     if (isRequesting) return
 
     setIsRequesting(true)
-    setMicInput(null)
 
     const config = useAppStore.getState().config  // 快照
 
@@ -129,15 +126,10 @@ export function useAnalysis() {
       await getAudioEngine().startCapture(onAudioChunk)
 
       // Only create pipeline AFTER capture succeeds
-      let inputFrames = 0
       pipelineRef.current = new AnalysisPipeline({
         vadOptions: MIC_VAD_OPTIONS,
         onFrame: (frame: AnalysisFrame) => {
           useAppStore.getState().appendFrame(frame)
-          // Analysis runs at 100 Hz; limit shell/meter updates to 10 Hz.
-          if (inputFrames++ % 10 === 0) {
-            setMicInput({ rms: frame.rms ?? 0, gateOpen: frame.voiced ?? false })
-          }
         },
         formantMethod: config.formantMethod,
         formantSmoothing: config.formantSmoothing,
@@ -248,7 +240,6 @@ export function useAnalysis() {
     onImport,
     onClear,
     isCapturing,
-    micInput,
     isRequesting,
     dataSource,
     fileInputRef,

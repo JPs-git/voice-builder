@@ -113,25 +113,24 @@ describe('useAnalysis record/pause latestFrame', () => {
   })
   afterEach(() => resetStores())
 
-  it('detects quiet microphone input, preserves recording samples and clears input status on stop', async () => {
+  it('detects quiet microphone input, preserves recording samples and resets the gate on restart', async () => {
     const { result } = renderHook(() => useAnalysis())
-    expect(result.current.micInput).toBeNull()
     await act(async () => { await result.current.onRecord() })
     const quiet = Float32Array.from({ length: 16000 }, (_, i) => 0.02 * Math.sin(2 * Math.PI * 200 * i / 16000))
     act(() => { captureCallback!(quiet, 16000) })
     expect(useAppStore.getState().frames.some(f => f.f0 === 200)).toBe(true)
-    expect(result.current.micInput?.rms).toBeCloseTo(0.014142, 5)
-    expect(result.current.micInput?.gateOpen).toBe(true)
+    expect(useAppStore.getState().latestFrame?.rms).toBeCloseTo(0.014142, 5)
+    expect(useAppStore.getState().latestFrame?.voiced).toBe(true)
     expect(recordingBuffer.read()).toEqual(quiet)
     act(() => { captureCallback!(new Float32Array(3200), 16000) })
-    expect(result.current.micInput).toEqual({ rms: 0, gateOpen: false })
+    expect(useAppStore.getState().latestFrame?.voiced).toBe(false)
     await act(async () => { await result.current.onRecord() })
-    expect(result.current.micInput).toBeNull()
+    expect(result.current.isCapturing).toBe(false)
     await act(async () => { await result.current.onRecord() })
     act(() => { captureCallback!(new Float32Array(800).fill(0.006), 16000) })
-    expect(result.current.micInput?.gateOpen).toBe(false)
+    expect(useAppStore.getState().latestFrame?.voiced).toBe(false)
     act(() => { result.current.onClear() })
-    expect(result.current.micInput).toBeNull()
+    expect(useAppStore.getState().frames).toEqual([])
   })
 
   it('restores latestFrame to the last complete frame after pausing', async () => {

@@ -27,26 +27,6 @@ describe('RecordDock', () => {
     measure.mockRestore()
     vi.unstubAllGlobals()
   })
-
-  it('shows input level and gate state only during live capture, including the action dock', () => {
-    const props = { onRecord: () => {}, isRequesting: false, goalLabel: 'a', onGoalClick: () => {}, onClear: () => {} }
-    const { rerender } = render(<RecordDock {...props} isCapturing micInput={{ rms: 0.003, gateOpen: false }} />)
-    expect(screen.getByTestId('dock-hint').textContent).toBe('输入偏弱')
-    const meter = screen.getByRole('meter', { name: '麦克风输入电平' }) as HTMLMeterElement
-    expect(meter.value).toBeGreaterThan(0)
-    expect(meter.value).toBeLessThan(1)
-    const quietLevel = meter.value
-    expect(screen.getByTestId('dock-hint').getAttribute('data-input')).toBe('true')
-    rerender(<RecordDock {...props} isCapturing micInput={{ rms: 0.014, gateOpen: true }} />)
-    expect(screen.getByTestId('dock-hint').textContent).toBe('正在分析')
-    expect((screen.getByRole('meter') as HTMLMeterElement).value).toBeGreaterThan(quietLevel)
-    rerender(<RecordDock {...props} isCapturing micInput={{ rms: 0, gateOpen: false }} />)
-    expect((screen.getByRole('meter') as HTMLMeterElement).value).toBe(0)
-    rerender(<RecordDock {...props} isCapturing={false} micInput={{ rms: 0.014, gateOpen: true }} />)
-    expect(screen.queryByRole('meter')).toBeNull()
-    expect(screen.getByTestId('dock-hint').textContent).toBe('点击开始录音')
-  })
-
   it('starts recording when the idle mic is clicked', () => {
     const onRecord = vi.fn()
     render(
