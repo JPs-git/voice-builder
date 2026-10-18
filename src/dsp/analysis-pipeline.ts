@@ -1,12 +1,11 @@
 import { Resampler } from './resampler'
 import { FrameProcessor } from './frame-processor'
 import type { FrameData } from './frame-processor'
-import { fftMagnitudes } from './fft'
 import { detectPitch, extractFormants, isHarmonicLocked } from './lpc'
 import type { FormantPeak } from './lpc'
 import { extractFormantsCepstral } from './cepstral'
-import { VoiceActivityDetector, DEFAULT_VAD_OPTIONS } from './vad'
-import { hasSpeechSpectrum } from './speech-spectrum'
+import { DEFAULT_VAD_OPTIONS } from './vad'
+import { VoicedFrameAnalyzer } from './voicedFrame'
 import type { VadOptions } from './vad'
 import { FormantSmoother } from './formant-smoother'
 import type { SmootherFrame } from './formant-smoother'
@@ -15,7 +14,6 @@ import { RegisterDetector } from './register-detector'
 const TARGET_RATE = 16000
 const FRAME_SIZE = 800
 const HOP_SIZE = 160
-const MIN_ANALYSIS_SAMPLES = FRAME_SIZE / 2
 
 export type FormantMethodValue = 'hybrid' | 'lpc' | 'cepstral'
 
@@ -34,7 +32,7 @@ export class AnalysisPipeline {
   onFrame: ((frame: SmootherFrame) => void) | null
   private _frameCount = 0
   private _frameOffset: number
-  private _vad: VoiceActivityDetector
+  private _voicedFrames: VoicedFrameAnalyzer
   private _formantMethod: FormantMethodValue
   private _prevGoodF1: number | null = null
   private _smoother: FormantSmoother | null
@@ -51,7 +49,7 @@ export class AnalysisPipeline {
   }: PipelineOptions = {}) {
     this._frameOffset = frameOffset
     const threshold = vadThreshold ?? vadOptions?.threshold ?? DEFAULT_VAD_OPTIONS.threshold
-    this._vad = new VoiceActivityDetector({
+    this._voicedFrames = new VoicedFrameAnalyzer({
       threshold,
       // A legacy opening-threshold override must not put release above opening.
       releaseThreshold: Math.min(threshold, vadOptions?.releaseThreshold ?? DEFAULT_VAD_OPTIONS.releaseThreshold),
@@ -77,12 +75,8 @@ export class AnalysisPipeline {
         // padding must not change noise into a structured spectrum. At least
         // half the 50ms window is needed for a tail's pitch/formant estimates.
         const realLength = Math.max(0, Math.min(FRAME_SIZE, this._inputSampleCount - this._frameCount * HOP_SIZE))
-        const analysisSamples = frame.samples.subarray(0, realLength)
-        const enoughSamples = realLength >= MIN_ANALYSIS_SAMPLES
-        const magnitudes = fftMagnitudes(enoughSamples ? analysisSamples : frame.samples, 2048)
-        const { voiced, rms } = this._vad.compute(
-          analysisSamples, HOP_SIZE / TARGET_RATE * 1000,
-          enoughSamples && hasSpeechSpectrum(magnitudes, frame.sampleRate),
+        const { samples: analysisSamples, magnitudes, voiced, rms } = this._voicedFrames.analyze(
+          frame.samples, realLength, frame.sampleRate, HOP_SIZE / TARGET_RATE * 1000,
         )
         let f0: number | null = null
         let formants: (FormantPeak | null)[] = []
@@ -181,7 +175,7 @@ export class AnalysisPipeline {
 
   reset(): void {
     this._inputSampleCount = 0
-    this._vad.reset()
+    this._voicedFrames.reset()
     if (this._resampler) this._resampler.reset()
     if (this._frameProcessor) this._frameProcessor.reset()
     if (this._smoother) this._smoother.reset()
