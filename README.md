@@ -25,6 +25,10 @@
 - 支持上传wav文件分析
 
 
+## 匿名使用统计
+
+自行部署默认关闭统计。正式站点可按 [统计接入说明](docs/analytics.md) 配置 Umami Cloud。录音和声音分析数据在本地处理，不发送给统计服务。
+
 ## Skills
 - Javascript
 - HTML

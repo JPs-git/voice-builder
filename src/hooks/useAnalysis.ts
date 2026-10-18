@@ -7,8 +7,26 @@ import { AnalysisPipeline, parseWav, isWavFile, Resampler } from '../dsp'
 import { AudioTooLongError, decodeAudioFile, probeAudioDuration, probeWavDuration } from '../audio/audioDecoder'
 import type { AnalysisFrame } from '../types'
 import { AUDIO_WINDOW_SECONDS } from '../config/audioLimits'
+import { getAnalyticsPage, track } from '../analytics/analytics'
+import { recordPracticeSamples } from '../analytics/practiceProgress'
 
 const STEREO_NOTICE = '该音频为双声道，仅使用第 0 声道进行分析'
+
+function recordingErrorReason(err: unknown): 'permission' | 'device' | 'unsupported' | 'unknown' {
+  if (!(err instanceof DOMException)) return 'unknown'
+  if (['NotAllowedError', 'SecurityError'].includes(err.name)) return 'permission'
+  if (['NotFoundError', 'NotReadableError', 'AbortError'].includes(err.name)) return 'device'
+  return err.name === 'NotSupportedError' ? 'unsupported' : 'unknown'
+}
+
+function importErrorReason(err: unknown): 'too_long' | 'unsupported_or_corrupt' | 'unknown' {
+  if (err instanceof AudioTooLongError) return 'too_long'
+  if (err instanceof DOMException) return 'unsupported_or_corrupt'
+  if (err instanceof Error && /Not a RIFF file|Not a WAV file|chunk not found|Unsupported bitsPerSample|Failed to load audio metadata|Failed to read audio duration/.test(err.message)) {
+    return 'unsupported_or_corrupt'
+  }
+  return 'unknown'
+}
 
 function importErrorMessage(err: unknown): string {
   if (err instanceof AudioTooLongError) {
@@ -77,6 +95,7 @@ export function useAnalysis() {
   const onAudioChunk = useCallback((chunk: Float32Array, rate: number) => {
     recordingBuffer.write(chunk)
     pipelineRef.current?.pushChunk(chunk, rate)
+    recordPracticeSamples(chunk.length, rate)
   }, [])
 
   // ── Import commit (shared by WAV & decoded paths) ──
@@ -97,6 +116,8 @@ export function useAnalysis() {
     dataSourceRef.current = 'file'
     setDataSource('file')
     frameOffsetRef.current = 0
+    const page = getAnalyticsPage()
+    if (page) track('audio_import', { page, result: 'success' })
   }, [])
 
   // ── Record ──
@@ -138,7 +159,11 @@ export function useAnalysis() {
       setDataSource('mic')
       setIsCapturing(true)
       setIsRequesting(false)
+      const page = getAnalyticsPage()
+      if (page) track('record_start', { page })
     } catch (err) {
+      const page = getAnalyticsPage()
+      if (page) track('record_error', { page, reason: recordingErrorReason(err) })
       console.error('Failed to start recording:', err)
       // Firefox rejects mic streams whose device rate differs from a custom
       // AudioContext rate (NotSupportedError); guide users instead of a
@@ -224,6 +249,8 @@ export function useAnalysis() {
       commitImport(samples)
     } catch (err) {
       console.error('Audio import failed:', err)
+      const page = getAnalyticsPage()
+      if (page) track('audio_import', { page, result: 'failure', reason: importErrorReason(err) })
       useToastStore.getState().showToast('error', importErrorMessage(err))
     } finally {
       setIsImporting(false)

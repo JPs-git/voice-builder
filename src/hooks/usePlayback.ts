@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { getAudioEngine } from '../ts'
 import { recordingBuffer } from '../audio/recordingBuffer'
 import { useAppStore } from '../store/appStore'
+import { getAnalyticsPage, track } from '../analytics/analytics'
 
 export function usePlayback() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -54,6 +55,8 @@ export function usePlayback() {
     }
 
     source.start()
+    const page = getAnalyticsPage()
+    if (page) track('playback_start', { page })
     sourceRef.current = source
     setIsPlaying(true)
 
