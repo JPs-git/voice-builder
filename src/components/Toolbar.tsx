@@ -19,7 +19,7 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recordButtonRef, helpButtonRef, recordingPage, compactActions, moreButtonRef }: ToolbarProps) {
-  const primaryIds = new Set(['record', 'cancel', 'import', 'playback'])
+  const primaryIds = new Set(['record', 'cancel', 'import', 'playback', 'clear'])
   const visibleItems = compactActions ? toolItems.filter(item => primaryIds.has(item.id)) : toolItems
   const secondaryItems = compactActions ? toolItems.filter(item => !primaryIds.has(item.id)) : []
   return (

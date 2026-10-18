@@ -66,7 +66,7 @@ export function getHelpSections(topic: HelpTopic, layout: HelpLayout): readonly 
       { title: '录音与回放', paragraphs: [
         `${getQuickStartSteps(layout)[0].description}再次点击录音按钮可停止；继续录音会接着追加数据。`,
         `实时曲线和回放保留最近 ${AUDIO_WINDOW_SECONDS} 秒的窗口，持续录音不会自动停止。停止录音后点击「回放」听取当前窗口。`,
-        `点击${layout === 'portrait' ? '底部「清除图谱」' : '顶栏「更多 → 清空」'}会停止录音并清除当前声音数据，但保留训练目标。`,
+        `点击${layout === 'portrait' ? '底部「清除图谱」' : '顶栏「清空」'}会停止录音并清除当前声音数据，但保留训练目标。`,
       ] },
       { title: '导入已有音频', paragraphs: [
         `通过${importEntry}选择文件；音频时长不能超过 ${AUDIO_WINDOW_SECONDS} 秒，较长文件请先裁剪。`,

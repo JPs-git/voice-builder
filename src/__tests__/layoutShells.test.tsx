@@ -290,7 +290,7 @@ describe('portrait analysis structure', () => {
     renderInsideShell(<AnalysisPage />)
     expect(pageLayout()).toBe('landscape')
     expect(document.querySelector('[data-portrait-dock="true"]')).toBeNull()
-    expect(document.querySelectorAll('header button[id]').length).toBe(3)
+    expect(document.querySelectorAll('header button[id]').length).toBe(4)
   })
 
   it('preserves the same frame and register across responsive layouts', () => {

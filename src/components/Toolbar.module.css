@@ -96,12 +96,12 @@
   .pageTabs { width:320px; }
   .actions { min-width:0; }
 }
-@media (max-width:1100px) and (min-width:769px) {
+@media (max-width:1280px) and (min-width:769px) {
   .subtitle { display:none; }
   .actions>button:not([id="record"]):not([id="cancel"])>span:last-child { display:none; }
   .actions>button:not([id="record"]):not([id="cancel"]) { padding:0 12px; }
 }
-@media (max-width:900px) and (min-width:769px) {
+@media (max-width:1000px) and (min-width:769px) {
   .toolbar { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px 20px; }
   .pageTabs { grid-column:1 / -1; grid-row:2; justify-self:center; }
   .actions { grid-column:2; grid-row:1; }

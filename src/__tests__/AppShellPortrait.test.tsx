@@ -65,7 +65,7 @@ describe('AppShell toolbar density', () => {
     expect(screen.getByText('导入音频')).toBeTruthy()
     expect(screen.getByText('音高参考')).toBeTruthy()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('false')
-    expect(document.querySelectorAll('header button[id]').length).toBe(3)
+    expect(document.querySelectorAll('header button[id]').length).toBe(4)
   })
 
   it('navigates to the practice page from the portrait tabs', () => {
