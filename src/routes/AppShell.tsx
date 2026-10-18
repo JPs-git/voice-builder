@@ -17,6 +17,7 @@ import type { HelpTopic } from '../content/helpContent'
 import { useFirstUseHelp } from '../hooks/useFirstUseHelp'
 import { FirstUseHelpBanner } from '../components/FirstUseHelpBanner'
 import { isAvailableFocusTarget } from '../components/focusTarget'
+import { getAnalyticsPage, track } from '../analytics/analytics'
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -64,6 +65,8 @@ export function AppShell() {
     setGoalOpen(overlay === 'goal')
   }
   const openHelp = (topic: HelpTopic = 'quick-start') => {
+    const page = getAnalyticsPage()
+    if (!helpOpen && page) track('help_open', { page, topic })
     setHelpTopic(topic)
     openOverlay('help')
   }

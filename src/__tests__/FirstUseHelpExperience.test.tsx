@@ -8,6 +8,11 @@ import { useAppStore } from '../store/appStore'
 import { useIntroHintStore } from '../store/introHintStore'
 
 const { audio, state } = vi.hoisted(() => ({ audio: vi.fn(), state: { capturing: false, requesting: false, playing: false, data: false } }))
+const { track } = vi.hoisted(() => ({ track: vi.fn() }))
+vi.mock('../analytics/analytics', async original => ({
+  ...await original<typeof import('../analytics/analytics')>(),
+  track, getAnalyticsPage: () => 'analysis',
+}))
 vi.mock('../hooks/useToolbar', () => ({ useToolbar: (config: () => void, help: () => void, about: () => void) => ({
   cursorTime: -1, hasData: state.data, isCapturing: state.capturing, isRequesting: state.requesting,
   fileInputRef: { current: null }, handleFileChange: vi.fn(),
@@ -35,6 +40,7 @@ beforeEach(() => {
   useAppStore.getState().reset()
   Object.assign(state, { capturing: false, requesting: false, playing: false, data: false })
   audio.mockClear()
+  track.mockClear()
   const listeners = new Set<(event: { matches: boolean }) => void>()
   const mql = { matches: true, addEventListener: (_: string, listener: (event: { matches: boolean }) => void) => listeners.add(listener), removeEventListener: (_: string, listener: (event: { matches: boolean }) => void) => listeners.delete(listener) }
   vi.stubGlobal('matchMedia', () => mql)
@@ -44,6 +50,24 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('first-use help integration', () => {
+  it.each([true, false])('records each real help opening once across all entry points (portrait=%s)', portrait => {
+    render(<TestApp />)
+    resizeLayout(portrait)
+    fireEvent.click(screen.getByRole('button', { name: '查看说明' }))
+    expect(track).toHaveBeenLastCalledWith('help_open', { page: 'analysis', topic: 'quick-start' })
+    fireEvent.click(screen.getByRole('button', { name: '读图与反馈' }))
+    expect(track).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+    fireEvent.click(screen.getByRole('button', { name: '基频图说明' }))
+    expect(track).toHaveBeenLastCalledWith('help_open', { page: 'analysis', topic: 'charts' })
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+    if (portrait) {
+      fireEvent.click(screen.getByRole('button', { name: '更多操作' }))
+      fireEvent.click(screen.getByRole('menuitem', { name: '帮助' }))
+    } else fireEvent.click(screen.getByRole('button', { name: /帮助/ }))
+    expect(track).toHaveBeenCalledTimes(3)
+    expect(track).toHaveBeenLastCalledWith('help_open', { page: 'analysis', topic: 'quick-start' })
+  })
   it.each([true, false])('uses contextual controls and one first-use banner on both pages (portrait=%s)', portrait => {
     render(<TestApp />)
     resizeLayout(portrait)
