@@ -5,8 +5,8 @@ export interface RecordDockProps {
   onRecord: () => void
   isCapturing: boolean
   isRequesting: boolean
-  goalLabel: string
-  onGoalClick: () => void
+  goalLabel?: string
+  onGoalClick?: () => void
   showGoal?: boolean
   onClear?: () => void
   onPlayback?: () => void
@@ -14,6 +14,14 @@ export interface RecordDockProps {
   isPlaying?: boolean
   recordButtonRef?: Ref<HTMLButtonElement>
   onHeightChange?: (height: number) => void
+  variant?: 'realtime' | 'statistics'
+  recordLabel?: string
+  recordDisabled?: boolean
+  elapsedSeconds?: number
+  clearLabel?: string
+  clearDisabled?: boolean
+  onCancel?: () => void
+  cancelLabel?: string
 }
 
 function MicGlyph() {
@@ -30,7 +38,8 @@ function MicGlyph() {
   )
 }
 
-export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange }: RecordDockProps) {
+export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange,
+  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音' }: RecordDockProps) {
   const dockRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const dock = dockRef.current
@@ -44,12 +53,13 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
   }, [onHeightChange])
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
-    if (!isCapturing) { setElapsed(0); return }
+    if (!isCapturing || elapsedSeconds !== undefined) { setElapsed(0); return }
     const id = window.setInterval(() => setElapsed(s => s + 1), 1000)
     return () => window.clearInterval(id)
-  }, [isCapturing])
-  const timer = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
-  const micLabel = isRequesting ? '麦克风授权中' : isCapturing ? '停止录音' : '开始录音'
+  }, [isCapturing, elapsedSeconds])
+  const seconds = elapsedSeconds ?? elapsed
+  const timer = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
+  const micLabel = recordLabel ?? (isRequesting ? '麦克风授权中' : isCapturing ? '停止录音' : '开始录音')
   return (
     <div
       ref={dockRef}
@@ -57,6 +67,7 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
       data-portrait-dock="true"
       data-actions={Boolean(onClear || onPlayback)}
       data-goal-entry={showGoal}
+      data-variant={variant}
     >
       {showGoal && (
         <button type="button" className={styles.goal} onClick={onGoalClick}
@@ -66,14 +77,15 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
           <span className={styles.goalChevron} aria-hidden="true">›</span>
         </button>
       )}
+      {onCancel && <button type="button" className={`${styles.action} ${styles.cancel}`} onClick={onCancel}>{cancelLabel}</button>}
       <span className={styles.micHalo} data-testid="dock-mic-halo">
         <button ref={recordButtonRef} type="button" className={styles.mic} data-recording={isCapturing}
-          onClick={onRecord} disabled={isRequesting} aria-label={micLabel}>
+          onClick={onRecord} disabled={recordDisabled ?? isRequesting} aria-label={micLabel} title={micLabel}>
           {isCapturing ? '●' : <MicGlyph />}
         </button>
       </span>
-      {onClear && <button type="button" className={styles.action} onClick={onClear} disabled={!hasData}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7" /></svg>清除图谱
+      {onClear && <button type="button" className={styles.action} onClick={onClear} disabled={clearDisabled ?? !hasData}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7" /></svg>{clearLabel}
       </button>}
       {onPlayback && <button type="button" className={styles.action} onClick={onPlayback} disabled={!hasData || isRequesting}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d={isPlaying ? 'M9 9h6v6H9z' : 'm10 8 6 4-6 4z'} fill="currentColor" /></svg>{isPlaying ? '停止' : '回放'}

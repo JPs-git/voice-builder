@@ -31,6 +31,7 @@ export interface ShellContext {
   onClear?: () => void
   onPlayback?: () => void
   isPlaying?: boolean
+  dockHeight?: number
   onRecord: () => void
   pianoScrollProgress?: number
   setPianoScrollProgress?: (progress: number) => void
@@ -56,7 +57,7 @@ function AppShellContent() {
 
   const isPractice = useMatch('/practice') != null
   const isRecording = useMatch('/recording') != null
-  const { controller: recordingController } = useRecordingSession()
+  const { controller: recordingController, snapshot: recordingSnapshot } = useRecordingSession()
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
   const activePreset = useAppStore(s => s.activePreset)
   useEffect(() => {
@@ -118,6 +119,7 @@ function AppShellContent() {
     onClear: () => handleClickTool('clear'),
     onPlayback: () => handleClickTool('playback'),
     isPlaying,
+    dockHeight: isPortrait ? dockHeight : 0,
     pianoScrollProgress: pianoScrollProgressRef.current,
     setPianoScrollProgress: (progress: number) => {
       pianoScrollProgressRef.current = progress
@@ -135,18 +137,37 @@ function AppShellContent() {
         toolItems={isRecording ? recordingTools.toolItems : toolItems}
         onToolClick={isRecording ? recordingTools.handleClickTool : handleClickTool}
         pageTabs={<MobilePageTabs variant={isPortrait ? 'mobile' : 'desktop'} />}
-        moreMenu={isPortrait && !isRecording
+        moreMenu={isPortrait
           ? <MobileMoreMenu
               triggerButtonRef={moreButtonRef}
-              items={toolItems}
-              onSelect={handleClickTool}
+              items={isRecording ? recordingTools.toolItems.filter(item => !['cancel','clear'].includes(item.id)) : toolItems}
+              onSelect={isRecording ? recordingTools.handleClickTool : handleClickTool}
             />
           : undefined}
       />
       <Outlet context={shellContext} />
-      {isPortrait && !isRecording && (
+      {isPortrait && (
         <>
+          {isRecording ? <RecordDock
+            key="statistics"
+            variant="statistics"
+            recordButtonRef={recordButtonRef}
+            onHeightChange={setDockHeight}
+            onRecord={() => recordingTools.handleClickTool('record')}
+            recordLabel={recordingTools.toolItems.find(item => item.id==='record')?.label}
+            recordDisabled={recordingTools.toolItems.find(item => item.id==='record')?.disabled}
+            isCapturing={recordingSnapshot.phase==='recording'}
+            isRequesting={recordingSnapshot.phase==='requesting'}
+            elapsedSeconds={recordingSnapshot.elapsed}
+            showGoal={false}
+            onClear={() => recordingTools.handleClickTool('clear')}
+            clearLabel="清除本次"
+            clearDisabled={recordingSnapshot.phase!=='ready' || !recordingSnapshot.report}
+            onCancel={recordingTools.toolItems.some(item => item.id==='cancel') ? () => recordingTools.handleClickTool('cancel') : undefined}
+            cancelLabel={recordingTools.toolItems.find(item => item.id==='cancel')?.label}
+          /> :
           <RecordDock
+            key="realtime"
             recordButtonRef={recordButtonRef}
             onHeightChange={setDockHeight}
             onRecord={() => handleClickTool('record')}
@@ -159,8 +180,8 @@ function AppShellContent() {
             onPlayback={() => handleClickTool('playback')}
             hasData={hasData}
             isPlaying={isPlaying}
-          />
-          <TrainingGoalModal open={goalOpen} onClose={() => setGoalOpen(false)} />
+          />}
+          {!isRecording && <TrainingGoalModal open={goalOpen} onClose={() => setGoalOpen(false)} />}
         </>
       )}
       <FirstUseHelpBanner

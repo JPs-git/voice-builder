@@ -1,0 +1,63 @@
+import {it,expect,vi,afterEach} from 'vitest'
+import {render,screen,fireEvent,act,cleanup,within} from '@testing-library/react'
+import {MemoryRouter,Routes,Route} from 'react-router-dom'
+import {AppShell} from '../routes/AppShell'
+import {RecordingPage} from '../recording/RecordingPage'
+import {summarizePitch} from '../recording/statistics'
+import {ANALYSIS_SETTINGS} from '../recording/constants'
+const audio=vi.hoisted(()=>({startCapture:vi.fn(),stopCapture:vi.fn()}))
+const analyze=vi.hoisted(()=>vi.fn())
+vi.mock('../ts',()=>({getAudioEngine:()=>audio}))
+vi.mock('../recording/workerClient',()=>({runClipAnalysis:analyze}))
+vi.mock('../hooks/useMediaQuery',()=>({useMediaQuery:()=>true}))
+vi.mock('../hooks/useECharts',()=>({useECharts:()=>({chartRef:{current:null},getInstance:()=>null,setOption:()=>{}})}))
+vi.mock('../hooks/useToolbar',()=>({useToolbar:()=>({toolItems:[],handleClickTool:vi.fn(),suspend:vi.fn(),hasData:false,
+ cursorTime:0,isCapturing:false,isRequesting:false,fileInputRef:{current:null},handleFileChange:vi.fn()})}))
+afterEach(()=>{cleanup();vi.clearAllMocks()})
+function mount(){return render(<MemoryRouter initialEntries={['/recording']}><Routes><Route element={<AppShell/>}>
+ <Route path="recording" element={<RecordingPage/>}/></Route></Routes></MemoryRouter>)}
+it('uses the shared portrait header and RecordDock for capture, analysis cancellation and clear',async()=>{
+ let chunk!:(samples:Float32Array,rate:number)=>void
+ audio.startCapture.mockImplementation(async cb=>{chunk=cb})
+ analyze.mockImplementationOnce(()=>new Promise(()=>{}))
+ mount()
+ const header=document.querySelector('header')!
+ expect(header.getAttribute('data-compact')).toBe('true')
+ expect(within(header).queryByRole('button',{name:/开始录音/})).toBeNull()
+ expect(screen.getAllByRole('button',{name:'开始录音'})).toHaveLength(1)
+ expect(document.querySelectorAll('[data-portrait-dock]')).toHaveLength(1)
+ expect(screen.queryByTestId('dock-goal')).toBeNull()
+ expect((screen.getByRole('button',{name:'清除本次'}) as HTMLButtonElement).disabled).toBe(true)
+ fireEvent.click(screen.getByRole('button',{name:'更多操作'}))
+ expect(screen.getByRole('menuitem',{name:/导入音频/})).toBeTruthy()
+ expect(screen.queryByRole('menuitem',{name:/清除本次/})).toBeNull()
+ fireEvent.keyDown(document,{key:'Escape'})
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+ act(()=>chunk(new Float32Array(32000),16000))
+ expect(screen.getByTestId('dock-timer').textContent).toBe('00:02')
+ expect(screen.getByRole('button',{name:'取消录音'})).toBeTruthy()
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
+ expect((screen.getByRole('button',{name:'正在分析…'}) as HTMLButtonElement).disabled).toBe(true)
+ fireEvent.click(screen.getByRole('button',{name:'取消分析'}))
+ expect(screen.getByRole('button',{name:'开始录音'})).toBeTruthy()
+ analyze.mockResolvedValueOnce({...summarizePitch([],2),settings:ANALYSIS_SETTINGS,version:'test'})
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+ act(()=>chunk(new Float32Array(32000),16000))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
+ expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
+ fireEvent.click(screen.getByRole('button',{name:'清除本次'}))
+ expect(screen.queryByRole('heading',{name:'录音分析结果'})).toBeNull()
+ expect(screen.getByRole('button',{name:'开始录音'})).toBeTruthy()
+})
+it('keeps cancellation accessible during pending microphone permission',async()=>{
+ let resolve!:()=>void
+ audio.startCapture.mockImplementationOnce(()=>new Promise<void>(r=>{resolve=r}))
+ mount()
+ expect(document.querySelector('[data-portrait-dock]')).not.toBeNull()
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+ expect((screen.getByRole('button',{name:'麦克风授权中…'}) as HTMLButtonElement).disabled).toBe(true)
+ fireEvent.click(screen.getByRole('button',{name:'取消'}))
+ await act(async()=>resolve())
+ expect(screen.getByRole('button',{name:'开始录音'})).toBeTruthy()
+ expect(audio.stopCapture).toHaveBeenCalled()
+})

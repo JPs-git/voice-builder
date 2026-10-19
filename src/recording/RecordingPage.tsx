@@ -1,4 +1,6 @@
-import {useEffect,useRef} from 'react'
+import {useEffect,useRef,type CSSProperties} from 'react'
+import {useOutletContext} from 'react-router-dom'
+import type {ShellContext} from '../routes/AppShell'
 import {useRecordingSession} from './RecordingSessionProvider'
 import {READING_MATERIALS,SPEAKING_PROMPTS} from './materials'
 import {RecordingReader} from './RecordingReader'
@@ -7,12 +9,13 @@ import {formatClock} from './format'
 import styles from './RecordingPage.module.css'
 
 export function RecordingPage(){
+ const shell=useOutletContext<ShellContext|null>()
  const {controller,snapshot:s,preferences:p,updatePreferences}=useRecordingSession()
  const busy=['requesting','recording','importing','analyzing'].includes(s.phase)
  const material=READING_MATERIALS.find(m=>m.id===p.materialId)??READING_MATERIALS[0]
  const errorRef=useRef<HTMLDivElement>(null)
  useEffect(()=>{if(s.error&&document.visibilityState!=='hidden')errorRef.current?.focus()},[s.error])
- return <main className={styles.page} data-recording-page>
+ return <main className={styles.page} data-recording-page style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
   <div className={styles.content}>
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
     <span>{s.error}</span>
