@@ -18,7 +18,7 @@ function mount(path='/recording'){
 }
 it('uses one directly accessible recorder and page-specific help without a target dock',async()=>{
  mount()
- expect(screen.getByRole('link',{name:'录音统计'})).toBeTruthy()
+ expect(screen.getByRole('link',{name:'统计分析'})).toBeTruthy()
  expect(screen.getAllByRole('button',{name:/开始录音/})).toHaveLength(1)
  fireEvent.click(screen.getByRole('button',{name:'更多操作'}))
  fireEvent.click(screen.getByRole('menuitem',{name:/帮助/}))
@@ -29,7 +29,7 @@ it('suspends realtime on entry and stops the new capture on leaving',async()=>{
  let chunk!:(samples:Float32Array,rate:number)=>void
  audio.startCapture.mockImplementation(async cb=>{chunk=cb})
  mount('/')
- fireEvent.click(screen.getByRole('link',{name:'录音统计'}))
+ fireEvent.click(screen.getByRole('link',{name:'统计分析'}))
  expect(realtime.suspend).toHaveBeenCalledTimes(1)
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:/开始录音/})))
  act(()=>chunk(new Float32Array(16000),16000))

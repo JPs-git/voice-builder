@@ -54,7 +54,7 @@ describe('AppShell toolbar density', () => {
     expect(screen.getByRole('navigation', { name: '页面切换' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '音高参考' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '实时分析' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: '录音统计' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '统计分析' })).toBeTruthy()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('true')
   })
 

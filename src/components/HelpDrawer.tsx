@@ -26,7 +26,7 @@ export function HelpDrawer({ open, onClose, topic, onTopicChange, getFallbackFoc
           onClick={() => onTopicChange(item)}>{getHelpTopicTitle(item)}</button>)}
       </nav>}
       <div ref={contentRef} className={styles.content}>
-        <h4 className={styles.chapterTitle}>{recording ? '录音统计' : getHelpTopicTitle(topic)}</h4>
+        <h4 className={styles.chapterTitle}>{recording ? '统计分析' : getHelpTopicTitle(topic)}</h4>
         {(recording ? RECORDING_HELP : getHelpSections(topic, portrait ? 'portrait' : 'landscape')).map((section, index) => (
           <section key={section.title} className={styles.section}>
             <h5>{!recording && topic === 'quick-start' && <span className={styles.step}>{index + 1}</span>}{section.title}</h5>

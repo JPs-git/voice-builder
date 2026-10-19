@@ -62,7 +62,7 @@ describe('AppShell', () => {
     renderApp('/')
     expect(screen.getByText('analysis-content')).toBeDefined()
     expect(screen.getByRole('link', { name: '音高参考' })).toBeDefined()
-    expect(screen.getByRole('link', { name: '录音统计' })).toBeDefined()
+    expect(screen.getByRole('link', { name: '统计分析' })).toBeDefined()
   })
 
   it('navigates to practice and flips the nav label', () => {

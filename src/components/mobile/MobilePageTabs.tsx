@@ -7,11 +7,11 @@ export function MobilePageTabs({variant='mobile'}:{variant?:'mobile'|'desktop'})
       <NavLink to="/" end className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ''}`}>
         实时分析
       </NavLink>
-      <NavLink to="/recording" className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ''}`}>
-        录音统计
-      </NavLink>
       <NavLink to="/practice" className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ''}`}>
         音高参考
+      </NavLink>
+      <NavLink to="/recording" className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ''}`}>
+        统计分析
       </NavLink>
     </nav>
   )
