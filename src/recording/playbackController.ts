@@ -59,7 +59,6 @@ export class RecordingPlaybackController {
   this.update({position:Math.max(0,Math.min(this.snapshot.duration,seconds))})
   if(playing)this.play()
  }
- playAround(seconds:number){this.playBetween(Math.max(0,seconds-2),Math.min(this.snapshot.duration,seconds+2))}
  stop(){this.detach();this.update({playing:false,position:0})}
  destroy(){this.stop();this.clip=null;this.listeners.clear()}
 }

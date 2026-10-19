@@ -20,10 +20,15 @@ it.each([2.99,3,9.99,10])('applies the %s second valid-data presentation policy'
  expect(card.textContent).toContain(seconds<3?'—':'200')
  expect(!!screen.queryByText('有效音高样本较少，结果仅供本段参考')).toBe(seconds>=3&&seconds<10)
 })
-it('extremum selection locates without starting playback',()=>{
+it('shows only three percentile metrics, one histogram and full playback controls',()=>{
  render(<RecordingReport report={report(4)}/>)
- fireEvent.click(screen.getByRole('button',{name:/定位最高/}))
- expect(screen.getByLabelText('回放位置').getAttribute('value')).toBe('0.025')
+ expect(screen.getByTestId('stat-p10').textContent).toContain('200')
+ expect(screen.getByTestId('stat-p90').textContent).toContain('200')
+ expect(screen.getAllByRole('img')).toHaveLength(1)
+ expect(screen.queryByRole('button',{name:/定位|回听此处/})).toBeNull()
+ expect(screen.queryByText(/变化幅度|最高 F0|最低 F0|音高随时间变化/)).toBeNull()
+ fireEvent.change(screen.getByLabelText('回放位置'),{target:{value:'3'}})
+ expect(screen.getByLabelText('回放位置').getAttribute('value')).toBe('3')
  expect(screen.getByRole('button',{name:'播放'})).toBeTruthy()
 })
 it('identifies the imported file in the report',()=>{
@@ -32,14 +37,15 @@ it('identifies the imported file in the report',()=>{
  render(<RecordingReport report={data}/>)
  expect(screen.getByText(/自然说话\.wav/)).toBeTruthy()
 })
-it('pauses before locating an extremum during active playback',()=>{
+it('keeps full playback active after seeking, without a local review action',()=>{
  vi.stubGlobal('requestAnimationFrame',vi.fn(()=>1));vi.stubGlobal('cancelAnimationFrame',vi.fn())
  render(<RecordingReport report={report(4)}/>)
  fireEvent.click(screen.getByRole('button',{name:'播放'}))
  expect(screen.getByRole('button',{name:'暂停'})).toBeTruthy()
  const sources=engine.createPlaybackSource.mock.calls.length
- fireEvent.click(screen.getByRole('button',{name:'定位最高 F0'}))
- expect(engine.createPlaybackSource.mock.calls.length).toBe(sources)
- expect(screen.getByRole('button',{name:'播放'})).toBeTruthy()
+ fireEvent.change(screen.getByLabelText('回放位置'),{target:{value:'3'}})
+ expect(engine.createPlaybackSource.mock.calls.length).toBe(sources+1)
+ expect(screen.getByRole('button',{name:'暂停'})).toBeTruthy()
+ expect(screen.queryByRole('button',{name:'回听此处'})).toBeNull()
  cleanup();vi.unstubAllGlobals()
 })

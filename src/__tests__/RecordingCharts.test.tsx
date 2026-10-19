@@ -13,7 +13,7 @@ it('can mount and unmount charts under StrictMode after chart disposal',()=>{
  vi.stubGlobal('ResizeObserver',class{observe(){} disconnect(){}})
  const analysis={...summarizePitch([],45),settings:ANALYSIS_SETTINGS,version:'test'}
  expect(()=>{
-  render(<StrictMode><RecordingCharts analysis={analysis} duration={45} position={0} onSeek={()=>{}}/></StrictMode>)
+  render(<StrictMode><RecordingCharts analysis={analysis}/></StrictMode>)
   cleanup()
  }).not.toThrow()
  vi.unstubAllGlobals()

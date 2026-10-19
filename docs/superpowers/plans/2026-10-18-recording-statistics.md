@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
-**Goal:** 实现独立的 60 秒自然说话录音统计页，采集时专注朗读，录后查看 F0 概览并定位回听。
+**Goal:** 实现独立的 60 秒自然说话录音统计页，采集时专注朗读，录后查看 F0 分位概览与直方图并完整回放。
 
 **Architecture:** 保持 AppShell 与旧实时会话常驻，新增常驻 RecordingSessionController，按路由切换工具栏与音频所有权。新会话保存完整 PCM，录后由 Worker 执行仅 F0 分析与统计；页面和回放只消费同一份报告。复用现有门控、频谱检查、重采样、音高估计和基础组件，不改变旧页面的 10 秒窗口。
 
@@ -194,3 +194,14 @@
 ## 执行结果
 
 已完成实现及独立审查修复，最终 80 个测试文件 / 568 项通过，构建和类型检查通过。浏览器已验证导入、分析、结果、错误、回听、切页和三种视口；真实麦克风录制与低音量自然说话未实测，采集/取消状态使用自动测试验证。详细证据与边界见 `../verification/2026-10-18-recording-statistics.md`。
+
+
+## 2026-10-19 统计范围收敛（已执行）
+
+本节取代旧计划中极值、变化幅度、时间曲线及局部回听任务，以修订后的规格为准。
+
+- [x] 新增本页 60–500Hz 统计范围，保留共享检测范围；原始 F0 保留，超上限独立排除并记录计数、时长与候选时长占比。
+- [x] 仅返回中位数、P10/P90、有效时长及直方图，更新分析版本与配置快照。
+- [x] 报告三项指标与单一直方图，保留有效样本不足策略，500Hz 归入最后一箱。
+- [x] 移除时间曲线、极值定位及局部回听路径；保留整段原音频播放、暂停、seek、结束和重播。
+- [x] 更新帮助、统计说明、纯函数/DSP/页面/真实 ECharts/回放测试及横竖屏流程检查。

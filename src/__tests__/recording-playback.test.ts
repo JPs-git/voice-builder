@@ -23,15 +23,17 @@ it('seeks without playing and resumes from a paused original-rate clip',()=>{
  s.controller.play();expect(s.nodes[1].start).toHaveBeenCalledWith(0,5,5)
  s.controller.destroy()
 })
-it('clamps local review to boundaries and ignores stale ended handlers',()=>{
- const s=setup();s.controller.playAround(1)
- expect(s.nodes[0].start).toHaveBeenCalledWith(0,0,3)
+it('plays the complete clip, seeks to the end, replays and ignores stale ended handlers',()=>{
+ const s=setup();s.controller.play()
+ expect(s.nodes[0].start).toHaveBeenCalledWith(0,0,10)
  const old=s.nodes[0].onended
- s.controller.playAround(9)
+ s.controller.seek(7)
  expect(s.nodes[1].start).toHaveBeenCalledWith(0,7,3)
  old?.();expect(s.controller.getSnapshot().playing).toBe(true)
+ s.nodes[1].onended?.();expect(s.controller.getSnapshot().position).toBe(10)
+ s.controller.play();expect(s.nodes[2].start).toHaveBeenCalledWith(0,0,10)
  s.controller.stop();expect(s.controller.getSnapshot().playing).toBe(false)
- expect(s.nodes[1].stop).toHaveBeenCalled()
+ expect(s.nodes[2].stop).toHaveBeenCalled()
  s.controller.destroy()
 })
 

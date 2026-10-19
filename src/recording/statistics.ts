@@ -1,4 +1,5 @@
 import { F0_RANGE } from '../config/analysisRanges'
+import { STATISTICS_F0_RANGE } from './constants'
 import type { PitchFrame, PitchSummary, HistogramBin } from './types'
 
 function quantile(sorted:number[],p:number):number|null {
@@ -10,10 +11,16 @@ const semitones=(a:number,b:number)=>12*Math.log2(a/b)
 const median=(values:number[])=>quantile([...values].sort((a,b)=>a-b),.5)!
 
 export function summarizePitch(input:readonly PitchFrame[],duration:number):{frames:PitchFrame[];summary:PitchSummary} {
+  const weight=(f:PitchFrame)=>Math.max(0,Math.min(f.duration,duration-f.start))
+  let candidateDuration=0,aboveLimitDuration=0,aboveLimitCount=0
   const frames=input.map(frame=>{
-    const valid=frame.voiced && frame.rawF0!=null && Number.isFinite(frame.rawF0)
-      && frame.rawF0>=F0_RANGE.min && frame.rawF0<=F0_RANGE.max && frame.start<duration
-    return {...frame,f0:valid?frame.rawF0:null,exclusion:valid?null:'invalid'} as PitchFrame
+    const candidate=frame.voiced && frame.rawF0!=null && Number.isFinite(frame.rawF0)
+      && frame.rawF0>=F0_RANGE.min && frame.rawF0<=F0_RANGE.max && frame.start>=0 && weight(frame)>0
+    const above=candidate&&frame.rawF0!>STATISTICS_F0_RANGE.max
+    if(candidate)candidateDuration+=weight(frame)
+    if(above){aboveLimitCount++;aboveLimitDuration+=weight(frame)}
+    const valid=candidate&&!above&&frame.rawF0!>=STATISTICS_F0_RANGE.min
+    return {...frame,f0:valid?frame.rawF0:null,exclusion:above?'above-statistics-limit':valid?null:'invalid'} as PitchFrame
   })
   const base=frames.map(f=>f.f0), excluded=new Set<number>()
   for(let i=3;i<frames.length-3;i++) for(const length of [1,2]) {
@@ -35,20 +42,17 @@ export function summarizePitch(input:readonly PitchFrame[],duration:number):{fra
   for(const i of excluded) {frames[i].f0=null;frames[i].exclusion='isolated-jump'}
   const valid=frames.filter(f=>f.f0!=null)
   const sorted=valid.map(f=>f.f0!).sort((a,b)=>a-b)
-  const minimum=sorted[0]??null,maximum=sorted[sorted.length-1]??null
-  const weight=(f:PitchFrame)=>Math.max(0,Math.min(f.duration,duration-f.start))
   const validDuration=valid.reduce((sum,f)=>sum+weight(f),0)
   const bins=new Map<number,HistogramBin>()
   for(const f of valid) {
-    const from=Math.min(990,Math.floor(f.f0!/10)*10)
+    const from=Math.min(STATISTICS_F0_RANGE.max-10,Math.floor(f.f0!/10)*10)
     const bin=bins.get(from)??{from,to:from+10,count:0,proportion:0}
     bin.count++;bin.proportion+=weight(f);bins.set(from,bin)
   }
   for(const b of bins.values()) b.proportion=validDuration?b.proportion/validDuration:0
   return {frames,summary:{
-    median:quantile(sorted,.5),minimum,maximum,minTime:valid.find(f=>f.f0===minimum)?.time??null,
-    maxTime:valid.find(f=>f.f0===maximum)?.time??null,
-    range:minimum==null?null:maximum!-minimum,semitoneRange:minimum==null?null:semitones(maximum!,minimum),
+    median:quantile(sorted,.5),aboveLimitCount,aboveLimitDuration,candidateDuration,
+    aboveLimitProportion:candidateDuration?aboveLimitDuration/candidateDuration:null,
     p10:quantile(sorted,.1),p90:quantile(sorted,.9),validDuration,coverage:duration>0?Math.min(1,validDuration/duration):0,
     excludedCount:excluded.size,histogram:[...bins.values()].sort((a,b)=>a.from-b.from),
   }}

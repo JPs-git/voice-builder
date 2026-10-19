@@ -8,6 +8,8 @@ it('analyzes low-volume speech-like periodic input without a 10 second window',(
  expect(result.frames[0].time).toBe(.025)
  expect(result.frames[result.frames.length-1].time).toBeLessThanOrEqual(11)
  expect(result.settings.f0Range).toEqual([60,1000])
+ expect(result.settings.statisticsRange).toEqual([60,500])
+ expect(result.version).toBe('recording-f0-v2')
 })
 it('does not invent pitch in silence or short zero-padded tails',()=>{
  expect(analyzeClip(new Float32Array(16000),16000).summary.median).toBeNull()
@@ -16,8 +18,11 @@ it('does not invent pitch in silence or short zero-padded tails',()=>{
 it('preserves original time including silence and can detect pitches above 500Hz',()=>{
  const samples=new Float32Array(32000);samples.set(tone(16000,1,800),16000)
  const result=analyzeClip(samples,16000)
- expect(result.summary.maximum).toBeCloseTo(800,0)
- expect(result.summary.minTime).toBeGreaterThan(.95)
+ expect(result.summary.median).toBeNull()
+ expect(result.summary.aboveLimitCount).toBeGreaterThan(0)
+ const candidate=result.frames.find(frame=>frame.exclusion==='above-statistics-limit')!
+ expect(candidate.rawF0).toBeCloseTo(800,0)
+ expect(candidate.time).toBeGreaterThan(.95)
 })
 it('handles 48kHz input with bounded valid duration and actual window times',()=>{
  const result=analyzeClip(tone(48000,1),48000)

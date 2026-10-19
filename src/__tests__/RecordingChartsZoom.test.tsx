@@ -12,13 +12,14 @@ vi.mock('echarts',async importOriginal=>{
   charts.push(chart);return chart
  }}
 })
-it('preserves the actual ECharts zoom when the playback cursor changes',()=>{
+it('renders one real histogram and hides percentile marks for insufficient samples',()=>{
  vi.stubGlobal('ResizeObserver',class{observe(){} disconnect(){}})
  const analysis={...summarizePitch([],45),settings:ANALYSIS_SETTINGS,version:'test'}
- const onSeek=()=>{}
- const view=render(<RecordingCharts analysis={analysis} duration={45} position={0} onSeek={onSeek}/>)
- charts[0].dispatchAction({type:'dataZoom',start:20,end:40})
- view.rerender(<RecordingCharts analysis={analysis} duration={45} position={7} onSeek={onSeek}/>)
- expect(charts[0].getOption().dataZoom[0]).toMatchObject({start:20,end:40})
+ const view=render(<RecordingCharts analysis={analysis}/>)
+ expect(charts).toHaveLength(1)
+ expect(charts[0].getOption().series[0].type).toBe('bar')
+ expect(charts[0].getOption().xAxis[0]).toMatchObject({min:60,max:500})
+ view.rerender(<RecordingCharts analysis={analysis} showPercentiles={false}/>)
+ expect(charts[0].getOption().series[0].markLine).toBeUndefined()
  cleanup();vi.unstubAllGlobals()
 })

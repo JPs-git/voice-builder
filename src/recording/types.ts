@@ -6,16 +6,16 @@ export interface AudioClip {
 }
 export interface PitchFrame {
   start: number; duration: number; time: number; rawF0: number | null; f0: number | null
-  voiced: boolean; exclusion: 'invalid' | 'isolated-jump' | null
+  voiced: boolean; exclusion: 'invalid' | 'isolated-jump' | 'above-statistics-limit' | null
 }
 export interface HistogramBin { from: number; to: number; count: number; proportion: number }
 export interface PitchSummary {
-  median: number|null; minimum: number|null; maximum: number|null; minTime: number|null; maxTime: number|null
-  range: number|null; semitoneRange: number|null; p10: number|null; p90: number|null
+  median: number|null; p10: number|null; p90: number|null
+  aboveLimitCount:number; aboveLimitDuration:number; candidateDuration:number; aboveLimitProportion:number|null
   validDuration: number; coverage: number; excludedCount: number; histogram: HistogramBin[]
 }
 export interface AnalysisSettings {
-  sampleRate: number; frameSize: number; hopSize: number; f0Range: readonly [number,number]
+  sampleRate: number; frameSize: number; hopSize: number; f0Range: readonly [number,number]; statisticsRange:readonly [number,number]
   vad: {threshold:number;releaseThreshold:number;holdMs:number}; outlierVersion: string
 }
 export interface ClipAnalysis { frames: PitchFrame[]; summary: PitchSummary; version: string; settings: AnalysisSettings }
