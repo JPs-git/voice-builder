@@ -33,7 +33,7 @@
 .reportIdentity{min-width:0}.reportIdentity p{overflow-wrap:anywhere}
 .reportTitleRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .reportTitleRow h1{margin:0}
-.prepareAction{flex-shrink:0;min-height:44px;padding:0 12px;font-size:13px;border-radius:22px}
+.backAction{flex-shrink:0;min-height:44px;padding:0 12px;font-size:13px;border-radius:22px}
 .reportMeta{display:flex;gap:8px 24px;flex-wrap:wrap;font-size:13px;color:var(--text-soft)}
 .reportMeta strong{font-weight:600;color:var(--text)}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0}

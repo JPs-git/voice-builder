@@ -11,7 +11,7 @@ function setup(){
  const imported:AudioClip={samples:new Float32Array(16000),sampleRate:16000,duration:1,source:'file',name:'clip',mode:null,material:null,prompt:null}
  const deps={engine,analyze,importClip:vi.fn(async()=>imported),now:()=>new Date('2026-10-18T00:00:00Z')}
  const controller=new RecordingSessionController(deps)
- return {controller,engine,analyze,chunk:(data:Float32Array,rate=16000)=>chunk(data,rate),deps,result}
+ return {controller,records:controller.recordStore,engine,analyze,chunk:(data:Float32Array,rate=16000)=>chunk(data,rate),deps,result}
 }
 const options={mode:'free' as const,material:null,prompt:'今天'}
 const settle=async()=>{await Promise.resolve();await Promise.resolve();await Promise.resolve()}
@@ -22,25 +22,25 @@ it('copies complete PCM and analyzes only on finish',async()=>{
  expect(s.analyze).not.toHaveBeenCalled()
  expect(s.controller.getSnapshot().elapsed).toBe(1)
  s.controller.finish();await settle()
- expect(s.controller.getSnapshot().phase).toBe('ready')
- expect(s.controller.getSnapshot().report!.clip.samples[0]).toBeCloseTo(.2)
+ expect(s.controller.getSnapshot().phase).toBe('prepared')
+ expect(s.records.getSnapshot()!.clip.samples![0]).toBeCloseTo(.2)
  expect(s.engine.stopCapture).toHaveBeenCalled()
 })
 it('clips the final input block at exactly 60 seconds and finalizes once',async()=>{
  const s=setup();await s.controller.start(options)
  s.chunk(new Float32Array(960010));s.controller.finish();await settle()
  expect(s.analyze).toHaveBeenCalledTimes(1)
- expect(s.controller.getSnapshot().report!.clip.samples.length).toBe(960000)
- expect(s.controller.getSnapshot().report!.clip.duration).toBe(60)
+ expect(s.records.getSnapshot()!.clip.samples!.length).toBe(960000)
+ expect(s.records.getSnapshot()!.clip.duration).toBe(60)
 })
 it('keeps the previous report when a new recording is cancelled or import fails',async()=>{
  const s=setup();await s.controller.importFile({} as File)
- const report=s.controller.getSnapshot().report
+ const report=s.records.getSnapshot()
  await s.controller.start(options);s.chunk(new Float32Array(160));s.controller.cancel()
- expect(s.controller.getSnapshot().report).toBe(report)
+ expect(s.records.getSnapshot()).toBe(report)
  s.deps.importClip.mockRejectedValueOnce(new Error('broken'))
  await s.controller.importFile({} as File)
- expect(s.controller.getSnapshot().report).toBe(report)
+ expect(s.records.getSnapshot()).toBe(report)
  expect(s.controller.getSnapshot().error).toBeTruthy()
 })
 it('ignores a late analysis after cancel and preserves failed PCM for retry',async()=>{
@@ -48,20 +48,20 @@ it('ignores a late analysis after cancel and preserves failed PCM for retry',asy
  s.analyze.mockImplementationOnce(()=>new Promise(r=>{resolve=r}))
  await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish()
  s.controller.cancel();resolve(s.result);await settle()
- expect(s.controller.getSnapshot().report).toBeNull()
+ expect(s.records.getSnapshot()).toBeNull()
  s.analyze.mockRejectedValueOnce(new Error('worker failed'))
  await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
  expect(s.controller.getSnapshot().phase).toBe('error')
  s.controller.retry();await settle()
- expect(s.controller.getSnapshot().phase).toBe('ready')
+ expect(s.controller.getSnapshot().phase).toBe('prepared')
 })
 it('finishes on leave and cancels pending permission',async()=>{
  const s=setup();await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.leave();await settle()
- expect(s.controller.getSnapshot().phase).toBe('ready')
+ expect(s.controller.getSnapshot().phase).toBe('prepared')
  let resolve!:()=>void
  s.engine.startCapture.mockImplementationOnce(()=>new Promise<void>(r=>{resolve=r}))
  const pending=s.controller.start(options);s.controller.leave();resolve();await pending
- expect(s.controller.getSnapshot().phase).toBe('ready')
+ expect(s.controller.getSnapshot().phase).toBe('prepared')
 })
 it('stops a capture that never supplies an initial chunk after permission succeeds',async()=>{
  vi.useFakeTimers();const s=setup();await s.controller.start(options)
@@ -84,53 +84,45 @@ it('analyzes preserved PCM on interruption and ignores stale interruption events
  s.engine.startCapture.mockImplementation(async(cb:any,_signal?:any,onInterrupted?:any)=>{interruptions.push(onInterrupted);(s as any).feed=cb})
  await s.controller.start(options);(s as any).feed(new Float32Array(16000),16000)
  interruptions[interruptions.length-1]?.();await settle()
- expect(s.controller.getSnapshot().phase).toBe('ready')
- expect(s.controller.getSnapshot().report!.clip.duration).toBe(1)
+ expect(s.controller.getSnapshot().phase).toBe('prepared')
+ expect(s.records.getSnapshot()!.clip.duration).toBe(1)
 })
 
 
-it('prepares the next recording without discarding the report or starting a task',async()=>{
+it('keeps records outside the recorder task and cancel never opens old details',async()=>{
  const s=setup();await s.controller.importFile({} as File)
- const report=s.controller.getSnapshot().report
- s.controller.playback.seek(.5)
+ const report=s.records.getSnapshot()!
+ expect(s.controller.getSnapshot().completedRecordId).toBe(report.id)
+ s.records.playback.seek(.5)
  const taskCalls=s.analyze.mock.calls.length
  s.controller.prepare()
- expect(s.controller.getSnapshot()).toMatchObject({phase:'prepared',view:'prepared',report})
+ expect(s.controller.getSnapshot().phase).toBe('prepared')
+ expect(s.records.get(report.id)).toBe(report)
  expect(s.engine.startCapture).not.toHaveBeenCalled()
  expect(s.analyze).toHaveBeenCalledTimes(taskCalls)
  s.controller.leave()
- expect(s.controller.getSnapshot().view).toBe('prepared')
- s.controller.returnToReport()
- expect(s.controller.getSnapshot()).toMatchObject({phase:'ready',view:'report',report})
- expect(s.controller.playback.getSnapshot()).toMatchObject({position:.5,playing:false})
- s.controller.prepare();await s.controller.start(options);s.controller.cancel()
- expect(s.controller.getSnapshot()).toMatchObject({phase:'ready',view:'report',report})
- s.controller.destroy()
+ expect(s.records.playback.getSnapshot()).toMatchObject({position:.5,playing:false})
+ await s.controller.start(options);s.controller.cancel()
+ expect(s.controller.getSnapshot().phase).toBe('prepared')
+ expect(s.records.get(report.id)).toBe(report)
+ s.controller.destroy();s.records.destroy()
 })
-
-it('keeps the old report through failed analysis, return, retry, and next preparation',async()=>{
+it('retains failed PCM while old records are read and publishes a new identity only on successful retry',async()=>{
  const s=setup();await s.controller.importFile({} as File)
- const old=s.controller.getSnapshot().report
- s.controller.playback.seek(.4)
+ const old=s.records.getSnapshot()!
+ s.records.playback.seek(.4)
  s.analyze.mockRejectedValueOnce(new Error('worker failed'))
- s.controller.prepare();await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
- expect(s.controller.canRetry()).toBe(true)
- expect(s.controller.getSnapshot()).toMatchObject({phase:'error',report:old})
- s.controller.returnToReport()
- expect(s.controller.canRetry()).toBe(false)
- expect(s.controller.getSnapshot()).toMatchObject({phase:'ready',view:'report',report:old})
- expect(s.controller.playback.getSnapshot().position).toBe(.4)
- s.analyze.mockRejectedValueOnce(new Error('again'))
- s.controller.prepare();await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
- s.controller.prepare()
- expect(s.controller.getSnapshot()).toMatchObject({phase:'prepared',view:'prepared',report:old})
- expect(s.controller.canRetry()).toBe(false)
- s.analyze.mockRejectedValueOnce(new Error('retryable'))
  await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
+ expect(s.controller.canRetry()).toBe(true)
+ expect(s.records.get(old.id)).toBe(old)
+ expect(s.records.playback.getSnapshot().position).toBe(.4)
+ s.controller.leave()
+ expect(s.controller.canRetry()).toBe(true)
  const captures=s.engine.startCapture.mock.calls.length
  s.controller.retry();await settle()
  expect(s.engine.startCapture).toHaveBeenCalledTimes(captures)
- expect(s.controller.getSnapshot().report).not.toBe(old)
- expect(s.controller.playback.getSnapshot().position).toBe(0)
- s.controller.destroy()
+ expect(s.records.getSnapshot()!.id).not.toBe(old.id)
+ expect(s.records.get(old.id)).toBeNull()
+ expect(s.records.playback.getSnapshot().position).toBe(0)
+ s.controller.destroy();s.records.destroy()
 })

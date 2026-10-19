@@ -6,10 +6,11 @@ import {formatClock,formatHz} from './format'
 import {Button} from '../components/Button'
 import styles from './RecordingPage.module.css'
 import type {RecordingPlaybackController} from './playbackController'
+import {reportAudio} from './recordStore'
 import {canAutoFocusPage} from '../components/focusTarget'
-export function RecordingReport({report,playbackController,onPrepare}:{report:ReportData;playbackController?:RecordingPlaybackController;onPrepare?:()=>void}){
+export function RecordingReport({report,playbackController,onBack,backLabel='返回录音'}:{report:ReportData;playbackController?:RecordingPlaybackController;onBack?:()=>void;backLabel?:string}){
  const {clip,analysis}=report,s=analysis.summary
- const {controller:playback,snapshot:p}=useRecordingPlayback(clip,playbackController)
+ const {controller:playback,snapshot:p}=useRecordingPlayback(reportAudio(report),playbackController)
  const titleRef=useRef<HTMLHeadingElement>(null)
  useEffect(()=>{if(canAutoFocusPage())titleRef.current?.focus()},[report.id])
  const seek=useCallback((seconds:number)=>playback.seek(seconds),[playback])
@@ -19,7 +20,7 @@ export function RecordingReport({report,playbackController,onPrepare}:{report:Re
   <header className={styles.reportHeader}>
    <div className={styles.reportIdentity}><div className={styles.reportTitleRow}>
     <h1 ref={titleRef} tabIndex={-1}>录音分析结果</h1>
-    {onPrepare&&<Button type="button" variant="primary" className={styles.prepareAction} onClick={onPrepare}>再录一段</Button>}
+    {onBack&&<Button type="button" variant="ghost" className={styles.backAction} onClick={onBack}>{backLabel}</Button>}
    </div><p className={styles.muted}>
     {clip.source==='file'?'导入音频 · '+clip.name:'录音'} · {clip.material?.title??clip.prompt??(clip.source==='file'?'材料未指定':clip.name)}
    </p></div>
@@ -33,11 +34,12 @@ export function RecordingReport({report,playbackController,onPrepare}:{report:Re
    <div className={styles.stat} data-testid="stat-p10"><span>P10</span><strong>{value(s.p10)} <small>{enough?'Hz':''}</small></strong><p>常用音高范围下界</p></div>
    <div className={styles.stat} data-testid="stat-p90"><span>P90</span><strong>{value(s.p90)} <small>{enough?'Hz':''}</small></strong><p>常用音高范围上界</p></div>
   </div>
-  <div className={styles.playback}>
+  {reportAudio(report)?<div className={styles.playback}>
    <Button aria-label={p.playing?'暂停':'播放'} label={p.playing?'暂停':'播放'} icon={p.playing?'Ⅱ':'▶'} onClick={()=>p.playing?playback.pause():playback.play()}/>
    <span className={styles.playbackTime}>{formatClock(p.position)} / {formatClock(clip.duration)}</span>
    <input type="range" aria-label="回放位置" min={0} max={clip.duration} step={.001} value={p.position} onChange={e=>seek(Number(e.target.value))}/>
   </div>
+  :<p className={styles.muted}>此记录没有可回放的音频</p>}
   {p.error&&<p role="alert" className={styles.error}>{p.error}</p>}
   {s.validDuration>0?<RecordingCharts analysis={analysis} showPercentiles={enough}/>
    :<div className={styles.empty}>未检测到有效音高。可以先回听原音频，检查收音或换一段录音。</div>}

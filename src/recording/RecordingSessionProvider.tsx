@@ -4,16 +4,23 @@ import {getAudioEngine} from '../ts'
 import {RecordingSessionController} from './sessionController'
 import {runClipAnalysis} from './workerClient'
 import {importRecordingFile} from './importClip'
+import {RecordingRecordsProvider,useRecordingRecords} from './RecordingRecordsProvider'
+import type {RecordingRecordStore} from './recordStore'
 
 export interface RecordingPreferences {
  referenceId:string;fontSize:number;promptVisible:boolean
 }
 const Context=createContext<{controller:RecordingSessionController;preferences:RecordingPreferences;
  updatePreferences:(patch:Partial<RecordingPreferences>)=>void}|null>(null)
-export function RecordingSessionProvider({children,controller:provided}:{children:ReactNode;controller?:RecordingSessionController}){
+interface ProviderProps {children:ReactNode;controller?:RecordingSessionController;records?:RecordingRecordStore}
+export function RecordingSessionProvider({children,controller,records}:ProviderProps){
+ return <RecordingRecordsProvider store={records??controller?.recordStore}><RecordingTaskProvider controller={controller}>{children}</RecordingTaskProvider></RecordingRecordsProvider>
+}
+function RecordingTaskProvider({children,controller:provided}:ProviderProps){
+ const {records}=useRecordingRecords()
  const [controller]=useState(()=>provided??new RecordingSessionController({
   engine:getAudioEngine(),analyze:runClipAnalysis,importClip:importRecordingFile,now:()=>new Date(),
- }))
+ },records))
  const lifecycle=useRef(0)
  const [preferences,setPreferences]=useState<RecordingPreferences>({
   referenceId:'after-rain-v1',fontSize:22,promptVisible:true,

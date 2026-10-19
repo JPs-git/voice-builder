@@ -11,7 +11,7 @@ afterEach(cleanup)
 function report(seconds:number):ReportData{
  const frames:PitchFrame[]=Array.from({length:Math.round(seconds*100)},(_,i)=>({start:i*.01,time:i*.01+.025,duration:.01,rawF0:200,f0:200,voiced:true,exclusion:null}))
  const data=summarizePitch(frames,10)
- return {id:1,clip:{samples:new Float32Array(160000),sampleRate:16000,duration:10,name:'测试片段',source:'mic',mode:'reading',material:null,prompt:null},
+ return {id:'test-report',createdAt:'2026-10-19T00:00:00Z',clip:{samples:new Float32Array(160000),sampleRate:16000,duration:10,name:'测试片段',source:'mic',mode:'reading',material:null,prompt:null},
  analysis:{...data,version:'test',settings:ANALYSIS_SETTINGS}}
 }
 it.each([2.99,3,9.99,10])('applies the %s second valid-data presentation policy',seconds=>{

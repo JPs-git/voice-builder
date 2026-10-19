@@ -1,8 +1,9 @@
 import {it,expect,vi,afterEach} from 'vitest'
 import {render,screen,fireEvent,act,cleanup} from '@testing-library/react'
-import {MemoryRouter,Routes,Route} from 'react-router-dom'
+import {MemoryRouter,Routes,Route,useLocation,useNavigate} from 'react-router-dom'
 import {AppShell} from '../routes/AppShell'
 import {RecordingPage} from '../recording/RecordingPage'
+import {RecordingReportPage} from '../recording/RecordingReportPage'
 import {summarizePitch} from '../recording/statistics'
 import {ANALYSIS_SETTINGS} from '../recording/constants'
 const analyze=vi.hoisted(()=>vi.fn())
@@ -15,9 +16,10 @@ vi.mock('../hooks/useToolbar',()=>({useToolbar:(_onConfig:any,onHelp:any)=>({...
 vi.mock('../hooks/useMediaQuery',()=>({useMediaQuery:()=>false}))
 vi.mock('../hooks/useECharts',()=>({useECharts:()=>({chartRef:{current:null},getInstance:()=>null,setOption:()=>{}})}))
 afterEach(()=>{cleanup();vi.clearAllMocks()})
+function NavigationProbe(){const location=useLocation(),navigate=useNavigate();return <><output data-testid="route">{location.pathname}</output><button onClick={()=>navigate(-1)}>测试后退</button><button onClick={()=>navigate(1)}>测试前进</button></>}
 function mount(path='/recording'){
- return render(<MemoryRouter initialEntries={[path]}><Routes><Route element={<AppShell/>}>
- <Route index element={<div>实时页内容</div>}/><Route path="recording" element={<RecordingPage/>}/>
+ return render(<MemoryRouter initialEntries={[path]}><NavigationProbe/><Routes><Route element={<AppShell/>}>
+ <Route index element={<div>实时页内容</div>}/><Route path="recording" element={<RecordingPage/>}/><Route path="reports/:reportId" element={<RecordingReportPage/>}/>
  <Route path="practice" element={<div>音高参考内容</div>}/></Route></Routes></MemoryRouter>)
 }
 it('uses one directly accessible recorder and page-specific help without a target dock',async()=>{
@@ -47,7 +49,7 @@ it('suspends realtime on entry and stops the new capture on leaving',async()=>{
 })
 
 
-it('uses desktop result actions, prepares without recording, and keeps that view across routes',async()=>{
+it('uses standalone desktop details and restores the recorder across routes',async()=>{
  let chunk!:(samples:Float32Array,rate:number)=>void
  audio.startCapture.mockImplementation(async cb=>{chunk=cb})
  analyze.mockResolvedValue({...summarizePitch([],1),settings:ANALYSIS_SETTINGS,version:'test'})
@@ -56,26 +58,25 @@ it('uses desktop result actions, prepares without recording, and keeps that view
  act(()=>chunk(new Float32Array(16000),16000))
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
- expect(screen.getByRole('button',{name:'再录一段'})).toBeTruthy()
+ expect(screen.getByRole('button',{name:'返回录音'})).toBeTruthy()
  expect(screen.queryByRole('button',{name:'清除本次'})).toBeNull()
  expect(screen.queryByRole('button',{name:'导入音频'})).toBeNull()
  fireEvent.click(screen.getByRole('button',{name:'更多操作'}))
- expect(screen.getByRole('menuitem',{name:/导入音频/})).toBeTruthy()
+ expect(screen.queryByRole('menuitem',{name:/导入音频/})).toBeNull()
  fireEvent.keyDown(document,{key:'Escape'})
- fireEvent.change(document.querySelector('input[type=file]')!,{target:{files:[]}})
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
  expect(analyze).toHaveBeenCalledTimes(1)
  const starts=audio.startCapture.mock.calls.length
- fireEvent.click(screen.getByRole('button',{name:'再录一段'}))
+ fireEvent.click(screen.getByRole('button',{name:'返回录音'}))
  expect(screen.getByRole('button',{name:'开始录音'})).toBeTruthy()
- expect(screen.getByRole('button',{name:'返回结果'})).toBeTruthy()
+ expect(screen.getByRole('button',{name:'查看上次结果'})).toBeTruthy()
  expect(screen.getByRole('button',{name:'导入音频'})).toBeTruthy()
  expect(screen.getByRole('region',{name:'录音设置'})).toBeTruthy()
  expect(audio.startCapture.mock.calls.length).toBe(starts)
  fireEvent.click(screen.getByRole('link',{name:'实时分析'}))
  fireEvent.click(screen.getByRole('link',{name:'统计分析'}))
  expect(screen.getByRole('button',{name:'开始录音'})).toBeTruthy()
- fireEvent.click(screen.getByRole('button',{name:'返回结果'}))
+ fireEvent.click(screen.getByRole('button',{name:'查看上次结果'}))
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
  expect(analyze).toHaveBeenCalledTimes(1)
 })
@@ -151,4 +152,70 @@ it('keeps full playback running while browsing and closing shared help',async()=
  expect(audio.createPlaybackSource).toHaveBeenCalledTimes(1)
  fireEvent.click(screen.getByRole('button',{name:'暂停'}))
  cleanup();vi.unstubAllGlobals()
+})
+
+it('uses independent detail URLs and browser back/forward without creating a recording loop',async()=>{
+ let chunk!:(samples:Float32Array,rate:number)=>void
+ audio.startCapture.mockImplementation(async cb=>{chunk=cb})
+ analyze.mockResolvedValue({...summarizePitch([],1),settings:ANALYSIS_SETTINGS,version:'test'})
+ mount()
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+ act(()=>chunk(new Float32Array(16000),16000))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
+ const path=screen.getByTestId('route').textContent!
+ expect(path).toMatch(/^\/reports\/[a-f0-9-]+$/)
+ expect(screen.getByRole('link',{name:'统计分析'}).getAttribute('aria-current')).toBe('page')
+ fireEvent.change(screen.getByLabelText('回放位置'),{target:{value:'.5'}})
+ fireEvent.click(screen.getByRole('button',{name:'测试后退'}))
+ expect(screen.getByTestId('route').textContent).toBe('/recording')
+ expect(screen.getByRole('button',{name:'查看上次结果'})).toBeTruthy()
+ fireEvent.click(screen.getByRole('button',{name:'测试前进'}))
+ expect(screen.getByTestId('route').textContent).toBe(path)
+ expect(screen.getByLabelText('回放位置').getAttribute('value')).toBe('0.5')
+ fireEvent.click(screen.getByRole('button',{name:'返回录音'}))
+ expect(screen.getByTestId('route').textContent).toBe('/recording')
+ expect(audio.startCapture).toHaveBeenCalledTimes(1)
+ expect(analyze).toHaveBeenCalledTimes(1)
+})
+it('does not redirect other pages when a background recording analysis completes',async()=>{
+ let chunk!:(samples:Float32Array,rate:number)=>void,resolve!:(value:any)=>void
+ audio.startCapture.mockImplementation(async cb=>{chunk=cb})
+ analyze.mockImplementationOnce(()=>new Promise(r=>{resolve=r}))
+ mount()
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+ act(()=>chunk(new Float32Array(16000),16000))
+ fireEvent.click(screen.getByRole('link',{name:'实时分析'}))
+ await act(async()=>resolve({...summarizePitch([],1),settings:ANALYSIS_SETTINGS,version:'test'}))
+ expect(screen.getByTestId('route').textContent).toBe('/')
+ fireEvent.click(screen.getByRole('link',{name:'统计分析'}))
+ expect(screen.getByTestId('route').textContent).toBe('/recording')
+ expect(screen.queryByRole('heading',{name:'录音分析结果'})).toBeNull()
+ fireEvent.click(screen.getByRole('button',{name:'查看上次结果'}))
+ expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
+})
+it('keeps failed PCM at the recorder while an older detail is viewed, then retries without capturing again',async()=>{
+ let chunk!:(samples:Float32Array,rate:number)=>void
+ audio.startCapture.mockImplementation(async cb=>{chunk=cb})
+ analyze.mockResolvedValue({...summarizePitch([],1),settings:ANALYSIS_SETTINGS,version:'test'})
+ mount()
+ const capture=async()=>{
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+  act(()=>chunk(new Float32Array(16000),16000))
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
+ }
+ await capture()
+ const old=screen.getByTestId('route').textContent
+ fireEvent.click(screen.getByRole('button',{name:'返回录音'}))
+ analyze.mockRejectedValueOnce(new Error('retry me'))
+ await capture()
+ expect(screen.getByTestId('route').textContent).toBe('/recording')
+ expect(screen.getByRole('alert').textContent).toContain('retry me')
+ fireEvent.click(screen.getByRole('button',{name:'查看上次结果'}))
+ expect(screen.getByTestId('route').textContent).toBe(old)
+ fireEvent.click(screen.getByRole('button',{name:'返回录音'}))
+ expect(screen.getByRole('button',{name:'重试分析'})).toBeTruthy()
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'重试分析'})))
+ expect(screen.getByTestId('route').textContent).not.toBe(old)
+ expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
+ expect(audio.startCapture).toHaveBeenCalledTimes(2)
 })

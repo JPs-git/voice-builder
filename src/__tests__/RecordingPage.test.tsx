@@ -1,5 +1,6 @@
 import {it,expect,vi,afterEach} from 'vitest'
 import {render,screen,fireEvent,act,cleanup} from '@testing-library/react'
+import {MemoryRouter} from 'react-router-dom'
 import {RecordingPage} from '../recording/RecordingPage'
 import {RecordingSessionProvider} from '../recording/RecordingSessionProvider'
 import {RecordingSessionController} from '../recording/sessionController'
@@ -11,7 +12,7 @@ it('shows readable material and keeps every capture state free of acoustic feedb
  const analyze=vi.fn()
  const controller=new RecordingSessionController({engine:{startCapture:async cb=>{chunk=cb},stopCapture:()=>{}},
  analyze,importClip:vi.fn(),now:()=>new Date()})
- const {container}=render(<RecordingSessionProvider controller={controller}><RecordingPage/></RecordingSessionProvider>)
+ const {container}=render(<MemoryRouter><RecordingSessionProvider controller={controller}><RecordingPage/></RecordingSessionProvider></MemoryRouter>)
  expect(screen.getByRole('heading',{name:'雨后的街道'})).toBeTruthy()
  expect(screen.queryByRole('button',{name:'朗读'})).toBeNull()
  expect(screen.queryByRole('button',{name:'自由说话'})).toBeNull()
@@ -26,7 +27,7 @@ it('shows readable material and keeps every capture state free of acoustic feedb
  act(()=>controller.cancel())
 })
 it('offers only the three reading passages',()=>{
- render(<RecordingSessionProvider><RecordingPage/></RecordingSessionProvider>)
+ render(<MemoryRouter><RecordingSessionProvider><RecordingPage/></RecordingSessionProvider></MemoryRouter>)
  expect(screen.getAllByRole('option').map(option=>option.textContent)).toEqual(['雨后的街道','清晨的公园','一件小事'])
  fireEvent.change(screen.getByLabelText('参考内容'),{target:{value:'morning-park-v1'}})
  expect(screen.getByRole('heading',{name:'清晨的公园'})).toBeTruthy()
@@ -42,7 +43,7 @@ it.each([
 ])('snapshots reference %s when starting the same recording flow',(id,materialId,prompt)=>{
  const controller=new RecordingSessionController({engine:{startCapture:vi.fn(),stopCapture:vi.fn()},analyze:vi.fn(),importClip:vi.fn(),now:()=>new Date()})
  const start=vi.spyOn(controller,'start').mockResolvedValue(undefined)
- render(<RecordingSessionProvider controller={controller}><RecordingPage/><Recorder/></RecordingSessionProvider>)
+ render(<MemoryRouter><RecordingSessionProvider controller={controller}><RecordingPage/><Recorder/></RecordingSessionProvider></MemoryRouter>)
  fireEvent.change(screen.getByLabelText('参考内容'),{target:{value:id}})
  fireEvent.click(screen.getByRole('button',{name:'开始测试录音'}))
  expect(start).toHaveBeenCalledTimes(1)

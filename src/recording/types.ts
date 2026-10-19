@@ -19,9 +19,9 @@ export interface AnalysisSettings {
   vad: {threshold:number;releaseThreshold:number;holdMs:number}; outlierVersion: string
 }
 export interface ClipAnalysis { frames: PitchFrame[]; summary: PitchSummary; version: string; settings: AnalysisSettings }
-export interface RecordingReport { id: number; clip: AudioClip; analysis: ClipAnalysis }
-export type RecordingPhase = 'prepared'|'requesting'|'recording'|'importing'|'analyzing'|'ready'|'error'
+export type StoredRecordingClip=Omit<AudioClip,'samples'>&{samples?:Float32Array}
+export interface RecordingReport { id:string;createdAt:string;clip:StoredRecordingClip;analysis:ClipAnalysis }
+export type RecordingPhase = 'prepared'|'requesting'|'recording'|'importing'|'analyzing'|'error'
 export interface RecordingSnapshot {
-  view:'prepared'|'report'
-  phase: RecordingPhase; elapsed: number; progress: number; report: RecordingReport|null; error: string|null
+  phase: RecordingPhase; elapsed: number; progress: number; completedRecordId:string|null; error: string|null
 }

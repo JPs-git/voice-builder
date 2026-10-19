@@ -6,7 +6,7 @@ import {getRecordingReference} from './references'
 import {RecordingReferenceSelect} from './RecordingReferenceSelect'
 import {useMediaQuery} from '../hooks/useMediaQuery'
 import {RecordingReader} from './RecordingReader'
-import {RecordingReport} from './RecordingReport'
+import {useReportNavigation} from './useReportNavigation'
 import {formatClock} from './format'
 import styles from './RecordingPage.module.css'
 import {canAutoFocusPage} from '../components/focusTarget'
@@ -18,22 +18,23 @@ export function RecordingPage(){
  const {material}=getRecordingReference(p.referenceId)
  const errorRef=useRef<HTMLDivElement>(null)
  const mainRef=useRef<HTMLElement>(null)
- const previousView=useRef(s.view)
- const result=s.phase==='ready'&&s.view==='report'&&!!s.report
+ const {openReport}=useReportNavigation()
+ const observed=useRef(s.completedRecordId)
  useEffect(()=>{
-  if(previousView.current==='report'&&s.view==='prepared'&&s.phase==='prepared'&&canAutoFocusPage()){
-   const title=mainRef.current?.querySelector<HTMLElement>('h1')
-   if(title){title.tabIndex=-1;title.focus()}
+  if(s.phase==='prepared'&&s.completedRecordId&&observed.current!==s.completedRecordId){
+   observed.current=s.completedRecordId;openReport(s.completedRecordId)
   }
-  previousView.current=s.view
- },[s.view,s.phase])
+ },[s.phase,s.completedRecordId,openReport])
+ useEffect(()=>{
+  const title=mainRef.current?.querySelector<HTMLElement>('h1')
+  if(title&&canAutoFocusPage()){title.tabIndex=-1;title.focus()}
+ },[])
  useEffect(()=>{if(s.error&&canAutoFocusPage())errorRef.current?.focus()},[s.error])
- return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active={!result||undefined} style={{'--recording-dock-height':result?'0px':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
+ return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active="true" style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
   <div className={styles.content}>
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
     <span>{s.error}</span>
    </div>}
-   {result&&s.report?<RecordingReport report={s.report} playbackController={controller.playback} onPrepare={portrait?()=>controller.prepare():undefined}/>:<>
     {!portrait&&<section className={styles.settings} aria-label="录音设置">
      <div className={styles.settingsGroup}>
       <label htmlFor="recording-reference" className={styles.settingLabel}>参考内容</label>
@@ -53,7 +54,6 @@ export function RecordingPage(){
       <span className={styles.muted}>声音仅在本地处理</span>
     </div>}
     <RecordingReader compact={portrait}/>
-   </>}
   </div>
  </main>
 }

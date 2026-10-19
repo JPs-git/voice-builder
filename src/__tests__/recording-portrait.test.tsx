@@ -3,6 +3,7 @@ import {render,screen,fireEvent,act,cleanup,within} from '@testing-library/react
 import {MemoryRouter,Routes,Route} from 'react-router-dom'
 import {AppShell} from '../routes/AppShell'
 import {RecordingPage} from '../recording/RecordingPage'
+import {RecordingReportPage} from '../recording/RecordingReportPage'
 import {summarizePitch} from '../recording/statistics'
 import {ANALYSIS_SETTINGS} from '../recording/constants'
 const audio=vi.hoisted(()=>({startCapture:vi.fn(),stopCapture:vi.fn()}))
@@ -15,7 +16,7 @@ vi.mock('../hooks/useToolbar',()=>({useToolbar:()=>({toolItems:[],handleClickToo
  cursorTime:0,isCapturing:false,isRequesting:false,fileInputRef:{current:null},handleFileChange:vi.fn()})}))
 afterEach(()=>{cleanup();vi.clearAllMocks()})
 function mount(){return render(<MemoryRouter initialEntries={['/recording']}><Routes><Route element={<AppShell/>}>
- <Route path="recording" element={<RecordingPage/>}/></Route></Routes></MemoryRouter>)}
+ <Route path="recording" element={<RecordingPage/>}/><Route path="reports/:reportId" element={<RecordingReportPage/>}/></Route></Routes></MemoryRouter>)}
 it('uses the shared portrait header and RecordDock for capture, analysis cancellation and next-recording preparation',async()=>{
  let chunk!:(samples:Float32Array,rate:number)=>void
  audio.startCapture.mockImplementation(async cb=>{chunk=cb})
@@ -46,7 +47,7 @@ it('uses the shared portrait header and RecordDock for capture, analysis cancell
  expect(document.querySelectorAll('[data-portrait-dock]')).toHaveLength(1)
  expect(screen.queryByTestId('dock-goal')).toBeNull()
  expect(screen.queryByRole('button',{name:'清除本次'})).toBeNull()
- expect(screen.queryByRole('button',{name:'返回结果'})).toBeNull()
+ expect(screen.queryByRole('button',{name:'查看上次结果'})).toBeNull()
  fireEvent.click(screen.getByRole('button',{name:'更多操作'}))
  expect(screen.getByRole('menuitem',{name:/导入音频/})).toBeTruthy()
  expect(screen.queryByRole('menuitem',{name:/清除本次/})).toBeNull()
@@ -67,14 +68,14 @@ it('uses the shared portrait header and RecordDock for capture, analysis cancell
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
  expect(screen.queryByLabelText('参考内容')).toBeNull()
  expect(screen.queryByRole('button',{name:'清除本次'})).toBeNull()
- expect(screen.getByRole('button',{name:'再录一段'}).textContent).toContain('再录一段')
+ expect(screen.getByRole('button',{name:'返回录音'}).textContent).toContain('返回录音')
  expect(document.querySelector('[data-portrait-dock]')).toBeNull()
  const reportTitle=screen.getByRole('heading',{name:'录音分析结果'})
- expect(within(reportTitle.parentElement!).getByRole('button',{name:'再录一段'})).toBeTruthy()
+ expect(within(reportTitle.parentElement!).getByRole('button',{name:'返回录音'})).toBeTruthy()
  expect((document.querySelector('main[data-recording-page]') as HTMLElement).style.getPropertyValue('--recording-dock-height')).toBe('0px')
  fireEvent.change(screen.getByLabelText('回放位置'),{target:{value:'1'}})
  const captures=audio.startCapture.mock.calls.length,analyses=analyze.mock.calls.length
- fireEvent.click(screen.getByRole('button',{name:'再录一段'}))
+ fireEvent.click(screen.getByRole('button',{name:'返回录音'}))
  expect(screen.queryByRole('heading',{name:'录音分析结果'})).toBeNull()
  expect(screen.getByRole('button',{name:'开始录音'})).toBeTruthy()
  expect(screen.getByRole('heading',{name:'清晨的公园'})).toBeTruthy()
@@ -83,15 +84,18 @@ it('uses the shared portrait header and RecordDock for capture, analysis cancell
  expect(screen.getByTestId('reading-body').style.fontSize).toBe('24px')
  expect(audio.startCapture.mock.calls.length).toBe(captures)
  expect(analyze.mock.calls.length).toBe(analyses)
- fireEvent.click(screen.getByRole('button',{name:'返回结果'}))
+ fireEvent.click(screen.getByRole('button',{name:'查看上次结果'}))
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
  expect(screen.getByLabelText('回放位置').getAttribute('value')).toBe('1')
  expect(document.querySelector('[data-portrait-dock]')).toBeNull()
- fireEvent.click(screen.getByRole('button',{name:'再录一段'}))
+ fireEvent.click(screen.getByRole('button',{name:'返回录音'}))
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  expect(audio.startCapture.mock.calls.length).toBe(captures+1)
  act(()=>chunk(new Float32Array(1600),16000))
  fireEvent.click(screen.getByRole('button',{name:'取消录音'}))
+ expect(screen.queryByRole('heading',{name:'录音分析结果'})).toBeNull()
+ expect(screen.getByRole('button',{name:'开始录音'})).toBeTruthy()
+ fireEvent.click(screen.getByRole('button',{name:'查看上次结果'}))
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
 })
 it('dismisses the reference popup with Escape and outside clicks',()=>{
