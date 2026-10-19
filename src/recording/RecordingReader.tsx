@@ -1,7 +1,8 @@
 import {useRecordingSession} from './RecordingSessionProvider'
 import {getRecordingReference} from './references'
+import {RecordingReferenceSelect} from './RecordingReferenceSelect'
 import styles from './RecordingPage.module.css'
-export function RecordingReader(){
+export function RecordingReader({compact=false}:{compact?:boolean}){
  const {preferences:p,updatePreferences}=useRecordingSession()
  const {material,prompt}=getRecordingReference(p.referenceId)
  const sizes=[18,20,22,24,26]
@@ -9,8 +10,9 @@ export function RecordingReader(){
   const index=sizes.indexOf(p.fontSize)
   updatePreferences({fontSize:sizes[Math.max(0,Math.min(sizes.length-1,index+direction))]})
  }
- return <section className={styles.reader}>
-  <header className={styles.readerHeader}><strong>{material?'阅读材料':prompt?'话题提示':'参考内容'}</strong>
+ return <section className={`${styles.reader} ${compact?styles.compactReader:''}`} data-compact-reader={compact||undefined}>
+  <header className={styles.readerHeader}>
+   {compact?<RecordingReferenceSelect className={styles.readerSelect}/>:<strong>{material?'阅读材料':prompt?'话题提示':'参考内容'}</strong>}
    <div className={styles.fontControls}><span>字号</span>
     <button type="button" aria-label="减小字号" disabled={p.fontSize===18} onClick={()=>step(-1)}>−</button>
     <span aria-hidden="true">A</span>

@@ -23,6 +23,13 @@ it('uses the shared portrait header and RecordDock for capture, analysis cancell
  mount()
  const header=document.querySelector('header')!
  expect(header.getAttribute('data-compact')).toBe('true')
+ expect(screen.queryByRole('region',{name:'录音设置'})).toBeNull()
+ const reference=screen.getByLabelText('参考内容')
+ expect(reference.closest('[data-compact-reader="true"]')).not.toBeNull()
+ expect(within(reference.closest('header')!).getByRole('button',{name:'增大字号'})).toBeTruthy()
+ expect(screen.queryByText('准备录音')).toBeNull()
+ expect(screen.queryByRole('timer')).toBeNull()
+ expect(screen.queryByText(/原创短文/)).toBeNull()
  expect(within(header).queryByRole('button',{name:/开始录音/})).toBeNull()
  expect(screen.getAllByRole('button',{name:'开始录音'})).toHaveLength(1)
  expect(document.querySelectorAll('[data-portrait-dock]')).toHaveLength(1)
