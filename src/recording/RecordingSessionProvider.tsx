@@ -6,7 +6,7 @@ import {runClipAnalysis} from './workerClient'
 import {importRecordingFile} from './importClip'
 
 export interface RecordingPreferences {
- mode:'reading'|'free';materialId:string;fontSize:number;promptIndex:number;promptVisible:boolean
+ referenceId:string;fontSize:number;promptVisible:boolean
 }
 const Context=createContext<{controller:RecordingSessionController;preferences:RecordingPreferences;
  updatePreferences:(patch:Partial<RecordingPreferences>)=>void}|null>(null)
@@ -16,7 +16,7 @@ export function RecordingSessionProvider({children,controller:provided}:{childre
  }))
  const lifecycle=useRef(0)
  const [preferences,setPreferences]=useState<RecordingPreferences>({
-  mode:'reading',materialId:'after-rain-v1',fontSize:22,promptIndex:0,promptVisible:true,
+  referenceId:'after-rain-v1',fontSize:22,promptVisible:true,
  })
  const updatePreferences=useCallback((patch:Partial<RecordingPreferences>)=>setPreferences(old=>({...old,...patch})),[])
  useEffect(()=>{

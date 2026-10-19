@@ -17,7 +17,7 @@ export function RecordingReport({report}:{report:ReportData}){
  return <section className={styles.report}>
   <header className={styles.reportHeader}>
    <div><h1 ref={titleRef} tabIndex={-1}>录音分析结果</h1><p className={styles.muted}>
-    {clip.source==='file'?'导入音频 · '+clip.name:clip.mode==='reading'?'朗读':'自由说话'} · {clip.material?.title??(clip.source==='file'?'材料未指定':clip.name)}
+    {clip.source==='file'?'导入音频 · '+clip.name:'录音'} · {clip.material?.title??clip.prompt??(clip.source==='file'?'材料未指定':clip.name)}
    </p></div>
    <div className={styles.reportMeta}><span>录音时长 <strong>{clip.duration.toFixed(2)} 秒</strong></span>
     <span>有效 F0 <strong>{s.validDuration.toFixed(2)} 秒</strong> · {(s.coverage*100).toFixed(0)}%</span></div>

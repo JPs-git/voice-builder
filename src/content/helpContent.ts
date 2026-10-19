@@ -6,7 +6,7 @@ export type HelpTopic = 'quick-start' | 'charts' | 'targets' | 'audio' | 'troubl
 export type HelpLayout = 'portrait' | 'landscape'
 export interface HelpSection { title: string; paragraphs: readonly string[] }
 export const RECORDING_HELP: readonly HelpSection[] = [
-  { title: '安静录音，录后分析', paragraphs: ['选择朗读材料或自由说话，横屏点击顶栏「开始录音」，竖屏点击底部麦克风按钮。建议录制 30–60 秒；录音中只显示计时与材料，不显示声学反馈。再次点击录音按钮结束并分析，或达到 60 秒后自动生成报告。'] },
+  { title: '安静录音，录后分析', paragraphs: ['可选择参考短文、话题提示，也可以选择「无参考内容」直接说话。横屏点击顶栏「开始录音」，竖屏点击底部麦克风按钮。建议录制 30–60 秒；录音中只显示计时与材料，不显示声学反馈。再次点击录音按钮结束并分析，或达到 60 秒后自动生成报告。'] },
   { title: '导入与回听', paragraphs: ['可导入最多 60 秒的 WAV、MP3、M4A 等浏览器支持的音频，竖屏入口为右上角「更多 → 导入音频」。结果页可整段播放、拖动定位，点击最高或最低值只定位；点击「回听此处」播放附近片段。'] },
   { title: '统计怎么看', paragraphs: ['典型 F0 为有效音高中位数；最高、最低为本段检测极值；变化幅度为两者之差，并附半音跨度。P10–P90 描述常用音高范围。停顿和无效值不按 0 Hz 统计，检测极值可结合回听核验。'] },
   { title: '数据保留', paragraphs: ['录音只在本地处理。切页时停止本页录音并分析，保留本次结果；取消新录音可恢复上一份结果。刷新或关闭页面后不保留声音数据。实时分析和音高参考仍使用最近 10 秒的窗口。'] },

@@ -1,7 +1,7 @@
 import {useRef} from 'react'
 import type {ToolItem} from '../hooks/useToolbar'
 import {useRecordingSession} from './RecordingSessionProvider'
-import {READING_MATERIALS,SPEAKING_PROMPTS} from './materials'
+import {getRecordingReference} from './references'
 export function useRecordingToolbar(onHelp:()=>void,onAbout:()=>void){
  const {controller,snapshot:s,preferences:p}=useRecordingSession()
  const fileInputRef=useRef<HTMLInputElement>(null)
@@ -23,9 +23,8 @@ export function useRecordingToolbar(onHelp:()=>void,onAbout:()=>void){
   if(id==='record'){
    if(s.phase==='recording'){controller.finish();return}
    if(busy)return
-   const selected=READING_MATERIALS.find(m=>m.id===p.materialId)??READING_MATERIALS[0]
-   void controller.start({mode:p.mode,material:p.mode==='reading'?{id:selected.id,version:selected.version,title:selected.title,source:selected.source}:null,
-    prompt:p.mode==='free'?SPEAKING_PROMPTS[p.promptIndex]:null})
+   const {material,prompt}=getRecordingReference(p.referenceId)
+   void controller.start({mode:material?'reading':'free',material:material?{id:material.id,version:material.version,title:material.title,source:material.source}:null,prompt})
   }
  }
  const handleFileChange=(event:React.ChangeEvent<HTMLInputElement>)=>{

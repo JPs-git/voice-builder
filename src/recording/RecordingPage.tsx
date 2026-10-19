@@ -2,7 +2,7 @@ import {useEffect,useRef,type CSSProperties} from 'react'
 import {useOutletContext} from 'react-router-dom'
 import type {ShellContext} from '../routes/AppShell'
 import {useRecordingSession} from './RecordingSessionProvider'
-import {READING_MATERIALS,SPEAKING_PROMPTS} from './materials'
+import {REFERENCE_OPTIONS,getRecordingReference} from './references'
 import {RecordingReader} from './RecordingReader'
 import {RecordingReport} from './RecordingReport'
 import {formatClock} from './format'
@@ -12,7 +12,7 @@ export function RecordingPage(){
  const shell=useOutletContext<ShellContext|null>()
  const {controller,snapshot:s,preferences:p,updatePreferences}=useRecordingSession()
  const busy=['requesting','recording','importing','analyzing'].includes(s.phase)
- const material=READING_MATERIALS.find(m=>m.id===p.materialId)??READING_MATERIALS[0]
+ const {material}=getRecordingReference(p.referenceId)
  const errorRef=useRef<HTMLDivElement>(null)
  useEffect(()=>{if(s.error&&document.visibilityState!=='hidden')errorRef.current?.focus()},[s.error])
  return <main className={styles.page} data-recording-page style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
@@ -24,19 +24,15 @@ export function RecordingPage(){
    </div>}
    {s.phase==='ready'&&s.report?<RecordingReport report={s.report}/>:<>
     <section className={styles.settings} aria-label="录音设置">
-     <div className={styles.settingsGroup}><span className={styles.settingLabel}>录音模式</span>
-      <div className={styles.modes}>
-       <button type="button" aria-pressed={p.mode==='reading'} disabled={busy} onClick={()=>updatePreferences({mode:'reading'})}>朗读</button>
-       <button type="button" aria-pressed={p.mode==='free'} disabled={busy} onClick={()=>updatePreferences({mode:'free'})}>自由说话</button>
-      </div>
-     </div>
      <div className={styles.settingsGroup}>
-      {p.mode==='reading'?<><label htmlFor="reading-material" className={styles.settingLabel}>阅读材料</label>
-       <select id="reading-material" aria-label="阅读材料" disabled={busy} value={p.materialId} onChange={e=>updatePreferences({materialId:e.target.value})}>
-        {READING_MATERIALS.map(m=><option key={m.id} value={m.id}>{m.title}</option>)}
-       </select><span className={styles.muted}>{material.source} · 约 {material.estimatedSeconds} 秒</span></>
-       :<button type="button" disabled={busy} className={styles.textButton}
-         onClick={()=>updatePreferences({promptIndex:(p.promptIndex+1)%SPEAKING_PROMPTS.length,promptVisible:true})}>换一个话题</button>}
+      <label htmlFor="recording-reference" className={styles.settingLabel}>参考内容</label>
+      <select id="recording-reference" disabled={busy} value={p.referenceId} onChange={e=>updatePreferences({referenceId:e.target.value,promptVisible:true})}>
+       <option value="none">无参考内容</option>
+       {(['material','prompt'] as const).map(kind=><optgroup key={kind} label={kind==='material'?'短文':'话题提示'}>
+        {REFERENCE_OPTIONS.filter(reference=>reference.kind===kind).map(reference=><option key={reference.id} value={reference.id}>{reference.label}</option>)}
+       </optgroup>)}
+      </select>
+      {material&&<span className={styles.muted}>{material.source} · 约 {material.estimatedSeconds} 秒</span>}
      </div>
      <div className={styles.status}>
       <span className={s.phase==='recording'?styles.recordingStatus:styles.muted} role="status">

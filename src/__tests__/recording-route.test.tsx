@@ -34,7 +34,7 @@ it('suspends realtime on entry and stops the new capture on leaving',async()=>{
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:/开始录音/})))
  act(()=>chunk(new Float32Array(16000),16000))
  expect(screen.getByRole('button',{name:/结束并分析/})).toBeTruthy()
- expect(screen.getByLabelText('阅读材料').hasAttribute('disabled')).toBe(true)
+ expect(screen.getByLabelText('参考内容').hasAttribute('disabled')).toBe(true)
  await act(async()=>{fireEvent.click(screen.getByRole('link',{name:'实时分析'}));await Promise.resolve()})
  expect(audio.stopCapture).toHaveBeenCalled()
  expect(screen.getByText('实时页内容')).toBeTruthy()
