@@ -1,6 +1,5 @@
 import {useRecordingSession} from './RecordingSessionProvider'
 import {getRecordingReference} from './references'
-import {RecordingReferenceSelect} from './RecordingReferenceSelect'
 import styles from './RecordingPage.module.css'
 export function RecordingReader({compact=false}:{compact?:boolean}){
  const {preferences:p,updatePreferences}=useRecordingSession()
@@ -12,7 +11,7 @@ export function RecordingReader({compact=false}:{compact?:boolean}){
  }
  return <section className={`${styles.reader} ${compact?styles.compactReader:''}`} data-compact-reader={compact||undefined}>
   <header className={styles.readerHeader}>
-   {compact?<RecordingReferenceSelect className={styles.readerSelect}/>:<strong>{material?'阅读材料':prompt?'话题提示':'参考内容'}</strong>}
+   {compact&&material?<h1>{material.title}</h1>:<strong>{material?'阅读材料':prompt?'话题提示':'参考内容'}</strong>}
    <div className={styles.fontControls}><span>字号</span>
     <button type="button" aria-label="减小字号" disabled={p.fontSize===18} onClick={()=>step(-1)}>−</button>
     <span aria-hidden="true">A</span>
@@ -20,7 +19,7 @@ export function RecordingReader({compact=false}:{compact?:boolean}){
    </div>
   </header>
   {material?<article className={styles.article} tabIndex={compact?0:undefined} aria-label={compact?'阅读正文':undefined}>
-   <h1>{material.title}</h1>
+   {!compact&&<h1>{material.title}</h1>}
    <div data-testid="reading-body" style={{fontSize:p.fontSize}}>
     {material.paragraphs.map(text=><p key={text}>{text}</p>)}
    </div>

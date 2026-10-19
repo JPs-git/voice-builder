@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type Ref } from 'react'
+import { useEffect, useRef, useState, type Ref, type ReactNode } from 'react'
 import styles from './RecordDock.module.css'
 
 export interface RecordDockProps {
@@ -22,6 +22,7 @@ export interface RecordDockProps {
   clearDisabled?: boolean
   onCancel?: () => void
   cancelLabel?: string
+  leadingControl?: ReactNode
 }
 
 function MicGlyph() {
@@ -39,7 +40,7 @@ function MicGlyph() {
 }
 
 export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange,
-  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音' }: RecordDockProps) {
+  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音', leadingControl }: RecordDockProps) {
   const dockRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const dock = dockRef.current
@@ -77,7 +78,8 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
           <span className={styles.goalChevron} aria-hidden="true">›</span>
         </button>
       )}
-      {onCancel && <button type="button" className={`${styles.action} ${styles.cancel}`} onClick={onCancel}>{cancelLabel}</button>}
+      {onCancel ? <button type="button" className={`${styles.action} ${styles.cancel}`} onClick={onCancel}>{cancelLabel}</button>
+        : leadingControl && <div className={styles.leadingControl}>{leadingControl}</div>}
       <span className={styles.micHalo} data-testid="dock-mic-halo">
         <button ref={recordButtonRef} type="button" className={styles.mic} data-recording={isCapturing}
           onClick={onRecord} disabled={recordDisabled ?? isRequesting} aria-label={micLabel} title={micLabel}>

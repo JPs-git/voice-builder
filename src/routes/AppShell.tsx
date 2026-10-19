@@ -6,6 +6,7 @@ import { Toolbar } from '../components/Toolbar'
 import { MobileMoreMenu } from '../components/mobile/MobileMoreMenu'
 import { MobilePageTabs } from '../components/mobile/MobilePageTabs'
 import { RecordDock } from '../components/mobile/RecordDock'
+import { RecordingReferenceSelect } from '../recording/RecordingReferenceSelect'
 import { TrainingGoalModal } from '../components/mobile/TrainingGoalModal'
 import { ConfigDrawer } from '../components/ConfigDrawer'
 import { HelpDrawer } from '../components/HelpDrawer'
@@ -149,6 +150,7 @@ function AppShellContent() {
       {isPortrait && (
         <>
           {isRecording ? <RecordDock
+            leadingControl={<RecordingReferenceSelect/>}
             key="statistics"
             variant="statistics"
             recordButtonRef={recordButtonRef}
