@@ -31,6 +31,7 @@ it('uses the shared portrait header and RecordDock for capture, analysis cancell
  expect(within(document.querySelector('[data-compact-reader]')! as HTMLElement).queryByRole('combobox')).toBeNull()
  fireEvent.click(reference)
  expect(screen.getByRole('menu',{name:'参考内容'}).getAttribute('data-placement')).toBe('top')
+ expect(screen.getAllByRole('menuitemradio').map(item=>item.textContent?.replace('✓',''))).toEqual(['雨后的街道','清晨的公园','一件小事'])
  expect(screen.getByRole('menuitemradio',{name:'雨后的街道'}).getAttribute('aria-checked')).toBe('true')
  fireEvent.click(screen.getByRole('menuitemradio',{name:'清晨的公园'}))
  expect(screen.queryByRole('menu',{name:'参考内容'})).toBeNull()

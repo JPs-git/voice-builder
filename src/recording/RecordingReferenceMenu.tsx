@@ -42,14 +42,11 @@ export function RecordingReferenceMenu(){
    <span>{getRecordingReference(preferences.referenceId).label}</span><span aria-hidden="true">⌃</span>
   </button>
   {open&&!busy&&<div ref={menu} id={id} role="menu" aria-label="参考内容" data-placement="top" className={styles.menu} onKeyDown={navigate}>
-   {(['none','material','prompt'] as const).map(kind=><div key={kind} role="group" aria-label={kind==='material'?'短文':kind==='prompt'?'话题提示':'无参考内容'}>
-    {kind!=='none'&&<div className={styles.groupLabel} aria-hidden="true">{kind==='material'?'短文':'话题提示'}</div>}
-    {REFERENCE_OPTIONS.filter(reference=>reference.kind===kind).map(reference=><button key={reference.id} type="button"
+    {REFERENCE_OPTIONS.map(reference=><button key={reference.id} type="button"
      role="menuitemradio" aria-checked={reference.id===preferences.referenceId} tabIndex={-1} className={styles.option}
      onClick={()=>{updatePreferences({referenceId:reference.id,promptVisible:true});setOpen(false);trigger.current?.focus()}}>
      <span>{reference.label}</span><span aria-hidden="true">{reference.id===preferences.referenceId?'✓':''}</span>
     </button>)}
-   </div>)}
   </div>}
  </div>
 }

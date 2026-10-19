@@ -25,20 +25,9 @@ it('shows readable material and keeps every capture state free of acoustic feedb
  expect(analyze).not.toHaveBeenCalled()
  act(()=>controller.cancel())
 })
-it('allows free speaking with a collapsible non-acoustic topic',()=>{
- const {container}=render(<RecordingSessionProvider><RecordingPage/></RecordingSessionProvider>)
- fireEvent.change(screen.getByLabelText('参考内容'),{target:{value:'prompt:0'}})
- expect(screen.getByRole('heading',{name:'讲讲今天发生的一件事'})).toBeTruthy()
- fireEvent.click(screen.getByRole('button',{name:'收起提示'}))
- expect(screen.queryByRole('heading',{name:'讲讲今天发生的一件事'})).toBeNull()
- expect(container.textContent).not.toMatch(/Hz|F0/)
-})
-it('allows speaking without reference content through the same selector',()=>{
+it('offers only the three reading passages',()=>{
  render(<RecordingSessionProvider><RecordingPage/></RecordingSessionProvider>)
- fireEvent.change(screen.getByLabelText('参考内容'),{target:{value:'none'}})
- expect(screen.queryByRole('heading',{name:'雨后的街道'})).toBeNull()
- expect(screen.getByText('按自己的习惯说一段话')).toBeTruthy()
- expect(screen.queryByRole('button',{name:'收起提示'})).toBeNull()
+ expect(screen.getAllByRole('option').map(option=>option.textContent)).toEqual(['雨后的街道','清晨的公园','一件小事'])
  fireEvent.change(screen.getByLabelText('参考内容'),{target:{value:'morning-park-v1'}})
  expect(screen.getByRole('heading',{name:'清晨的公园'})).toBeTruthy()
 })
@@ -47,8 +36,8 @@ function Recorder(){
  return <button onClick={()=>handleClickTool('record')}>开始测试录音</button>
 }
 it.each([
- ['none',null,null],
- ['prompt:0',null,'讲讲今天发生的一件事'],
+ ['after-rain-v1','after-rain-v1',null],
+ ['small-event-v1','small-event-v1',null],
  ['morning-park-v1','morning-park-v1',null],
 ])('snapshots reference %s when starting the same recording flow',(id,materialId,prompt)=>{
  const controller=new RecordingSessionController({engine:{startCapture:vi.fn(),stopCapture:vi.fn()},analyze:vi.fn(),importClip:vi.fn(),now:()=>new Date()})
