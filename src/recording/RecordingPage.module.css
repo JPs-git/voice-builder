@@ -30,6 +30,10 @@
 .error button{padding:6px 10px;font:inherit;background:white;border:1px solid #fecdd3;border-radius:5px;color:inherit}
 .reportHeader{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
 .reportHeader h1{font-size:22px;margin:0 0 8px}.reportHeader p{margin:0}
+.reportIdentity{min-width:0}.reportIdentity p{overflow-wrap:anywhere}
+.reportTitleRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.reportTitleRow h1{margin:0}
+.prepareAction{flex-shrink:0;min-height:44px;padding:0 12px;font-size:13px;border-radius:22px}
 .reportMeta{display:flex;gap:8px 24px;flex-wrap:wrap;font-size:13px;color:var(--text-soft)}
 .reportMeta strong{font-weight:600;color:var(--text)}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0}
@@ -57,6 +61,7 @@ button.stat:disabled{cursor:default}
 @media(max-width:1000px){.status{width:100%;margin-left:0;justify-content:space-between}.charts{grid-template-columns:1fr}}
 @media(max-width:768px){.page{padding:16px 12px 28px}.settings{padding:16px;gap:14px}.settingsGroup{width:100%;gap:10px}.settingsGroup select{flex:1}.settingsGroup .muted{width:100%}.article{padding:24px 20px;min-height:380px}.article h1{font-size:22px}.readerHeader{margin:0 18px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat{padding:16px}.stat>strong{font-size:26px}.reportMeta{gap:8px}.chart{height:270px}.playback{gap:10px;padding:12px}.playback input{flex-basis:100%;order:4}.linkHint{display:none}.readerFooter{line-height:1.6}.freeBody{padding:28px 20px}.reportHeader{gap:12px}}
 @media(max-width:768px){.page{padding-bottom:calc(28px + var(--recording-dock-height, calc(80px + env(safe-area-inset-bottom))))}}
+@media(max-width:768px){.page:not([data-reader-active]){padding-bottom:calc(28px + env(safe-area-inset-bottom))}.reportIdentity{width:100%}}
 .compactReader .readerHeader{margin:0;padding:16px 20px;gap:12px;border-bottom:0}
 .compactReader .readerHeader h1{flex:1;min-width:0;margin:0;font-size:24px;line-height:1.4}
 .compactReader .fontControls{flex-shrink:0}

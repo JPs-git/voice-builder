@@ -28,12 +28,12 @@ export function RecordingPage(){
   previousView.current=s.view
  },[s.view,s.phase])
  useEffect(()=>{if(s.error&&canAutoFocusPage())errorRef.current?.focus()},[s.error])
- return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active={!result||undefined} style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
+ return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active={!result||undefined} style={{'--recording-dock-height':result?'0px':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
   <div className={styles.content}>
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
     <span>{s.error}</span>
    </div>}
-   {result&&s.report?<RecordingReport report={s.report} playbackController={controller.playback}/>:<>
+   {result&&s.report?<RecordingReport report={s.report} playbackController={controller.playback} onPrepare={portrait?()=>controller.prepare():undefined}/>:<>
     {!portrait&&<section className={styles.settings} aria-label="录音设置">
      <div className={styles.settingsGroup}>
       <label htmlFor="recording-reference" className={styles.settingLabel}>参考内容</label>

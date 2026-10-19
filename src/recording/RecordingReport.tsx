@@ -7,7 +7,7 @@ import {Button} from '../components/Button'
 import styles from './RecordingPage.module.css'
 import type {RecordingPlaybackController} from './playbackController'
 import {canAutoFocusPage} from '../components/focusTarget'
-export function RecordingReport({report,playbackController}:{report:ReportData;playbackController?:RecordingPlaybackController}){
+export function RecordingReport({report,playbackController,onPrepare}:{report:ReportData;playbackController?:RecordingPlaybackController;onPrepare?:()=>void}){
  const {clip,analysis}=report,s=analysis.summary
  const {controller:playback,snapshot:p}=useRecordingPlayback(clip,playbackController)
  const titleRef=useRef<HTMLHeadingElement>(null)
@@ -17,7 +17,10 @@ export function RecordingReport({report,playbackController}:{report:ReportData;p
  const value=(v:number|null)=>enough?formatHz(v):'—'
  return <section className={styles.report}>
   <header className={styles.reportHeader}>
-   <div><h1 ref={titleRef} tabIndex={-1}>录音分析结果</h1><p className={styles.muted}>
+   <div className={styles.reportIdentity}><div className={styles.reportTitleRow}>
+    <h1 ref={titleRef} tabIndex={-1}>录音分析结果</h1>
+    {onPrepare&&<Button type="button" variant="primary" className={styles.prepareAction} onClick={onPrepare}>再录一段</Button>}
+   </div><p className={styles.muted}>
     {clip.source==='file'?'导入音频 · '+clip.name:'录音'} · {clip.material?.title??clip.prompt??(clip.source==='file'?'材料未指定':clip.name)}
    </p></div>
    <div className={styles.reportMeta}><span>录音时长 <strong>{clip.duration.toFixed(2)} 秒</strong></span>

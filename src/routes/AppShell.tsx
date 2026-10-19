@@ -60,6 +60,11 @@ function AppShellContent() {
   const isRecording = useMatch('/recording') != null
   const { controller: recordingController, snapshot: recordingSnapshot } = useRecordingSession()
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
+  const recordingResult = isRecording && recordingSnapshot.phase==='ready' && recordingSnapshot.view==='report' && !!recordingSnapshot.report
+  const showPortraitDock = isPortrait && !recordingResult
+  useEffect(() => {
+    if (!showPortraitDock) setDockHeight(0)
+  }, [showPortraitDock])
   const activePreset = useAppStore(s => s.activePreset)
   useEffect(() => {
     if (!isPortrait) setGoalOpen(false)
@@ -120,7 +125,7 @@ function AppShellContent() {
     onClear: () => handleClickTool('clear'),
     onPlayback: () => handleClickTool('playback'),
     isPlaying,
-    dockHeight: isPortrait ? dockHeight : 0,
+    dockHeight: showPortraitDock ? dockHeight : 0,
     pianoScrollProgress: pianoScrollProgressRef.current,
     setPianoScrollProgress: (progress: number) => {
       pianoScrollProgressRef.current = progress
@@ -147,7 +152,7 @@ function AppShellContent() {
           : undefined}
       />
       <Outlet context={shellContext} />
-      {isPortrait && (
+      {showPortraitDock && (
         <>
           {isRecording ? <RecordDock
             leadingControl={recordingSnapshot.phase==='prepared'?<RecordingReferenceMenu/>:

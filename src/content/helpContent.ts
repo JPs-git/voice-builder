@@ -7,13 +7,14 @@ export type HelpLayout = 'portrait' | 'landscape'
 export interface HelpSection { title: string; paragraphs: readonly string[] }
 function getRecordingHelpSections(layout: HelpLayout): readonly HelpSection[] {
   const recordEntry = layout === 'portrait' ? '点击底部麦克风按钮' : '点击顶栏「开始录音」'
+  const prepareEntry = layout === 'portrait' ? '报告标题右侧的「再录一段」' : '顶栏「再录一段」'
   const importEntry = layout === 'portrait'
     ? '准备页和结果页均通过右上角「更多 → 导入音频」选择文件。'
     : '准备页通过顶栏「导入音频」选择文件；结果页通过「更多 → 导入音频」选择文件。'
   return [
     { title: '安静录音，录后分析', paragraphs: [
       `可从三篇短文中选择参考材料，也可按自己的习惯自然说话。${recordEntry}开始采集；建议录制 30–60 秒，达到 60 秒后自动结束并分析。采集中只显示材料与计时，不显示声学反馈；再次点击录音按钮可提前结束并分析。`,
-      '结果页点击「再录一段」先进入准备页，可以换短文、调字号，再点击「开始录音」；不会立即申请麦克风。有旧报告时可点击「返回结果」，不需要重新分析。',
+      `结果页点击${prepareEntry}先进入准备页，可以换短文、调字号，再点击「开始录音」；不会立即申请麦克风。有旧报告时可点击「返回结果」，不需要重新分析。`,
     ] },
     { title: '导入与完整回放', paragraphs: [
       `可导入最多 60 秒的 WAV、MP3、M4A 等浏览器支持的音频。${importEntry}取消文件选择不会替换原结果。`,

@@ -55,6 +55,7 @@ it('provides recording statistics as a shared topic with layout-specific instruc
  const portrait=JSON.stringify(getHelpSections('recording-statistics','portrait'))
  const landscape=JSON.stringify(getHelpSections('recording-statistics','landscape'))
  expect(portrait).toContain('底部麦克风')
+ expect(portrait).toContain('报告标题右侧')
  expect(landscape).toContain('顶栏「开始录音」')
  expect(landscape).toContain('准备页')
  expect(landscape).toContain('结果页')
