@@ -3,6 +3,7 @@ import type {AudioClip,RecordingMode,MaterialSnapshot,RecordingSnapshot} from '.
 import type {runClipAnalysis} from './workerClient'
 import type {importRecordingFile} from './importClip'
 import {MAX_RECORDING_SECONDS} from './constants'
+import {RecordingPlaybackController} from './playbackController'
 
 export interface RecordingOptions {mode:RecordingMode;material:MaterialSnapshot|null;prompt:string|null}
 export interface RecordingSessionDependencies {
@@ -11,7 +12,8 @@ export interface RecordingSessionDependencies {
 }
 const busy=(phase:string)=>['requesting','recording','importing','analyzing'].includes(phase)
 export class RecordingSessionController {
- private snapshot:RecordingSnapshot={phase:'prepared',elapsed:0,progress:0,report:null,error:null}
+ private snapshot:RecordingSnapshot={phase:'prepared',view:'prepared',elapsed:0,progress:0,report:null,error:null}
+ readonly playback=new RecordingPlaybackController()
  private listeners=new Set<()=>void>()
  private id=0
  private abort=new AbortController()
@@ -36,8 +38,9 @@ export class RecordingSessionController {
   this.captureTimer=setTimeout(()=>this.interrupted(id),5000)
  }
  private begin(phase:RecordingSnapshot['phase']){
+  this.playback.pause()
   this.abort.abort();this.abort=new AbortController();const id=++this.id
-  this.update({phase,error:null,progress:0,elapsed:0});return id
+  this.update({phase,view:'prepared',error:null,progress:0,elapsed:0});return id
  }
  async start(options:RecordingOptions):Promise<void>{
   if(busy(this.snapshot.phase))return
@@ -65,7 +68,7 @@ export class RecordingSessionController {
    if(id!==this.id)return
    this.clearCaptureTimer()
    this.deps.engine.stopCapture()
-   this.update({phase:this.snapshot.report?'ready':'prepared',error:'无法启动录音，请检查麦克风权限或设备。'})
+   this.update({phase:'prepared',view:'prepared',error:'无法启动录音，请检查麦克风权限或设备。'})
   }
  }
  finish():void{
@@ -88,7 +91,8 @@ export class RecordingSessionController {
    }})
    if(id!==this.id)return
    this.working=null
-   this.update({phase:'ready',progress:1,report:{id,clip,analysis},error:null})
+   this.playback.setClip(clip)
+   this.update({phase:'ready',view:'report',progress:1,report:{id,clip,analysis},error:null})
   } catch(error){
    if(id!==this.id)return
    this.update({phase:'error',error:error instanceof Error?error.message:'分析失败，请重试。'})
@@ -104,7 +108,7 @@ export class RecordingSessionController {
    await this.analyze(id,clip)
   } catch(error){
    if(id!==this.id)return
-   this.update({phase:this.snapshot.report?'ready':'prepared',error:error instanceof Error?error.message:'导入失败，请检查文件格式。'})
+   this.update({phase:this.snapshot.report?'ready':'prepared',view:this.snapshot.report?'report':'prepared',error:error instanceof Error?error.message:'导入失败，请检查文件格式。'})
   }
  }
  retry():void{
@@ -118,12 +122,26 @@ export class RecordingSessionController {
   ++this.id;this.abort.abort()
   if(capture)this.deps.engine.stopCapture()
   this.working=null;this.chunks=[];this.count=0;this.rate=0
-  this.update({phase:this.snapshot.report?'ready':'prepared',elapsed:this.snapshot.report?.clip.duration??0,progress:0,error:null})
+  this.update({phase:this.snapshot.report?'ready':'prepared',view:this.snapshot.report?'report':'prepared',elapsed:this.snapshot.report?.clip.duration??0,progress:0,error:null})
  }
- clear():void{this.cancel();this.update({phase:'prepared',report:null,elapsed:0})}
+ prepare():void{
+  if(busy(this.snapshot.phase))return
+  if(this.snapshot.phase==='error')this.cancel()
+  this.playback.pause()
+  this.update({phase:'prepared',view:'prepared',elapsed:0,progress:0,error:null})
+ }
+ returnToReport():void{
+  if(busy(this.snapshot.phase)||!this.snapshot.report)return
+  if(this.snapshot.phase==='error')this.cancel()
+  this.playback.pause()
+  this.update({phase:'ready',view:'report',error:null})
+ }
+ canRetry():boolean{return this.snapshot.phase==='error'&&this.working!==null}
+ clear():void{this.cancel();this.playback.setClip(null);this.update({phase:'prepared',view:'prepared',report:null,elapsed:0})}
  leave():void{
+  this.playback.pause()
   if(this.snapshot.phase==='recording')this.finish()
   else if(this.snapshot.phase==='requesting')this.cancel()
  }
- destroy():void{this.cancel();this.snapshot={...this.snapshot,phase:'prepared',report:null};this.listeners.clear()}
+ destroy():void{this.cancel();this.playback.destroy();this.snapshot={...this.snapshot,phase:'prepared',view:'prepared',report:null};this.listeners.clear()}
 }

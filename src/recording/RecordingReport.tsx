@@ -5,9 +5,10 @@ import {RecordingCharts} from './RecordingCharts'
 import {formatClock,formatHz} from './format'
 import {Button} from '../components/Button'
 import styles from './RecordingPage.module.css'
-export function RecordingReport({report}:{report:ReportData}){
+import type {RecordingPlaybackController} from './playbackController'
+export function RecordingReport({report,playbackController}:{report:ReportData;playbackController?:RecordingPlaybackController}){
  const {clip,analysis}=report,s=analysis.summary
- const {controller:playback,snapshot:p}=useRecordingPlayback(clip)
+ const {controller:playback,snapshot:p}=useRecordingPlayback(clip,playbackController)
  const titleRef=useRef<HTMLHeadingElement>(null)
  useEffect(()=>{if(document.visibilityState!=='hidden')titleRef.current?.focus()},[report.id])
  const seek=useCallback((seconds:number)=>playback.seek(seconds),[playback])

@@ -22,5 +22,6 @@ export interface ClipAnalysis { frames: PitchFrame[]; summary: PitchSummary; ver
 export interface RecordingReport { id: number; clip: AudioClip; analysis: ClipAnalysis }
 export type RecordingPhase = 'prepared'|'requesting'|'recording'|'importing'|'analyzing'|'ready'|'error'
 export interface RecordingSnapshot {
+  view:'prepared'|'report'
   phase: RecordingPhase; elapsed: number; progress: number; report: RecordingReport|null; error: string|null
 }

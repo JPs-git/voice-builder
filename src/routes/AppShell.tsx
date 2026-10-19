@@ -141,7 +141,7 @@ function AppShellContent() {
         moreMenu={isPortrait
           ? <MobileMoreMenu
               triggerButtonRef={moreButtonRef}
-              items={isRecording ? recordingTools.toolItems.filter(item => !['cancel','clear'].includes(item.id)) : toolItems}
+              items={isRecording ? recordingTools.toolItems.filter(item => !['cancel','return','prepare'].includes(item.id)) : toolItems}
               onSelect={isRecording ? recordingTools.handleClickTool : handleClickTool}
             />
           : undefined}
@@ -150,7 +150,11 @@ function AppShellContent() {
       {isPortrait && (
         <>
           {isRecording ? <RecordDock
-            leadingControl={<RecordingReferenceMenu/>}
+            leadingControl={recordingSnapshot.phase==='prepared'?<RecordingReferenceMenu/>:
+              recordingSnapshot.phase==='error'&&recordingController.canRetry()?<button type="button" onClick={()=>recordingController.prepare()}>再录一段</button>:undefined}
+            trailingControl={recordingSnapshot.report&&['prepared','error'].includes(recordingSnapshot.phase)?
+              <button type="button" onClick={()=>recordingController.returnToReport()}>返回结果</button>:undefined}
+            recordAsText={recordingSnapshot.view==='report'||['error','importing','analyzing'].includes(recordingSnapshot.phase)}
             key="statistics"
             variant="statistics"
             recordButtonRef={recordButtonRef}
@@ -162,9 +166,6 @@ function AppShellContent() {
             isRequesting={recordingSnapshot.phase==='requesting'}
             elapsedSeconds={recordingSnapshot.elapsed}
             showGoal={false}
-            onClear={() => recordingTools.handleClickTool('clear')}
-            clearLabel="清除本次"
-            clearDisabled={recordingSnapshot.phase!=='ready' || !recordingSnapshot.report}
             onCancel={recordingTools.toolItems.some(item => item.id==='cancel') ? () => recordingTools.handleClickTool('cancel') : undefined}
             cancelLabel={recordingTools.toolItems.find(item => item.id==='cancel')?.label}
           /> :

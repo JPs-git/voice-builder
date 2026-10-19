@@ -23,6 +23,8 @@ export interface RecordDockProps {
   onCancel?: () => void
   cancelLabel?: string
   leadingControl?: ReactNode
+  trailingControl?: ReactNode
+  recordAsText?: boolean
 }
 
 function MicGlyph() {
@@ -40,7 +42,7 @@ function MicGlyph() {
 }
 
 export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange,
-  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音', leadingControl }: RecordDockProps) {
+  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音', leadingControl, trailingControl, recordAsText=false }: RecordDockProps) {
   const dockRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const dock = dockRef.current
@@ -66,7 +68,7 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
       ref={dockRef}
       className={styles.dock}
       data-portrait-dock="true"
-      data-actions={Boolean(onClear || onPlayback)}
+      data-actions={variant==='statistics'||Boolean(onClear || onPlayback)}
       data-goal-entry={showGoal}
       data-variant={variant}
     >
@@ -80,12 +82,14 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
       )}
       {onCancel ? <button type="button" className={`${styles.action} ${styles.cancel}`} onClick={onCancel}>{cancelLabel}</button>
         : leadingControl && <div className={styles.leadingControl}>{leadingControl}</div>}
-      <span className={styles.micHalo} data-testid="dock-mic-halo">
+      {recordAsText?<button ref={recordButtonRef} type="button" className={styles.textPrimary}
+        onClick={onRecord} disabled={recordDisabled??isRequesting} aria-label={micLabel}>{micLabel}</button>:<span className={styles.micHalo} data-testid="dock-mic-halo">
         <button ref={recordButtonRef} type="button" className={styles.mic} data-recording={isCapturing}
           onClick={onRecord} disabled={recordDisabled ?? isRequesting} aria-label={micLabel} title={micLabel}>
           {isCapturing ? '●' : <MicGlyph />}
         </button>
-      </span>
+      </span>}
+      {trailingControl&&<div className={styles.trailingControl}>{trailingControl}</div>}
       {onClear && <button type="button" className={styles.action} onClick={onClear} disabled={clearDisabled ?? !hasData}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7" /></svg>{clearLabel}
       </button>}

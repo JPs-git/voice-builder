@@ -10,6 +10,7 @@ export interface ToolItem {
   label: string
   recording?: boolean
   disabled?: boolean
+  inMore?: boolean
 }
 
 // Actions that need pre-stop; config/help/about don't

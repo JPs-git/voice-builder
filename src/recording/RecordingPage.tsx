@@ -16,15 +16,23 @@ export function RecordingPage(){
  const {controller,snapshot:s,preferences:p}=useRecordingSession()
  const {material}=getRecordingReference(p.referenceId)
  const errorRef=useRef<HTMLDivElement>(null)
+ const mainRef=useRef<HTMLElement>(null)
+ const previousView=useRef(s.view)
+ const result=s.phase==='ready'&&s.view==='report'&&!!s.report
+ useEffect(()=>{
+  if(previousView.current==='report'&&s.view==='prepared'&&s.phase==='prepared'&&document.visibilityState!=='hidden'){
+   const title=mainRef.current?.querySelector<HTMLElement>('h1')
+   if(title){title.tabIndex=-1;title.focus()}
+  }
+  previousView.current=s.view
+ },[s.view,s.phase])
  useEffect(()=>{if(s.error&&document.visibilityState!=='hidden')errorRef.current?.focus()},[s.error])
- return <main className={styles.page} data-recording-page data-reader-active={s.phase!=='ready'||!s.report||undefined} style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
+ return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active={!result||undefined} style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
   <div className={styles.content}>
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
     <span>{s.error}</span>
-    {s.phase==='error'&&<><button type="button" onClick={()=>controller.retry()}>重试分析</button>
-     <button type="button" onClick={()=>controller.cancel()}>返回{s.report?'上一份结果':'准备录音'}</button></>}
    </div>}
-   {s.phase==='ready'&&s.report?<RecordingReport report={s.report}/>:<>
+   {result&&s.report?<RecordingReport report={s.report} playbackController={controller.playback}/>:<>
     {!portrait&&<section className={styles.settings} aria-label="录音设置">
      <div className={styles.settingsGroup}>
       <label htmlFor="recording-reference" className={styles.settingLabel}>参考内容</label>

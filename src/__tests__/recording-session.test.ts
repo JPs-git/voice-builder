@@ -88,3 +88,49 @@ it('analyzes preserved PCM on interruption and ignores stale interruption events
  expect(s.controller.getSnapshot().report!.clip.duration).toBe(1)
 })
 
+
+it('prepares the next recording without discarding the report or starting a task',async()=>{
+ const s=setup();await s.controller.importFile({} as File)
+ const report=s.controller.getSnapshot().report
+ s.controller.playback.seek(.5)
+ const taskCalls=s.analyze.mock.calls.length
+ s.controller.prepare()
+ expect(s.controller.getSnapshot()).toMatchObject({phase:'prepared',view:'prepared',report})
+ expect(s.engine.startCapture).not.toHaveBeenCalled()
+ expect(s.analyze).toHaveBeenCalledTimes(taskCalls)
+ s.controller.leave()
+ expect(s.controller.getSnapshot().view).toBe('prepared')
+ s.controller.returnToReport()
+ expect(s.controller.getSnapshot()).toMatchObject({phase:'ready',view:'report',report})
+ expect(s.controller.playback.getSnapshot()).toMatchObject({position:.5,playing:false})
+ s.controller.prepare();await s.controller.start(options);s.controller.cancel()
+ expect(s.controller.getSnapshot()).toMatchObject({phase:'ready',view:'report',report})
+ s.controller.destroy()
+})
+
+it('keeps the old report through failed analysis, return, retry, and next preparation',async()=>{
+ const s=setup();await s.controller.importFile({} as File)
+ const old=s.controller.getSnapshot().report
+ s.controller.playback.seek(.4)
+ s.analyze.mockRejectedValueOnce(new Error('worker failed'))
+ s.controller.prepare();await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
+ expect(s.controller.canRetry()).toBe(true)
+ expect(s.controller.getSnapshot()).toMatchObject({phase:'error',report:old})
+ s.controller.returnToReport()
+ expect(s.controller.canRetry()).toBe(false)
+ expect(s.controller.getSnapshot()).toMatchObject({phase:'ready',view:'report',report:old})
+ expect(s.controller.playback.getSnapshot().position).toBe(.4)
+ s.analyze.mockRejectedValueOnce(new Error('again'))
+ s.controller.prepare();await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
+ s.controller.prepare()
+ expect(s.controller.getSnapshot()).toMatchObject({phase:'prepared',view:'prepared',report:old})
+ expect(s.controller.canRetry()).toBe(false)
+ s.analyze.mockRejectedValueOnce(new Error('retryable'))
+ await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
+ const captures=s.engine.startCapture.mock.calls.length
+ s.controller.retry();await settle()
+ expect(s.engine.startCapture).toHaveBeenCalledTimes(captures)
+ expect(s.controller.getSnapshot().report).not.toBe(old)
+ expect(s.controller.playback.getSnapshot().position).toBe(0)
+ s.controller.destroy()
+})
