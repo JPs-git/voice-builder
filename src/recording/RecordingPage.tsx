@@ -17,7 +17,7 @@ export function RecordingPage(){
  const {material}=getRecordingReference(p.referenceId)
  const errorRef=useRef<HTMLDivElement>(null)
  useEffect(()=>{if(s.error&&document.visibilityState!=='hidden')errorRef.current?.focus()},[s.error])
- return <main className={styles.page} data-recording-page style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
+ return <main className={styles.page} data-recording-page data-reader-active={s.phase!=='ready'||!s.report||undefined} style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
   <div className={styles.content}>
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
     <span>{s.error}</span>

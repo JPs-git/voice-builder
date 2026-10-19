@@ -19,7 +19,7 @@ export function RecordingReader({compact=false}:{compact?:boolean}){
     <button type="button" aria-label="增大字号" disabled={p.fontSize===26} onClick={()=>step(1)}>＋</button>
    </div>
   </header>
-  {material?<article className={styles.article}>
+  {material?<article className={styles.article} tabIndex={compact?0:undefined} aria-label={compact?'阅读正文':undefined}>
    <h1>{material.title}</h1>
    <div data-testid="reading-body" style={{fontSize:p.fontSize}}>
     {material.paragraphs.map(text=><p key={text}>{text}</p>)}

@@ -68,3 +68,12 @@ button.stat:disabled{cursor:default}
 .compactReader .article p{line-height:1.8}
 .compactReader .readerFooter{display:none}
 .compactReader .freeBody{padding:20px;min-height:300px}
+@media(max-width:768px){
+ .page[data-reader-active="true"]{display:flex;flex-direction:column;overflow:hidden}
+ .page[data-reader-active="true"] .content{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+ .page[data-reader-active="true"] .error,.page[data-reader-active="true"] .analysisProgress{flex-shrink:0}
+ .compactReader{display:flex;flex-direction:column;flex:1;min-height:0}
+ .compactReader .readerHeader{flex-shrink:0}
+ .compactReader .article,.compactReader .freeBody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+ .compactReader .article:focus-visible{outline:2px solid var(--info);outline-offset:-2px}
+}
