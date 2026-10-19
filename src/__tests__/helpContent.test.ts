@@ -3,8 +3,8 @@ import { HELP_TOPIC_ORDER, getHelpSections, getHelpTopicTitle, getPresetRows, ge
 import { F0_CHART_RANGE, FORMANT_CHART_RANGE, F0_REFERENCE_ZONES } from '../config/analysisRanges'
 import { VOWEL_PRESETS } from '../types'
 
-it('defines six named help topics with non-empty content', () => {
-  expect(HELP_TOPIC_ORDER).toHaveLength(6)
+it('defines seven named help topics with non-empty content', () => {
+  expect(HELP_TOPIC_ORDER).toHaveLength(7)
   for (const topic of HELP_TOPIC_ORDER) {
     expect(getHelpTopicTitle(topic)).not.toBe('')
     expect(getHelpSections(topic, 'portrait').length).toBeGreaterThan(0)
@@ -49,4 +49,25 @@ it('contains no obsolete WAV-only button or green-only target description', () =
   expect(text).not.toContain('绿色区间为目标')
   expect(text).not.toContain('F3')
   expect(text).not.toContain('F4')
+})
+
+it('provides recording statistics as a shared topic with layout-specific instructions and current limits',()=>{
+ const portrait=JSON.stringify(getHelpSections('recording-statistics','portrait'))
+ const landscape=JSON.stringify(getHelpSections('recording-statistics','landscape'))
+ expect(portrait).toContain('底部麦克风')
+ expect(landscape).toContain('顶栏「开始录音」')
+ expect(landscape).toContain('准备页')
+ expect(landscape).toContain('结果页')
+ for(const text of [portrait,landscape]){
+  expect(text).toContain('500')
+  expect(text).toContain('P10')
+  expect(text).toContain('P90')
+  expect(text).toContain('中位数')
+  expect(text).toContain('返回结果')
+  expect(text).toContain('再录一段')
+  expect(text).toContain('3 秒')
+  expect(text).toContain('10 秒')
+  expect(text).not.toContain('回听此处')
+  expect(text).not.toContain('话题提示')
+ }
 })

@@ -9,6 +9,7 @@ import {RecordingReader} from './RecordingReader'
 import {RecordingReport} from './RecordingReport'
 import {formatClock} from './format'
 import styles from './RecordingPage.module.css'
+import {canAutoFocusPage} from '../components/focusTarget'
 
 export function RecordingPage(){
  const shell=useOutletContext<ShellContext|null>()
@@ -20,13 +21,13 @@ export function RecordingPage(){
  const previousView=useRef(s.view)
  const result=s.phase==='ready'&&s.view==='report'&&!!s.report
  useEffect(()=>{
-  if(previousView.current==='report'&&s.view==='prepared'&&s.phase==='prepared'&&document.visibilityState!=='hidden'){
+  if(previousView.current==='report'&&s.view==='prepared'&&s.phase==='prepared'&&canAutoFocusPage()){
    const title=mainRef.current?.querySelector<HTMLElement>('h1')
    if(title){title.tabIndex=-1;title.focus()}
   }
   previousView.current=s.view
  },[s.view,s.phase])
- useEffect(()=>{if(s.error&&document.visibilityState!=='hidden')errorRef.current?.focus()},[s.error])
+ useEffect(()=>{if(s.error&&canAutoFocusPage())errorRef.current?.focus()},[s.error])
  return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active={!result||undefined} style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
   <div className={styles.content}>
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>

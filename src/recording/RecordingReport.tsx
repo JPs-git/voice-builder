@@ -6,11 +6,12 @@ import {formatClock,formatHz} from './format'
 import {Button} from '../components/Button'
 import styles from './RecordingPage.module.css'
 import type {RecordingPlaybackController} from './playbackController'
+import {canAutoFocusPage} from '../components/focusTarget'
 export function RecordingReport({report,playbackController}:{report:ReportData;playbackController?:RecordingPlaybackController}){
  const {clip,analysis}=report,s=analysis.summary
  const {controller:playback,snapshot:p}=useRecordingPlayback(clip,playbackController)
  const titleRef=useRef<HTMLHeadingElement>(null)
- useEffect(()=>{if(document.visibilityState!=='hidden')titleRef.current?.focus()},[report.id])
+ useEffect(()=>{if(canAutoFocusPage())titleRef.current?.focus()},[report.id])
  const seek=useCallback((seconds:number)=>playback.seek(seconds),[playback])
  const enough=s.validDuration+1e-9>=3,limited=enough&&s.validDuration<10-1e-9
  const value=(v:number|null)=>enough?formatHz(v):'—'

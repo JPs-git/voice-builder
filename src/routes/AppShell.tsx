@@ -65,7 +65,7 @@ function AppShellContent() {
     if (!isPortrait) setGoalOpen(false)
   }, [isPortrait])
   const getHelpFallbackFocus = () =>
-    [recordButtonRef.current, helpButtonRef.current, moreButtonRef.current].find(isAvailableFocusTarget) ?? null
+    [helpButtonRef.current, moreButtonRef.current, recordButtonRef.current].find(isAvailableFocusTarget) ?? null
 
   const openOverlay = (overlay: 'config' | 'help' | 'about' | 'goal') => {
     setConfigOpen(overlay === 'config')
@@ -73,10 +73,10 @@ function AppShellContent() {
     setAboutOpen(overlay === 'about')
     setGoalOpen(overlay === 'goal')
   }
-  const openHelp = (topic: HelpTopic = 'quick-start') => {
+  const openHelp = (topic?: HelpTopic) => {
     const page = getAnalyticsPage()
-    if (!helpOpen && page) track('help_open', { page, topic })
-    setHelpTopic(topic)
+    if (!helpOpen && page) track('help_open', { page, topic: topic ?? (isRecording ? 'recording-statistics' : 'quick-start') })
+    setHelpTopic(topic ?? (isRecording ? 'recording-statistics' : 'quick-start'))
     openOverlay('help')
   }
 
@@ -193,11 +193,11 @@ function AppShellContent() {
         suppressed={hasData || isCapturing || isRequesting || isPlaying || helpOpen || configOpen || aboutOpen || goalOpen}
         dockHeight={dockHeight}
         onOpen={() => openHelp('quick-start')}
-        onDismiss={() => { getHelpFallbackFocus()?.focus({ preventScroll: true }); dismiss() }}
+        onDismiss={() => { [recordButtonRef.current, getHelpFallbackFocus()].find(isAvailableFocusTarget)?.focus({ preventScroll: true }); dismiss() }}
       />
       <Toast />
       <ConfigDrawer open={configOpen && !isRecording} onClose={() => setConfigOpen(false)} />
-      <HelpDrawer recording={isRecording} open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} getFallbackFocus={getHelpFallbackFocus} />
+      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} getFallbackFocus={getHelpFallbackFocus} />
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
       <input ref={isRecording ? recordingTools.fileInputRef : fileInputRef} type="file" accept="audio/*" hidden onChange={isRecording ? recordingTools.handleFileChange : handleFileChange} />
     </>

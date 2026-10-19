@@ -94,7 +94,7 @@ describe('first-use help integration', () => {
     expect(document.activeElement).toBe(topic)
     expect(topic.getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: /开始录音/ }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
     expect(audio).not.toHaveBeenCalled()
   })
 
@@ -151,18 +151,18 @@ describe('first-use help integration', () => {
     expect(audio).not.toHaveBeenCalled()
   })
 
-  it('returns focus to the mic if successful analysis removes the trigger while help is open', () => {
+  it('returns focus to More if successful analysis removes the trigger while help is open', () => {
     render(<TestApp />)
     const trigger = screen.getByRole('button', { name: '查看说明' })
     trigger.focus(); fireEvent.click(trigger)
     act(() => useAppStore.getState().setFrames([{ time: 1, f0: 200, f1: null, f2: null }]))
     expect(trigger.isConnected).toBe(false)
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: '开始录音' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
     expect(screen.queryByRole('region', { name: '首次使用帮助' })).toBeNull()
   })
 
-  it('returns focus to the mic when invalid imported data suppresses the connected trigger', () => {
+  it('returns focus to More when invalid imported data suppresses the connected trigger', () => {
     const view = render(<TestApp />)
     const trigger = screen.getByRole('button', { name: '查看说明' })
     trigger.focus(); fireEvent.click(trigger)
@@ -170,7 +170,7 @@ describe('first-use help integration', () => {
     view.rerender(<TestApp />)
     expect(trigger.isConnected).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: '开始录音' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
     expect(useIntroHintStore.getState().handled).toBe(false)
   })
 

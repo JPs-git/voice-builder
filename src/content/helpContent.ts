@@ -2,19 +2,41 @@ import { F0_CHART_RANGE, FORMANT_CHART_RANGE, F0_REFERENCE_ZONES, FORMANT_MIN_GA
 import { AUDIO_WINDOW_SECONDS } from '../config/audioLimits'
 import { VOWEL_PRESETS, presetShortLabel } from '../types'
 
-export type HelpTopic = 'quick-start' | 'charts' | 'targets' | 'audio' | 'troubleshooting' | 'pitch-reference'
+export type HelpTopic = 'quick-start' | 'charts' | 'targets' | 'audio' | 'troubleshooting' | 'pitch-reference' | 'recording-statistics'
 export type HelpLayout = 'portrait' | 'landscape'
 export interface HelpSection { title: string; paragraphs: readonly string[] }
-export const RECORDING_HELP: readonly HelpSection[] = [
-  { title: '安静录音，录后分析', paragraphs: ['可从三篇短文中选择参考材料，也可按自己的习惯自然说话。横屏点击顶栏「开始录音」，竖屏点击底部麦克风按钮。建议录制 30–60 秒；录音中只显示计时与材料，不显示声学反馈。再次点击录音按钮结束并分析，或达到 60 秒后自动生成报告。结果页点击「再录一段」先回到准备页，可以换短文、调字号，再点击「开始录音」；不会立即打开麦克风。'] },
-  { title: '导入与回听', paragraphs: ['可导入最多 60 秒的 WAV、MP3、M4A 等浏览器支持的音频，竖屏入口为右上角「更多 → 导入音频」。结果页保留完整录音，可播放、暂停和拖动进度，从选定位置继续播放到结尾；统计过滤不会裁剪原音频。横屏结果页的导入音频也在更多菜单中。'] },
-  { title: '统计怎么看', paragraphs: ['典型 F0 为有效音高中位数，P10/P90 描述常用音高范围的分位边界，不是最低/最高值。直方图展示有效音高的时间分布。仅统计 60–500 Hz（包含 500 Hz），停顿、无效值及超上限检测值不按 0 Hz 计入；超上限排除比例见统计说明。'] },
-  { title: '数据保留', paragraphs: ['录音只在本地处理。切页时停止本页录音并分析，保留本次结果；准备下一段时可点击「返回结果」，恢复旧报告与暂停后的回放位置；取消新任务可恢复上一份结果。只有新结果成功后才替换旧结果，不需要先清除本次。刷新或关闭页面后不保留声音数据。实时分析和音高参考仍使用最近 10 秒的窗口。'] },
-]
-export const HELP_TOPIC_ORDER: readonly HelpTopic[] = ['quick-start', 'charts', 'targets', 'audio', 'troubleshooting', 'pitch-reference']
+function getRecordingHelpSections(layout: HelpLayout): readonly HelpSection[] {
+  const recordEntry = layout === 'portrait' ? '点击底部麦克风按钮' : '点击顶栏「开始录音」'
+  const importEntry = layout === 'portrait'
+    ? '准备页和结果页均通过右上角「更多 → 导入音频」选择文件。'
+    : '准备页通过顶栏「导入音频」选择文件；结果页通过「更多 → 导入音频」选择文件。'
+  return [
+    { title: '安静录音，录后分析', paragraphs: [
+      `可从三篇短文中选择参考材料，也可按自己的习惯自然说话。${recordEntry}开始采集；建议录制 30–60 秒，达到 60 秒后自动结束并分析。采集中只显示材料与计时，不显示声学反馈；再次点击录音按钮可提前结束并分析。`,
+      '结果页点击「再录一段」先进入准备页，可以换短文、调字号，再点击「开始录音」；不会立即申请麦克风。有旧报告时可点击「返回结果」，不需要重新分析。',
+    ] },
+    { title: '导入与完整回放', paragraphs: [
+      `可导入最多 60 秒的 WAV、MP3、M4A 等浏览器支持的音频。${importEntry}取消文件选择不会替换原结果。`,
+      '结果页保留完整录音，可播放、暂停和拖动进度，从选定位置继续播放到结尾。统计过滤不会裁剪原音频，停顿和超上限音高对应的声音仍完整保留。',
+    ] },
+    { title: '中位数与 P10/P90', paragraphs: [
+      '典型 F0 为有效音高中位数；P10/P90 描述常用音高范围的分位边界，不是最低/最高值。中间 80% 是分位范围的定义，边界值重复时实际落入范围的比例可能更高。直方图纵轴是有效音高时间占比，不是整段录音的时间占比。',
+      '有效 F0 少于 3 秒时隐藏三项数值与图中分位标记；达到 3 秒但少于 10 秒时显示样本较少的说明。有有效数据时仍可看直方图，完整录音始终可回放。',
+    ] },
+    { title: '统计范围与限制', paragraphs: [
+      '仅统计 60–500 Hz，包含 500 Hz。停顿、无效值和超过上限的检测值不按 0 Hz 计入，也不将高值压到 500 Hz。超上限排除数量、时长和比例可在报告「统计说明」中查看。',
+      '范围过滤不能消除所有倍频或半频检测误差，也可能排除真实高音。有效时间比例不是识别准确率，报告不代表个人完整音域。',
+    ] },
+    { title: '数据与恢复', paragraphs: [
+      '声音仅在本地处理。切页时停止本页采集并分析，保留本次结果；准备下一段时可点击「返回结果」，恢复旧报告与暂停后的回放位置，不自动播放。',
+      '取消新任务不破坏上一份成功结果；分析失败可重试或返回旧结果，只有新结果成功后才替换旧报告。刷新或关闭页面后不保留声音数据。实时分析和音高参考仍使用最近 10 秒的窗口。',
+    ] },
+  ]
+}
+export const HELP_TOPIC_ORDER: readonly HelpTopic[] = ['quick-start', 'charts', 'targets', 'audio', 'troubleshooting', 'pitch-reference', 'recording-statistics']
 const TITLES: Record<HelpTopic, string> = {
   'quick-start': '快速上手', charts: '读图与反馈', targets: '训练目标', audio: '录音与导入',
-  troubleshooting: '遇到问题', 'pitch-reference': '音高参考',
+  troubleshooting: '遇到问题', 'pitch-reference': '音高参考', 'recording-statistics': '统计分析',
 }
 export function getHelpTopicTitle(topic: HelpTopic): string { return TITLES[topic] }
 
@@ -36,6 +58,7 @@ export function getHelpSections(topic: HelpTopic, layout: HelpLayout): readonly 
   const targetsEntry = layout === 'portrait' ? '底部「当前目标」' : '左侧「目标区间」'
   const importEntry = layout === 'portrait' ? '右上角「更多 → 导入音频」' : '顶栏「导入音频」'
   switch (topic) {
+    case 'recording-statistics': return getRecordingHelpSections(layout)
     case 'quick-start': return getQuickStartSteps(layout).map(step => ({ title: step.title, paragraphs: [step.description] }))
     case 'charts': return [
       { title: '基频图：曲线与固定参考', paragraphs: [
@@ -64,6 +87,7 @@ export function getHelpSections(topic: HelpTopic, layout: HelpLayout): readonly 
     ]
     case 'audio': return [
       { title: '录音与回放', paragraphs: [
+        '本主题介绍实时分析与音高参考页。60 秒录音统计与完整回放请查看「统计分析」主题。',
         `${getQuickStartSteps(layout)[0].description}再次点击录音按钮可停止；继续录音会接着追加数据。`,
         `实时曲线和回放保留最近 ${AUDIO_WINDOW_SECONDS} 秒的窗口，持续录音不会自动停止。停止录音后点击「回放」听取当前窗口。`,
         `点击${layout === 'portrait' ? '底部「清除图谱」' : '顶栏「清空」'}会停止录音并清除当前声音数据，但保留训练目标。`,
