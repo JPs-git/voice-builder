@@ -1,3 +1,4 @@
+import {StrictMode} from 'react'
 import {it,expect,vi,afterEach} from 'vitest'
 import {render,screen,fireEvent,act,cleanup} from '@testing-library/react'
 import {MemoryRouter,Routes,Route,useLocation,useNavigate} from 'react-router-dom'
@@ -8,6 +9,8 @@ import {summarizePitch} from '../recording/statistics'
 import {useIntroHintStore} from '../store/introHintStore'
 import {useAppStore} from '../store/appStore'
 import {ANALYSIS_SETTINGS} from '../recording/constants'
+const events=vi.hoisted(()=>vi.fn())
+vi.mock('../analytics/analytics',async original=>({...await original<typeof import('../analytics/analytics')>(),track:events}))
 const analyze=vi.hoisted(()=>vi.fn())
 vi.mock('../recording/workerClient',()=>({runClipAnalysis:analyze}))
 const realtime=vi.hoisted(()=>({suspend:vi.fn(),handleClickTool:vi.fn()}))
@@ -299,4 +302,28 @@ it('keeps the pending permission caption short while retaining its full accessib
  expect((screen.getByRole('button',{name:'完成录制'}) as HTMLButtonElement).disabled).toBe(true)
  fireEvent.click(screen.getByRole('button',{name:'取消'}))
  expect(screen.getByRole('button',{name:'开始录音'})).toBeTruthy()
+})
+
+it('tracks auto, latest and history report entries once without responsive or effect duplicates',async()=>{
+ analyze.mockResolvedValue({ ...summarizePitch([],1),settings:ANALYSIS_SETTINGS,version:'test' })
+ audio.startCapture.mockImplementation(async(cb:any)=>cb(new Float32Array(16000),16000))
+ mount()
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+ fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制'})))
+ expect(events).toHaveBeenCalledWith('report_open',{page:'report',entry:'auto',availability:'available'})
+ fireEvent.click(screen.getByRole('button',{name:'返回录音'}))
+ fireEvent.click(screen.getByRole('button',{name:'查看上次结果'}))
+ expect(events).toHaveBeenCalledWith('report_open',{page:'report',entry:'latest',availability:'available'})
+ fireEvent.click(screen.getByRole('button',{name:'测试后退'}))
+ fireEvent.click(screen.getByRole('button',{name:'测试前进'}))
+ expect(events).toHaveBeenCalledWith('report_open',{page:'report',entry:'other',availability:'available'})
+ expect(events.mock.calls.filter(([n])=>n==='report_open')).toHaveLength(3)
+})
+it('tracks an unavailable report once under StrictMode effect replay',()=>{
+ render(<StrictMode><MemoryRouter initialEntries={['/reports/missing']}><Routes><Route element={<AppShell/>}>
+ <Route path="reports/:reportId" element={<RecordingReportPage/>}/></Route></Routes></MemoryRouter></StrictMode>)
+ expect(events.mock.calls.filter(([n])=>n==='report_open')).toEqual([
+  ['report_open',{page:'report',entry:'other',availability:'unavailable'}],
+ ])
 })

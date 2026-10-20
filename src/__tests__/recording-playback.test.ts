@@ -1,7 +1,9 @@
 import {it,expect,vi,afterEach} from 'vitest'
 import {RecordingPlaybackController} from '../recording/playbackController'
 import type {AudioClip} from '../recording/types'
-afterEach(()=>vi.unstubAllGlobals())
+const events=vi.hoisted(()=>vi.fn())
+vi.mock('../analytics/analytics',()=>({track:events}))
+afterEach(()=>{vi.unstubAllGlobals();vi.clearAllMocks()})
 const clip={samples:new Float32Array(480000),sampleRate:48000,duration:10,source:'file',name:'test',mode:null,material:null,prompt:null} as AudioClip
 function setup(){
  vi.stubGlobal('requestAnimationFrame',vi.fn(()=>1));vi.stubGlobal('cancelAnimationFrame',vi.fn())
@@ -43,5 +45,15 @@ it('stops at the end when seeking during playback and replays only on explicit p
  expect(s.engine.createPlaybackSource).toHaveBeenCalledTimes(1)
  s.controller.play()
  expect(s.nodes[1].start).toHaveBeenCalledWith(0,0,clip.duration)
+ s.controller.destroy()
+})
+
+
+it('counts successful user playback starts but not seek rebuilds, failures or duplicate play calls',()=>{
+ const s=setup();s.controller.play();s.controller.play();s.controller.seek(2);s.controller.pause()
+ expect(events.mock.calls).toEqual([['playback_start',{page:'report'}]])
+ s.controller.play();expect(events).toHaveBeenCalledTimes(2)
+ s.controller.pause();s.engine.createPlaybackSource.mockImplementationOnce(()=>{throw new Error('private')})
+ s.controller.play();expect(events).toHaveBeenCalledTimes(2)
  s.controller.destroy()
 })

@@ -20,7 +20,7 @@ export function RecordingPage(){
  const observed=useRef(s.completedRecordId)
  useEffect(()=>{
   if(s.phase==='prepared'&&s.completedRecordId&&observed.current!==s.completedRecordId){
-   observed.current=s.completedRecordId;openReport(s.completedRecordId)
+   observed.current=s.completedRecordId;openReport(s.completedRecordId,'auto')
   }
  },[s.phase,s.completedRecordId,openReport])
  useEffect(()=>{

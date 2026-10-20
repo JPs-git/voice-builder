@@ -29,3 +29,11 @@ it('does not publish a decode which resolves after cancellation',async()=>{
  const abort=new AbortController();abort.abort()
  await expect(importRecordingFile(file,abort.signal)).rejects.toMatchObject({name:'AbortError'})
 })
+
+it('provides enum error reasons without parsing user-facing messages',async()=>{
+ vi.mocked(probeAudioDuration).mockResolvedValue(61)
+ await expect(importRecordingFile(file,new AbortController().signal)).rejects.toMatchObject({reason:'too_long'})
+ vi.mocked(probeAudioDuration).mockResolvedValue(1)
+ vi.mocked(decodeAudioFile).mockRejectedValue(new Error('private decoder details'))
+ await expect(importRecordingFile(file,new AbortController().signal)).rejects.toMatchObject({reason:'unsupported_or_corrupt'})
+})

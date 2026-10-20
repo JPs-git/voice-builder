@@ -1,3 +1,4 @@
+import {track} from '../analytics/analytics'
 import {getAudioEngine} from '../ts'
 import type {AudioEngine} from '../ts/AudioEngine'
 import type {AudioClip} from './types'
@@ -29,7 +30,7 @@ export class RecordingPlaybackController {
  private currentPosition(){
   return this.snapshot.playing?Math.min(this.end,this.offset+this.engine().audioContext.currentTime-this.startedAt):this.snapshot.position
  }
- private playBetween(start:number,end:number){
+ private playBetween(start:number,end:number,user=false){
   if(!this.clip||!this.clip.samples.length)return
   this.detach()
   const duration=Math.max(0,end-start);if(!duration)return
@@ -42,6 +43,7 @@ export class RecordingPlaybackController {
     this.detach();this.update({playing:false,position:end})
    }
    source.start(0,start,duration);this.update({playing:true,position:start,error:null})
+   if(user){try{track('playback_start',{page:'report'})}catch{/* Keep playback running. */}}
    const tick=()=>{
     if(generation!==this.generation)return
     this.update({position:this.currentPosition()})
@@ -52,12 +54,12 @@ export class RecordingPlaybackController {
    this.detach();this.update({playing:false,error:'无法回放，请检查浏览器音频设置后重试。'})
   }
  }
- play(){const position=this.snapshot.position>=this.snapshot.duration?0:this.snapshot.position;this.playBetween(position,this.snapshot.duration)}
+ play(){if(this.snapshot.playing)return;const position=this.snapshot.position>=this.snapshot.duration?0:this.snapshot.position;this.playBetween(position,this.snapshot.duration,true)}
  pause(){const position=this.currentPosition();this.detach();this.update({playing:false,position})}
  seek(seconds:number){
   const playing=this.snapshot.playing;this.pause()
   this.update({position:Math.max(0,Math.min(this.snapshot.duration,seconds))})
-  if(playing&&this.snapshot.position<this.snapshot.duration)this.play()
+  if(playing&&this.snapshot.position<this.snapshot.duration)this.playBetween(this.snapshot.position,this.snapshot.duration)
  }
  stop(){this.detach();this.update({playing:false,position:0})}
  destroy(){this.stop();this.clip=null;this.listeners.clear()}

@@ -32,3 +32,12 @@ it('terminates work and rejects cancellation without committing a late response'
  await expect(result).rejects.toMatchObject({name:'AbortError'})
  expect(FakeWorker.last.terminated).toBe(true)
 })
+
+it('exposes fixed unsupported and processing error categories',async()=>{
+ vi.stubGlobal('Worker',undefined)
+ await expect(runClipAnalysis(clip,{signal:new AbortController().signal,onProgress:()=>{}})).rejects.toMatchObject({reason:'unsupported'})
+ vi.stubGlobal('Worker',FakeWorker)
+ const pending=runClipAnalysis(clip,{signal:new AbortController().signal,onProgress:()=>{}})
+ FakeWorker.last.onerror?.({message:'private worker error'})
+ await expect(pending).rejects.toMatchObject({reason:'processing'})
+})

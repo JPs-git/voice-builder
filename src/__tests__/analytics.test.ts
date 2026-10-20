@@ -307,3 +307,74 @@ describe('analytics initialization and privacy', () => {
     await Promise.resolve()
   })
 })
+
+
+describe('statistics analytics contracts', () => {
+  it('normalizes report URLs in pageviews, referrers and Vercel without exposing IDs', async () => {
+    navigate('/reports/private-id?secret=audio#name')
+    const a = await import('../analytics/analytics'); a.initAnalytics()
+    const filter = window.voiceBuilderAnalyticsBeforeSend!
+    expect(a.getAnalyticsPage()).toBe('report')
+    expect(filter('event', {url:location.href, referrer:'https://voice.starbow.top/reports/another-secret'})).toMatchObject({url:'/reports/detail', referrer:'/reports/detail'})
+    expect(inject.mock.calls[0][0].beforeSend({type:'pageview',url:location.href})).toMatchObject({url:'https://voice.starbow.top/reports/detail'})
+    expect(filter('event', {url:'/reports/id/extra'})).toBe(false)
+  })
+  it('keeps delayed task completion attributed to recording and strips unapproved fields', async () => {
+    navigate('/recording'); const a = await import('../analytics/analytics'); a.initAnalytics()
+    a.trackRecordingTask('recording_analysis', {stage:'start',source:'mic',attempt:'initial',duration_bucket:'under_10s'})
+    navigate('/practice')
+    a.trackRecordingTask('recording_analysis', {stage:'success',source:'mic',attempt:'initial',fileName:'private',median:211} as any)
+    const sent=loadTracker()
+    expect(sent.mock.calls.map(([p])=>[p.url,p.data])).toEqual([
+      ['/recording',{page:'recording',stage:'start',source:'mic',attempt:'initial',duration_bucket:'under_10s'}],
+      ['/recording',{page:'recording',stage:'success',source:'mic',attempt:'initial'}],
+    ])
+    a.trackRecordingTask('help_open' as any,{topic:'charts'} as any)
+    a.trackRecordingTask('recording_analysis',{stage:'failure',source:'mic',attempt:'initial',reason:'raw error'} as any)
+    expect(sent).toHaveBeenCalledTimes(2)
+    a.setAnalyticsDisabled(true)
+    a.trackRecordingTask('recording_analysis',{stage:'success',source:'mic',attempt:'initial'})
+    expect(sent).toHaveBeenCalledTimes(2)
+  })
+  it('accepts report/help entries and requires recording-specific action and enums',async()=>{
+    const a=await import('../analytics/analytics');a.initAnalytics();const sent=loadTracker()
+    navigate('/recording')
+    a.track('record_start',{page:'recording',action:'new'})
+    a.track('record_start',{page:'recording'} as any)
+    a.track('help_open',{page:'recording',topic:'recording-statistics'})
+    navigate('/reports/private')
+    a.track('report_open',{page:'report',entry:'auto',availability:'available'})
+    a.track('report_open',{page:'report',entry:'list',availability:'available'} as any)
+    expect(sent.mock.calls.map(([p])=>p.name)).toEqual(['record_start','help_open','report_open'])
+    expect(JSON.stringify(sent.mock.calls)).not.toContain('private')
+  })
+})
+
+it('filters every recording event variant and never sends extra payload properties',async()=>{
+ navigate('/recording');const a=await import('../analytics/analytics');a.initAnalytics();const sent=loadTracker()
+ const valid=[
+  ['recording_pause',{reason:'limit'}],
+  ['recording_complete',{duration_bucket:'at_limit',at_limit:'yes'}],
+  ['recording_cancel',{target:'analysis',phase:'analyzing'}],
+  ['recording_analysis',{stage:'failure',source:'import',attempt:'retry',reason:'processing'}],
+  ['recording_analysis',{stage:'cancel',source:'mic',attempt:'initial'}],
+  ['audio_import',{result:'failure',reason:'too_long'}],
+ ] as const
+ for(const [name,data] of valid)a.trackRecordingTask(name,{...data,reportId:'private-id',pcm:[1],duration:60} as any)
+ expect(sent).toHaveBeenCalledTimes(valid.length)
+ expect(JSON.stringify(sent.mock.calls)).not.toMatch(/private-id|pcm|duration":/)
+ const invalid=[
+  ['recording_pause',{reason:'shutdown'}],['recording_complete',{duration_bucket:'60',at_limit:'yes'}],
+  ['recording_cancel',{target:'file',phase:'prepared'}],['audio_import',{result:'failure',reason:'message'}],
+ ] as const
+ for(const [name,data] of invalid)a.trackRecordingTask(name,data as any)
+ expect(sent).toHaveBeenCalledTimes(valid.length)
+})
+it('drops pending task events on opt-out or expiry, preserving the original trigger time',async()=>{
+ vi.useFakeTimers();navigate('/recording');const a=await import('../analytics/analytics');a.initAnalytics()
+ a.trackRecordingTask('recording_pause',{reason:'user'})
+ await vi.advanceTimersByTimeAsync(30001)
+ const sent=loadTracker();expect(sent).not.toHaveBeenCalled()
+ a.setAnalyticsDisabled(true);a.trackRecordingTask('recording_pause',{reason:'user'})
+ a.setAnalyticsDisabled(false);expect(sent).not.toHaveBeenCalled()
+})
