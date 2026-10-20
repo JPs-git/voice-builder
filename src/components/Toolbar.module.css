@@ -90,8 +90,38 @@
 .toolbar[data-compact="true"] .title { font-size: 18px; line-height: 26px; color: #0a2344; letter-spacing: .6px; white-space: nowrap; }
 .toolbar[data-compact="true"] .brand { gap: 6px; }
 .toolbar[data-compact="true"] .pageTabs { max-width: 330px; }
+@media (min-width:769px) {
+  .toolbar { display:grid; grid-template-columns:minmax(0,1fr) 320px minmax(0,1fr); }
+  .brand { white-space:nowrap; }
+  .pageTabs { width:320px; }
+  .actions { min-width:0; }
+}
+@media (max-width:1280px) and (min-width:769px) {
+  .subtitle { display:none; }
+  .actions>button:not([id="record"]):not([id="cancel"]):not([id="report-back"])>span:last-child { display:none; }
+  .actions>button:not([id="record"]):not([id="cancel"]):not([id="report-back"]) { padding:0 12px; }
+}
+@media (max-width:1000px) and (min-width:769px) {
+  .toolbar { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px 20px; }
+  .pageTabs { grid-column:1 / -1; grid-row:2; justify-self:center; }
+  .actions { grid-column:2; grid-row:1; }
+}
+@media (max-width:768px) {
+  .toolbar[data-compact="true"] { height:auto; min-height:64px; flex-wrap:wrap; }
+  .toolbar[data-compact="true"] .brand { flex:1; }
+  .toolbar[data-compact="true"] .pageTabs { order:3; flex-basis:100%; max-width:none; }
+}
 @media (max-width: 390px) {
   .toolbar[data-compact="true"] { padding: 8px 10px; gap: 6px; }
   .toolbar[data-compact="true"] .logo { width: 28px; height: 28px; }
   .toolbar[data-compact="true"] .title { font-size: 15px; letter-spacing: 0; }
+}
+
+@media(min-width:1281px){
+ .toolbar[data-recording-page="true"] .actions>button{justify-content:center;padding:0 12px}
+ .toolbar[data-recording-page="true"] .actions>button[id="record"]{width:120px}
+ .toolbar[data-recording-page="true"] .actions>button[id="cancel"],.toolbar[data-recording-page="true"] .actions>button[id="finish"],.toolbar[data-recording-page="true"] .actions>button[id="import"]{width:104px}
+}
+@media(min-width:769px){
+ .toolbar[data-recording-page="true"] .actions>button[id="record"]:disabled{background:var(--bg);color:var(--text-mute);border-color:var(--border);opacity:1;box-shadow:none;animation:none}
 }

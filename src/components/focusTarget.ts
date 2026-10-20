@@ -1,4 +1,8 @@
-// Used only when returning focus, not during the normal recording/render loop.
+// Used only for focus transitions, not during the normal recording/render loop.
+export function canAutoFocusPage(): boolean {
+  return document.visibilityState !== 'hidden' && !document.querySelector('[role="dialog"][aria-modal="true"]')
+}
+
 export function isAvailableFocusTarget(element: HTMLElement | null): element is HTMLElement {
   if (!element?.isConnected || element.matches(':disabled')) return false
   for (let node: HTMLElement | null = element; node; node = node.parentElement) {

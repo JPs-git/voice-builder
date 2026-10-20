@@ -32,34 +32,56 @@ Voice Builder 使用 Umami Cloud 了解访问来源及功能使用情况。应�
 
 Umami 默认采集的技术维度包含浏览器、系统、设备、语言、屏幕及粗略地区等。服务器仍需接收网络请求；“录音本地处理”不代表“网站没有向统计服务发送信息”。
 
-URL 只允许 `/`、`/practice` 及 `utm_source`、`utm_medium`、`utm_campaign`、`utm_content`，UTM 值仅保留 1–64 个英文字母、数字、下划线、连字符。其他参数、hash、动态标题和未声明的事件属性不会发送。站外 referrer 只保留 origin，站内 referrer 也经过 URL 过滤。未知页面跳过统计。
+URL 只允许 `/`、`/practice`、`/recording`、`/reports/:reportId`（报告统一上报为 `/reports/detail`，不包含真实 ID）及 `utm_source`、`utm_medium`、`utm_campaign`、`utm_content`，UTM 值仅保留 1–64 个英文字母、数字、下划线、连字符。其他参数、hash、动态标题和未声明的事件属性不会发送。站外 referrer 只保留 origin，站内 referrer 也经过 URL 过滤。未知页面跳过统计。
 
 Vercel 脚本另外读取原始 document.referrer，无法通过其 beforeSend 修改。因此，来源地址包含不允许的路径或参数时，本次文档完全跳过 Vercel，仅由 Umami 发送清理后的来源。页面设置 origin 来源策略，避免同源统计请求的 HTTP Referer 头携带当前页路径或查询参数。
 
 ## 事件字典
 
-页面浏览由 Umami 自动记录首次加载与路由导航，不手工重复发送。下面六类业务事件均带 `page: analysis | practice`，只附带表内白名单属性。
+页面浏览由 Umami 自动记录首次加载与路由导航，不手工重复发送。业务事件均带页面标识 `page: analysis | practice | recording | report`，只附带白名单属性。原页面的事件和计数规则保持兼容；报告浏览包含有效与失效页面，使用 report_open 区分可用性。
 
 当前 Cloud 脚本只观察 pushState/replaceState；应用对浏览器前进、后退增加 popstate 补偿，通过同 URL、同 state 的 replaceState 同步 SDK 的路由缓存，不新增历史条目。更新供应商脚本后应回归“进入音高参考 → 后退 → 再进入”，确认每步各一条浏览。
 
 | 事件 | 统计含义 | 额外属性 |
 |---|---|---|
-| `record_start` | 成功启动或继续录音一次 | 无 |
-| `record_error` | 录音启动失败 | `reason: permission / device / unsupported / unknown` |
+| `record_start` | 成功启动或继续录音一次 | 统计录音页必带 `action: new / resume`；原页面不带 |
+| `record_error` | 录音启动失败 | `reason: permission / device / unsupported / unknown`；统计录音页另带 `action` |
 | `practice_engaged` | 本次文档累计录音首次达到 30 秒 | 无 |
 | `playback_start` | 音频实际开始回放 | 无 |
 | `audio_import` | 导入处理结果；取消选文件不记录 | `result: success / failure`；失败另附 `reason: too_long / unsupported_or_corrupt / unknown` |
-| `help_open` | 从关闭状态打开帮助；内部换主题不重复记录 | `topic: quick-start / charts / targets / audio / troubleshooting / pitch-reference` |
+| `help_open` | 从关闭状态打开帮助；内部换主题不重复记录 | `topic: quick-start / charts / targets / audio / troubleshooting / pitch-reference / recording-statistics` |
+
+统计分析新增事件：
+
+| 事件 | 统计含义 | 属性（除 page 外） |
+|---|---|---|
+| `recording_pause` | 有音频的草稿进入暂停 | `reason: user / limit / navigation / interruption` |
+| `recording_complete` | 暂停后接受完成录制，开始分析之前 | `duration_bucket`、`at_limit: yes / no` |
+| `recording_cancel` | 用户主动丢弃录音、导入或分析任务 | `target: capture / import / analysis`、`phase: requesting / recording / paused / importing / analyzing / error` |
+| `recording_analysis` | 每次分析尝试开始和终态 | `stage: start / success / failure / cancel`、`source: mic / import`、`attempt: initial / retry`；start 另带时长分档；failure 另带 `reason: unsupported / processing / unknown` |
+| `report_open` | 实际进入一次报告详情 | `entry: auto / latest / other`、`availability: available / unavailable` |
+
+录音任务事件始终归属 `page=recording`、固定 URL `/recording`，包括离开该页后才完成的后台分析，不额外产生页面浏览。报告进入与回放归属 `page=report`。帮助根据入口所在页面归属；内部换主题不重复上报。
+
+时长分档为 `under_10s`（小于 10 秒）、`10_to_29s`（10 至不足 30 秒）、`30_to_59s`（30 至不足 60 秒）、`at_limit`（达到实际 60 秒采样上限），不根据计时显示四舍五入；只上报分档，不上报精确时长或声音统计值。
+
+完成录制、分析成功、打开报告分别记录。达到 60 秒只是自动暂停，不能算完成。导入成功指解码、时长校验通过，分析结果另记；重试不重复报导入或完成。分析缺少有效 F0 但正常发布报告仍算成功，不上报有效时长或覆盖率。主动取消分析会有 recording_cancel 和分析 cancel 两个不同语义的事件，不能相加算作两次取消。
+
+控制器销毁、路由卸载、无音频请求自动取消不伪造主动取消。重复渲染、横竖屏切换不重复上报任务或报告进入。auto/latest 入口只保存在一次性内存导航上下文，前进/后退归 other。报告 ID 仅在本地用于路由；回放实际成功启动才上报，播放中拖动进度引起的音源重建不算一次用户启动。
+
+完整触发规则和验收见 [统计分析埋点规格](superpowers/specs/2026-10-20-recording-statistics-analytics-design.md)。
 
 30 秒以实际收到的麦克风采样数量除以采样率累计，包括静音；不是页面停留时间，也不是有效发声、练习完成或训练效果。暂停、继续、清空、换页面都不重置累计；刷新、新标签页或重新打开网站重新计数。关闭统计期间的采样不计入，不补发关闭期间的事件。它与 Umami visit 的划分不同。
 
-录音缓冲只保留最近 10 秒，参与度累计独立于该缓冲；上报只包含达到阈值的事件，不包含声音内容或累计采样数组。
+实时训练录音缓冲只保留最近 10 秒，统计录音最多保留 60 秒；三页麦克风采样共用一个文档级 30 秒累计器，导入和回放不累计。阈值触发页不一定是此前全部采样所在页，不能把该事件解释为该页单次录音满 30 秒。参与度累计独立于上述缓冲；上报只包含达到阈值的事件，不包含声音内容或累计采样数组。
 
 脚本慢加载时仅在内存缓冲最近 20 条业务事件，超过 30 秒的事件丢弃；保留触发时的安全路由与时间。脚本错误或关闭统计会清空队列，本次文档不自动重试、不落盘。网络错误和广告拦截可能造成漏报，不绕过用户拦截。
 
 ## 看板、来源与指标口径
 
 首期建立“进入网站 → record_start → practice_engaged”的录音漏斗，再看回放/导入覆盖、录音错误分类和来源/设备差异。使用同一范围与匿名访客口径的漏斗人数，不能拿重复的事件次数直接相除。打开帮助不代表存在问题或看懂了说明，需要结合后续行为判断。
+
+统计录音漏斗使用 `record_start(action=new)` → recording_complete → recording_analysis(success, mic) → 可用 report_open；导入漏斗使用 audio_import(success, recording) → recording_analysis(success, import) → 可用报告访问。按访客/会话分析趋势，重复暂停、继续和重试不作为新的首录。没有跨事件任务 ID，无法精确关联同一段录音或证明报告访问来自某次导入；匿名漏斗不等于逐任务转化率。无终态可能来自关闭页面、断网或拦截，不能直接算失败；重试成功不能混称首次成功。
 
 新的 B 站链接可使用：
 

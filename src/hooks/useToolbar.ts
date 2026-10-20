@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, type ReactNode } from 'react'
 import { useAppStore } from '../store/appStore'
 import { useAnalysis } from './useAnalysis'
 import { usePlayback } from './usePlayback'
@@ -6,10 +6,12 @@ import { usePlayback } from './usePlayback'
 export interface ToolItem {
   id: string
   variant: 'primary' | 'ghost'
-  icon: string
+  icon: ReactNode
   label: string
+  displayLabel?: string
   recording?: boolean
   disabled?: boolean
+  inMore?: boolean
 }
 
 // Actions that need pre-stop; config/help/about don't
@@ -30,8 +32,13 @@ export function useToolbar(
     dataSource,
     fileInputRef,
     handleFileChange,
+    suspend: suspendAnalysis,
   } = useAnalysis()
   const { play, stop, isPlaying, cursorTime } = usePlayback()
+  const suspend = useCallback(() => {
+    stop()
+    suspendAnalysis()
+  }, [stop, suspendAnalysis])
 
   const hasData = isCapturing || frameCount > 0
 
@@ -138,6 +145,7 @@ export function useToolbar(
   ], [isCapturing, isRequesting, isPlaying, hasData, dataSource, recorderLabel])
 
   return {
+    suspend,
     toolItems,
     handleClickTool,
     hasData,

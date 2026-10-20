@@ -1,16 +1,6 @@
-import type { HelpTopic } from '../content/helpContent'
-import { HELP_TOPIC_ORDER } from '../content/helpContent'
 import { inject } from '@vercel/analytics'
-
-export type AnalyticsPage = 'analysis' | 'practice'
-export interface AnalyticsEventMap {
-  record_start: { page: AnalyticsPage }
-  record_error: { page: AnalyticsPage; reason: 'permission' | 'device' | 'unsupported' | 'unknown' }
-  practice_engaged: { page: AnalyticsPage }
-  playback_start: { page: AnalyticsPage }
-  audio_import: { page: AnalyticsPage } & ({ result: 'success' } | { result: 'failure'; reason: 'too_long' | 'unsupported_or_corrupt' | 'unknown' })
-  help_open: { page: AnalyticsPage; topic: HelpTopic }
-}
+import {eventData,RECORDING_TASK_EVENTS,type AnalyticsPage,type AnalyticsEventMap,type RecordingTaskEvent,type WithoutPage} from './events'
+export type {AnalyticsPage,AnalyticsEventMap} from './events'
 
 const PREFERENCE_KEY = 'voicebuilder-analytics-disabled'
 const TITLE = '在线声音训练 · 看见自己的声音'
@@ -88,7 +78,7 @@ export function isAnalyticsAllowed(): boolean {
 }
 
 function pageForPath(pathname: string): AnalyticsPage | null {
-  return pathname === '/' ? 'analysis' : pathname === '/practice' ? 'practice' : null
+  return pathname === '/' ? 'analysis' : pathname === '/practice' ? 'practice' : pathname === '/recording' ? 'recording' : /^\/reports\/[^/]+$/.test(pathname) ? 'report' : null
 }
 
 export function getAnalyticsPage(): AnalyticsPage | null {
@@ -106,7 +96,8 @@ function cleanUrl(value: unknown): string | null {
       if (value && /^[a-z0-9_-]{1,64}$/i.test(value)) params.set(key, value)
     }
     const search = params.toString()
-    return url.pathname + (search ? `?${search}` : '')
+    const path = pageForPath(url.pathname) === 'report' ? '/reports/detail' : url.pathname
+    return path + (search ? `?${search}` : '')
   } catch { return null }
 }
 
@@ -127,27 +118,6 @@ function isVercelReferrerSafe(): boolean {
     // Vercel reads document.referrer separately; its beforeSend cannot replace that field.
     return new URL(document.referrer, location.origin).href === new URL(safe, location.origin).href
   } catch { return false }
-}
-
-function eventData(name: string, value: unknown): Record<string, string> | null {
-  if (!value || typeof value !== 'object') return null
-  const data = value as Record<string, unknown>
-  if (data.page !== 'analysis' && data.page !== 'practice') return null
-  const result: Record<string, string> = { page: data.page }
-  switch (name) {
-    case 'record_start': case 'practice_engaged': case 'playback_start': return result
-    case 'record_error':
-      if (typeof data.reason !== 'string' || !['permission', 'device', 'unsupported', 'unknown'].includes(data.reason)) return null
-      return { ...result, reason: data.reason }
-    case 'audio_import':
-      if (data.result === 'success') return { ...result, result: 'success' }
-      if (data.result !== 'failure' || typeof data.reason !== 'string' || !['too_long', 'unsupported_or_corrupt', 'unknown'].includes(data.reason)) return null
-      return { ...result, result: 'failure', reason: data.reason }
-    case 'help_open':
-      if (!HELP_TOPIC_ORDER.includes(data.topic as HelpTopic)) return null
-      return { ...result, topic: data.topic as string }
-    default: return null
-  }
 }
 
 function filterUmamiPayload(type: string, payload: UmamiPayload): UmamiPayload | false {
@@ -181,12 +151,12 @@ function send(entry: PendingEvent) {
   } catch { /* Statistics must never change the result of an audio operation. */ }
 }
 
-export function track<K extends keyof AnalyticsEventMap>(name: K, data: AnalyticsEventMap[K]): void {
+function trackAt(name:string,data:unknown,task=false):void {
   try {
     if (!isAnalyticsAllowed() || trackerState === 'idle' || trackerState === 'failed') return
     const safeData = eventData(name, data)
-    const url = cleanUrl(location.href)
-    if (!safeData || !url || safeData.page !== getAnalyticsPage()) return
+    const url = task ? '/recording' : cleanUrl(location.href)
+    if (!safeData || !url || safeData.page !== (task ? 'recording' : getAnalyticsPage())) return
     const entry = {
       payload: { name, data: safeData, url, referrer: cleanReferrer(document.referrer), timestamp: Math.floor(Date.now() / 1000) },
       queuedAt: Date.now(),
@@ -197,6 +167,16 @@ export function track<K extends keyof AnalyticsEventMap>(name: K, data: Analytic
       if (pending.length > 20) pending.shift()
     }
   } catch { /* Ignore malformed input and unavailable browser facilities. */ }
+}
+
+export function track<K extends keyof AnalyticsEventMap>(name:K,data:AnalyticsEventMap[K]):void {
+  trackAt(name,data)
+}
+
+/** Fixed context for recorder task transitions, never a caller-provided URL. */
+export function trackRecordingTask<K extends RecordingTaskEvent>(name:K,data:WithoutPage<AnalyticsEventMap[K]>):void {
+  if(!(RECORDING_TASK_EVENTS as readonly string[]).includes(name))return
+  trackAt(name,{...data,page:'recording'},true)
 }
 
 export function initAnalytics(): void {

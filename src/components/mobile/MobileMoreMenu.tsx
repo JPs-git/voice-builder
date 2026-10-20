@@ -1,4 +1,4 @@
-import { useRef, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { ToolItem } from '../../hooks/useToolbar'
 import styles from './MobileMoreMenu.module.css'
 
@@ -7,17 +7,34 @@ export interface MobileMoreMenuProps {
   onSelect: (toolId: string) => void
   nav?: { label: string; onClick: () => void }
   triggerButtonRef?: RefObject<HTMLButtonElement | null>
+  variant?: 'mobile' | 'desktop'
 }
 
-export function MobileMoreMenu({ items, onSelect, nav, triggerButtonRef }: MobileMoreMenuProps) {
+export function MobileMoreMenu({ items, onSelect, nav, triggerButtonRef, variant='mobile' }: MobileMoreMenuProps) {
   const [open, setOpen] = useState(false)
   const internalTriggerRef = useRef<HTMLButtonElement>(null)
   const triggerRef = triggerButtonRef ?? internalTriggerRef
+  const wrapRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const outside = (event: PointerEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setOpen(false); triggerRef.current?.focus() }
+    }
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      document.removeEventListener('keydown', escape)
+    }
+  }, [open, triggerRef])
   const menuItems = items.filter(item => item.id !== 'record')
   return (
-    <div className={styles.wrap}>
+    <div ref={wrapRef} className={`${styles.wrap} ${variant==='desktop'?styles.desktop:''}`}>
       <button ref={triggerRef} type="button" className={styles.trigger} aria-label="更多操作"
-        aria-expanded={open} onClick={() => setOpen(prev => !prev)}>⋯</button>
+        aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(prev => !prev)}>⋯</button>
       {open && (
         <div className={styles.menu} role="menu">
           {nav && (

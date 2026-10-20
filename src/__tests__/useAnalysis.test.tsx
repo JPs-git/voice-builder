@@ -44,6 +44,40 @@ function resetStores() {
   recordingBuffer.clear()
 }
 
+describe('explicit realtime suspension', () => {
+  it('ignores a late permission result after leaving realtime', async () => {
+    resetStores()
+    let resolve!: () => void
+    audioEngineMock.startCapture.mockImplementation(() => new Promise<void>(r => { resolve = r }))
+    const { result } = renderHook(() => useAnalysis())
+    let pending!: Promise<void>
+    act(() => { pending = result.current.onRecord() })
+    act(() => result.current.suspend())
+    await act(async () => { resolve(); await pending })
+    expect(result.current.isCapturing).toBe(false)
+    expect(result.current.isRequesting).toBe(false)
+    expect(useAppStore.getState().frames).toHaveLength(0)
+  })
+
+  it('keeps audio, target settings and time offset when suspended then resumed', async () => {
+    resetStores()
+    let callback!: (chunk:Float32Array, rate:number)=>void
+    audioEngineMock.startCapture.mockImplementation(async cb => { callback=cb })
+    const {result}=renderHook(()=>useAnalysis())
+    await act(async()=>{await result.current.onRecord()})
+    const tone=Float32Array.from({length:16000},(_,i)=>.02*Math.sin(2*Math.PI*200*i/16000))
+    act(()=>callback(tone,16000))
+    const before=useAppStore.getState().latestFrame!.time
+    const bands=useAppStore.getState().bands
+    act(()=>result.current.suspend())
+    expect(recordingBuffer.read()).toEqual(tone)
+    expect(useAppStore.getState().bands).toEqual(bands)
+    await act(async()=>{await result.current.onRecord()})
+    act(()=>callback(tone,16000))
+    expect(useAppStore.getState().latestFrame!.time).toBeGreaterThan(before)
+  })
+})
+
 describe('useAnalysis import error feedback', () => {
   beforeEach(() => resetStores())
   afterEach(() => resetStores())
