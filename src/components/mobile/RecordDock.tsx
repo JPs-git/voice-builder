@@ -26,6 +26,7 @@ export interface RecordDockProps {
   trailingControl?: ReactNode
   recordAsText?: boolean
   isPaused?: boolean
+  isProcessing?: boolean
 }
 
 function MicGlyph() {
@@ -42,8 +43,17 @@ function MicGlyph() {
   )
 }
 
+function ControlGlyph({kind}:{kind:'pause'|'play'|'loading'}){
+ return <svg viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"
+  className={kind==='loading'?styles.spinner:undefined}>
+  {kind==='pause'?<><rect x="6.5" y="5" width="4" height="14" rx="1.5"/><rect x="13.5" y="5" width="4" height="14" rx="1.5"/></>:
+   kind==='play'?<path d="M8.5 5 19 12 8.5 19Z"/>:
+   <path d="M12 3a9 9 0 1 1-9 9h3a6 6 0 1 0 6-6Z"/>}
+ </svg>
+}
+
 export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange,
-  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音', leadingControl, trailingControl, recordAsText=false, isPaused=false }: RecordDockProps) {
+  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音', leadingControl, trailingControl, recordAsText=false, isPaused=false, isProcessing=false }: RecordDockProps) {
   const dockRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const dock = dockRef.current
@@ -85,9 +95,11 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
         : leadingControl && <div className={styles.leadingControl}>{leadingControl}</div>}
       {recordAsText?<button ref={recordButtonRef} type="button" className={styles.textPrimary}
         onClick={onRecord} disabled={recordDisabled??isRequesting} aria-label={micLabel}>{micLabel}</button>:<span className={styles.micHalo} data-testid="dock-mic-halo">
-        <button ref={recordButtonRef} type="button" className={styles.mic} data-recording={isCapturing}
+        <button ref={recordButtonRef} type="button" className={styles.mic} data-recording={isCapturing} data-paused={isPaused}
           onClick={onRecord} disabled={recordDisabled ?? isRequesting} aria-label={micLabel} title={micLabel}>
-          {isCapturing ? (variant==='statistics'?'Ⅱ':'●') : isPaused ? '▶' : <MicGlyph />}
+          {variant==='statistics'&&(isCapturing||isPaused||isProcessing)?
+            <ControlGlyph kind={isProcessing?'loading':isCapturing?'pause':'play'}/>:
+            isCapturing?'●':<MicGlyph/>}
         </button>
       </span>}
       {trailingControl&&<div className={styles.trailingControl}>{trailingControl}</div>}
@@ -100,7 +112,7 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
       <span className={styles.hint} data-testid="dock-hint">
         {isCapturing ? '正在录音' : '点击开始录音'}
       </span>
-      {(isCapturing || isPaused) && <span className={styles.timer} data-testid="dock-timer">{timer}</span>}
+      {(isCapturing || isPaused || isProcessing) && <span className={styles.timer} data-testid="dock-timer">{timer}</span>}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 .wrap{position:relative;min-width:0;width:100%}
-.trigger{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;min-width:0;height:44px;padding:0 10px;border:1px solid #e4ebf5;border-radius:18px;background:#fff;color:#6d83a4;font:12px var(--font-sans);cursor:pointer}
+.trigger{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;min-width:0;height:44px;padding:0 10px;border:1px solid #e4ebf5;border-radius:12px;background:#fff;color:#6d83a4;font:12px var(--font-sans);cursor:pointer}
 .trigger>span:first-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .trigger:disabled{opacity:.45;cursor:default}
 .trigger:focus-visible,.option:focus-visible{outline:2px solid var(--info);outline-offset:-2px}

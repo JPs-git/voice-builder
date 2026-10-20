@@ -20,6 +20,7 @@ export class RecordingSessionController {
  private count=0
  private rate=0
  private options:RecordingOptions|null=null
+ private materials:MaterialSnapshot[]=[]
  private working:AudioClip|null=null
  private captureId=0
  private captureAbort=new AbortController()
@@ -49,8 +50,13 @@ export class RecordingSessionController {
   if(busy(this.snapshot.phase))return
   this.working=null;this.chunks=[];this.count=0;this.rate=0
   this.options={...options,material:options.material?{...options.material}:null}
+  this.materials=options.material?[{...options.material}]:[]
   this.begin('requesting')
   await this.capture()
+ }
+ reference(material:MaterialSnapshot|null):void{
+  if(!material||!['requesting','recording','paused'].includes(this.snapshot.phase))return
+  if(!this.materials.some(item=>item.id===material.id&&item.version===material.version))this.materials.push({...material})
  }
  async resume():Promise<void>{
   if(this.snapshot.phase!=='paused'||this.snapshot.atLimit)return
@@ -98,7 +104,8 @@ export class RecordingSessionController {
   let offset=0;for(const chunk of this.chunks){samples.set(chunk,offset);offset+=chunk.length}
   this.chunks=[]
   this.working={samples,sampleRate:this.rate,duration:this.count/this.rate,source:'mic',
-   name:'录音 '+this.deps.now().toLocaleString('zh-CN'),mode:this.options!.mode,material:this.options!.material,prompt:this.options!.prompt}
+   name:'录音 '+this.deps.now().toLocaleString('zh-CN'),mode:this.options!.mode,material:this.options!.material,prompt:this.options!.prompt,
+   materials:this.materials.map(item=>({...item}))}
   void this.analyze(this.id,this.working)
  }
  private async analyze(id:number,clip:AudioClip):Promise<void>{
@@ -138,7 +145,7 @@ export class RecordingSessionController {
   const capture=['requesting','recording'].includes(this.snapshot.phase)
   ++this.id;this.abort.abort()
   if(capture)this.stopCapture();else{++this.captureId;this.clearCaptureTimer();this.captureAbort.abort()}
-  this.working=null;this.chunks=[];this.count=0;this.rate=0
+  this.working=null;this.chunks=[];this.count=0;this.rate=0;this.materials=[]
   this.update({phase:'prepared',elapsed:0,progress:0,error:null,atLimit:false})
  }
  prepare():void{if(!busy(this.snapshot.phase))this.cancel()}

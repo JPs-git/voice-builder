@@ -6,6 +6,7 @@ import {runClipAnalysis} from './workerClient'
 import {importRecordingFile} from './importClip'
 import {RecordingRecordsProvider,useRecordingRecords} from './RecordingRecordsProvider'
 import type {RecordingRecordStore} from './recordStore'
+import {getRecordingReference} from './references'
 
 export interface RecordingPreferences {
  referenceId:string;fontSize:number|null;promptVisible:boolean
@@ -25,7 +26,13 @@ function RecordingTaskProvider({children,controller:provided}:ProviderProps){
  const [preferences,setPreferences]=useState<RecordingPreferences>({
   referenceId:'after-rain-v1',fontSize:null,promptVisible:true,
  })
- const updatePreferences=useCallback((patch:Partial<RecordingPreferences>)=>setPreferences(old=>({...old,...patch})),[])
+ const updatePreferences=useCallback((patch:Partial<RecordingPreferences>)=>{
+  if(patch.referenceId){
+   const {material}=getRecordingReference(patch.referenceId)
+   controller.reference(material?{id:material.id,version:material.version,title:material.title,source:material.source}:null)
+  }
+  setPreferences(old=>({...old,...patch}))
+ },[controller])
  useEffect(()=>{
   const generation=++lifecycle.current
   return()=>{queueMicrotask(()=>{if(lifecycle.current===generation)controller.destroy()})}

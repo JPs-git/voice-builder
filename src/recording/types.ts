@@ -3,6 +3,7 @@ export interface MaterialSnapshot { id: string; version: number; title: string; 
 export interface AudioClip {
   samples: Float32Array; sampleRate: number; duration: number; source: 'mic' | 'file'
   name: string; mode: RecordingMode | null; material: MaterialSnapshot | null; prompt: string | null
+  materials?: MaterialSnapshot[]
 }
 export interface PitchFrame {
   start: number; duration: number; time: number; rawF0: number | null; f0: number | null

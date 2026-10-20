@@ -1,3 +1,4 @@
+import {Button} from '../components/Button'
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useMatch } from 'react-router-dom'
 import { useToolbar } from '../hooks/useToolbar'
@@ -109,6 +110,7 @@ function AppShellContent() {
   )
 
   const recordingTools = useRecordingToolbar(() => openHelp(), () => openOverlay('about'))
+  const completionTool = recordingTools.toolItems.find(item=>item.id==='finish')
   const previousRecording = useRef(isRecording)
   const previousStatistics = useRef(isStatistics)
   useEffect(() => {
@@ -164,7 +166,7 @@ function AppShellContent() {
         moreMenu={isPortrait
           ? <MobileMoreMenu
               triggerButtonRef={moreButtonRef}
-              items={currentTools.filter(item => !['cancel','view-report','prepare','report-back','finish'].includes(item.id))}
+              items={currentTools.filter(item => !['view-report','report-back','finish'].includes(item.id))}
               onSelect={handleCurrentTool}
             />
           : undefined}
@@ -173,11 +175,14 @@ function AppShellContent() {
       {showPortraitDock && (
         <>
           {isRecording ? <RecordDock
-            leadingControl={recordingSnapshot.phase==='prepared'?<RecordingReferenceMenu/>:
-              recordingSnapshot.phase==='error'&&recordingController.canRetry()?<button type="button" onClick={()=>recordingController.prepare()}>重新准备</button>:undefined}
-            trailingControl={recordingSnapshot.phase==='paused'?<button type="button" disabled={recordingSnapshot.elapsed<=0} onClick={()=>recordingTools.handleClickTool('finish')}>完成录制并分析</button>:latest&&['prepared','error'].includes(recordingSnapshot.phase)?
-              <button type="button" onClick={()=>reportNavigation.openReport(latest.id)}>查看上次结果</button>:undefined}
-            recordAsText={['error','importing','analyzing'].includes(recordingSnapshot.phase)}
+            leadingControl={<RecordingReferenceMenu/>}
+            trailingControl={completionTool?
+              <Button type="button" variant="ghost" disabled={completionTool.disabled} aria-label={completionTool.label}
+                onClick={()=>recordingTools.handleClickTool('finish')}>{completionTool.label==='完成录制并分析'?<span>完成录制<br/>并分析</span>:completionTool.label}</Button>:
+              latest&&['prepared','error'].includes(recordingSnapshot.phase)?
+              <Button type="button" variant="ghost" onClick={()=>reportNavigation.openReport(latest.id)}>查看上次结果</Button>:undefined}
+            recordAsText={recordingSnapshot.phase==='error'}
+            isProcessing={['requesting','importing','analyzing'].includes(recordingSnapshot.phase)}
             key="statistics"
             variant="statistics"
             recordButtonRef={recordButtonRef}
@@ -190,8 +195,6 @@ function AppShellContent() {
             isRequesting={recordingSnapshot.phase==='requesting'}
             elapsedSeconds={recordingSnapshot.elapsed}
             showGoal={false}
-            onCancel={recordingTools.toolItems.some(item => item.id==='cancel') ? () => recordingTools.handleClickTool('cancel') : undefined}
-            cancelLabel={recordingTools.toolItems.find(item => item.id==='cancel')?.label}
           /> :
           <RecordDock
             key="realtime"

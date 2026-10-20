@@ -22,7 +22,7 @@ export function RecordingReport({report,playbackController,onBack,backLabel='返
     <h1 ref={titleRef} tabIndex={-1}>录音分析结果</h1>
     {onBack&&<Button type="button" variant="ghost" className={styles.backAction} onClick={onBack}>{backLabel}</Button>}
    </div><p className={styles.muted}>
-    {clip.source==='file'?'导入音频 · '+clip.name:'录音'} · {clip.material?.title??clip.prompt??(clip.source==='file'?'材料未指定':clip.name)}
+    {clip.source==='file'?'导入音频 · '+clip.name:'录音'} · {clip.materials&&clip.materials.length>1?'参考短文：'+clip.materials.map(item=>item.title).join('、'):clip.material?.title??clip.prompt??(clip.source==='file'?'材料未指定':clip.name)}
    </p></div>
    <div className={styles.reportMeta}><span>录音时长 <strong>{clip.duration.toFixed(2)} 秒</strong></span>
     <span>有效 F0 <strong>{s.validDuration.toFixed(2)} 秒</strong> · {(s.coverage*100).toFixed(0)}%</span></div>

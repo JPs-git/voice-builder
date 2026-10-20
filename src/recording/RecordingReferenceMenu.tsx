@@ -1,6 +1,7 @@
 import {useEffect,useId,useRef,useState,type KeyboardEvent} from 'react'
 import {useRecordingSession} from './RecordingSessionProvider'
 import {getRecordingReference,REFERENCE_OPTIONS} from './references'
+import {Button} from '../components/Button'
 import styles from './RecordingReferenceMenu.module.css'
 
 /** The bottom dock needs an upward menu; native select popup placement is browser-owned. */
@@ -11,7 +12,7 @@ export function RecordingReferenceMenu(){
  const trigger=useRef<HTMLButtonElement>(null)
  const menu=useRef<HTMLDivElement>(null)
  const id=useId()
- const busy=['requesting','recording','paused','importing','analyzing'].includes(snapshot.phase)
+ const busy=['importing','analyzing'].includes(snapshot.phase)
  useEffect(()=>{
   if(!open)return
   menu.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
@@ -35,12 +36,12 @@ export function RecordingReferenceMenu(){
  return <div ref={root} className={styles.wrap} onBlur={event=>{
   if(!event.currentTarget.contains(event.relatedTarget as Node|null))setOpen(false)
  }}>
-  <button ref={trigger} type="button" className={styles.trigger} aria-label="参考内容" disabled={busy}
+  <Button variant="ghost" ref={trigger} type="button" className={styles.trigger} aria-label="参考内容" disabled={busy}
    aria-haspopup="menu" aria-expanded={open} aria-controls={open?id:undefined}
    onKeyDown={event=>{if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();setOpen(true)}}}
    onClick={()=>setOpen(value=>!value)}>
    <span>{getRecordingReference(preferences.referenceId).label}</span><span aria-hidden="true">⌃</span>
-  </button>
+  </Button>
   {open&&!busy&&<div ref={menu} id={id} role="menu" aria-label="参考内容" data-placement="top" className={styles.menu} onKeyDown={navigate}>
     {REFERENCE_OPTIONS.map(reference=><button key={reference.id} type="button"
      role="menuitemradio" aria-checked={reference.id===preferences.referenceId} tabIndex={-1} className={styles.option}

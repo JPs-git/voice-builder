@@ -22,7 +22,7 @@ it('shows readable material and keeps every capture state free of acoustic feedb
  act(()=>chunk(new Float32Array(16000),16000))
  expect(container.querySelector('[data-acoustic-chart]')).toBeNull()
  expect(container.textContent).not.toMatch(/Hz|F0|波形|电平|评分/)
- expect(screen.getByLabelText('参考内容').hasAttribute('disabled')).toBe(true)
+ expect(screen.getByLabelText('参考内容').hasAttribute('disabled')).toBe(false)
  expect(analyze).not.toHaveBeenCalled()
  act(()=>controller.cancel())
 })
