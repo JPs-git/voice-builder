@@ -1,19 +1,14 @@
-import { Resampler } from './resampler'
-import { FrameProcessor } from './frame-processor'
-import type { FrameData } from './frame-processor'
-import { detectPitch, extractFormants, isHarmonicLocked } from './lpc'
+import { BaseAnalysisPipeline, BASE_SAMPLE_RATE } from './base-analysis'
+import { extractFormants, isHarmonicLocked } from './lpc'
 import type { FormantPeak } from './lpc'
 import { extractFormantsCepstral } from './cepstral'
 import { DEFAULT_VAD_OPTIONS } from './vad'
-import { VoicedFrameAnalyzer } from './voicedFrame'
 import type { VadOptions } from './vad'
 import { FormantSmoother } from './formant-smoother'
 import type { SmootherFrame } from './formant-smoother'
 import { RegisterDetector } from './register-detector'
 
-const TARGET_RATE = 16000
-const FRAME_SIZE = 800
-const HOP_SIZE = 160
+const TARGET_RATE = BASE_SAMPLE_RATE
 
 export type FormantMethodValue = 'hybrid' | 'lpc' | 'cepstral'
 
@@ -27,17 +22,14 @@ export interface PipelineOptions {
 }
 
 export class AnalysisPipeline {
-  private _resampler: Resampler | null = null
-  private _frameProcessor: FrameProcessor | null = null
+  private _base: BaseAnalysisPipeline
   onFrame: ((frame: SmootherFrame) => void) | null
   private _frameCount = 0
   private _frameOffset: number
-  private _voicedFrames: VoicedFrameAnalyzer
   private _formantMethod: FormantMethodValue
   private _prevGoodF1: number | null = null
   private _smoother: FormantSmoother | null
   private _registerDetector: RegisterDetector
-  private _inputSampleCount = 0
 
   constructor({
     onFrame,
@@ -49,39 +41,24 @@ export class AnalysisPipeline {
   }: PipelineOptions = {}) {
     this._frameOffset = frameOffset
     const threshold = vadThreshold ?? vadOptions?.threshold ?? DEFAULT_VAD_OPTIONS.threshold
-    this._voicedFrames = new VoicedFrameAnalyzer({
-      threshold,
-      // A legacy opening-threshold override must not put release above opening.
-      releaseThreshold: Math.min(threshold, vadOptions?.releaseThreshold ?? DEFAULT_VAD_OPTIONS.releaseThreshold),
-      holdMs: vadOptions?.holdMs ?? DEFAULT_VAD_OPTIONS.holdMs,
-    })
     this._formantMethod = formantMethod
     this._smoother = formantSmoothing ? new FormantSmoother() : null
     this._registerDetector = new RegisterDetector()
     this.onFrame = onFrame ?? null
+    this._base = this.createBase({
+      threshold,
+      releaseThreshold: Math.min(threshold, vadOptions?.releaseThreshold ?? DEFAULT_VAD_OPTIONS.releaseThreshold),
+      holdMs: vadOptions?.holdMs ?? DEFAULT_VAD_OPTIONS.holdMs,
+    })
   }
 
   get frameCount(): number { return this._frameCount }
 
-  pushChunk(samples: Float32Array, inputSampleRate: number): void {
-    if (!this._frameProcessor) {
-      this._frameProcessor = new FrameProcessor({
-        sampleRate: TARGET_RATE,
-        frameSize: FRAME_SIZE,
-        hopSize: HOP_SIZE,
-      })
-      this._frameProcessor.onFrame = (frame: FrameData) => {
-        // Only real samples can provide speech evidence. Synthetic flush
-        // padding must not change noise into a structured spectrum. At least
-        // half the 50ms window is needed for a tail's pitch/formant estimates.
-        const realLength = Math.max(0, Math.min(FRAME_SIZE, this._inputSampleCount - this._frameCount * HOP_SIZE))
-        const { samples: analysisSamples, magnitudes, voiced, rms } = this._voicedFrames.analyze(
-          frame.samples, realLength, frame.sampleRate, HOP_SIZE / TARGET_RATE * 1000,
-        )
-        let f0: number | null = null
+  private createBase(vadOptions: VadOptions): BaseAnalysisPipeline {
+    return new BaseAnalysisPipeline({vadOptions,onFrame: frame => {
+        const {samples: analysisSamples, magnitudes, voiced, rms, rawF0: f0} = frame
         let formants: (FormantPeak | null)[] = []
         if (voiced) {
-          f0 = detectPitch(analysisSamples, frame.sampleRate)
           if (this._formantMethod === 'cepstral') {
             const result = extractFormantsCepstral(analysisSamples, frame.sampleRate, 2, f0)
             formants = result.formants
@@ -155,29 +132,17 @@ export class AnalysisPipeline {
         output.register = result.register
         output.registerConfidence = result.confidence
         if (this.onFrame) this.onFrame(output)
-      }
-      if (inputSampleRate !== TARGET_RATE) {
-        this._resampler = new Resampler(inputSampleRate, TARGET_RATE)
-      }
-    }
-    const data = this._resampler ? this._resampler.process(samples) : samples
-    if (data.length > 0) {
-      this._inputSampleCount += data.length
-      this._frameProcessor.push(data)
-    }
+    }})
   }
 
-  flush(): void {
-    if (this._frameProcessor) {
-      this._frameProcessor.push(new Float32Array(FRAME_SIZE))
-    }
+  pushChunk(samples: Float32Array, inputSampleRate: number): void {
+    this._base.pushChunk(samples,inputSampleRate)
   }
+
+  flush(): void { this._base.flush() }
 
   reset(): void {
-    this._inputSampleCount = 0
-    this._voicedFrames.reset()
-    if (this._resampler) this._resampler.reset()
-    if (this._frameProcessor) this._frameProcessor.reset()
+    this._base.reset()
     if (this._smoother) this._smoother.reset()
     this._registerDetector.reset()
     this._prevGoodF1 = null
