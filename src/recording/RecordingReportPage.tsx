@@ -1,5 +1,6 @@
-import type {CSSProperties} from 'react'
-import {useParams} from 'react-router-dom'
+import {useEffect,useRef,type CSSProperties} from 'react'
+import {useParams,useLocation,useNavigationType} from 'react-router-dom'
+import {consumeReportEntry,reportOpened} from './reportAnalytics'
 import {useMediaQuery} from '../hooks/useMediaQuery'
 import {Button} from '../components/Button'
 import {useRecordingRecords} from './RecordingRecordsProvider'
@@ -11,6 +12,14 @@ import styles from './RecordingPage.module.css'
 export function RecordingReportPage(){
  const {reportId}=useParams(),{records}=useRecordingRecords()
  const report=records.get(reportId??'')
+ const location=useLocation(),navigationType=useNavigationType()
+ const observed=useRef<string|null>(null)
+ useEffect(()=>{
+  const key=location.key+location.pathname
+  if(observed.current===key)return
+  observed.current=key
+  reportOpened(consumeReportEntry(records,location.pathname,navigationType),!!report)
+ },[location.key,location.pathname,navigationType,records,report])
  const {back,backLabel}=useReportNavigation()
  const portrait=useMediaQuery('(max-width: 768px)')
  return <main className={styles.page} data-recording-page data-report-detail style={{'--recording-dock-height':'0px'} as CSSProperties}>

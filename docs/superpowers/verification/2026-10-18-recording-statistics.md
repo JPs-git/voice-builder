@@ -149,3 +149,14 @@
 - 浏览器检查：1440×900 阅读卡延伸至底部常规间距；900×600、26px 字号时 article 高 193px、内容 521px，End 后 scrollTop=328，main scrollTop=0；390×844 时 article 内部滚动且 main 无溢出。
 - 图标打开原帮助弹窗并选中统计分析；桌面、竖屏均无底部帮助占位。
 - 效果图：`C:/Users/Administrator/.codex/visualizations/2026/10/18/01a14d7c-f8c7-7913-9755-2979e99b400c/recording-reader-help-fill.png`。
+
+
+### 2026-10-20 统计分析匿名埋点
+
+- 录制新建/继续、失败、暂停原因、完成、主动取消、导入结果、分析尝试、报告进入、完整回放与统一帮助按已确认规格接入。
+- 报告 URL/referrer 归一为 `/reports/detail`；事件只发送固定枚举，未发送音频、文件名、实际报告 ID、精确时长或声学结果。
+- RED→GREEN：新路由/固定任务归属 3 个测试、控制器 6 个测试、导入/worker 错误分类、报告进入和回放去重均确认原实现失败后通过。
+- 新增完整状态序列、60 秒上限、采样先于授权 Promise、取消后迟到回调、失败重试、StrictMode/POP、拖动回放不重复计数和文档级采样参与度验证。
+- 集成验证使用真实统计封装及本地 SDK 替身：切换页面后的分析终态仍归 recording；关闭统计不中断录制、不丢弃 PCM，无外部请求。
+- 完整测试 91 文件 / 692 项通过；npm run build、npx tsc --noEmit、git diff --check 通过；构建保留原有 chunk-size 提示。
+- 独立审查未发现需修复问题。正式域名上的平台接收、页面浏览行为及网络 payload 验收待部署后进行。

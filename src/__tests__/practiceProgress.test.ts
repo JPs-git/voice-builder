@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPracticeProgress } from '../analytics/practiceProgress'
 
-const mocks = vi.hoisted(() => ({ allowed: true, page: 'analysis' as 'analysis' | 'practice' | null, track: vi.fn() }))
+const mocks = vi.hoisted(() => ({ allowed: true, page: 'analysis' as 'analysis' | 'practice' | 'recording' | null, track: vi.fn() }))
 vi.mock('../analytics/analytics', () => ({
   isAnalyticsAllowed: () => mocks.allowed,
   getAnalyticsPage: () => mocks.page,
@@ -68,4 +68,12 @@ describe('recording participation', () => {
     recordPracticeSamples(480000, 16000)
     expect(mocks.track).toHaveBeenCalledExactlyOnceWith('practice_engaged', { page: 'practice' })
   })
+})
+
+it('shares one document threshold with statistics recording samples',async()=>{
+ const {recordPracticeSamples}=await import('../analytics/practiceProgress')
+ recordPracticeSamples(20*16000,16000)
+ mocks.page='recording';recordPracticeSamples(10*48000,48000)
+ mocks.page='analysis';recordPracticeSamples(30*16000,16000)
+ expect(mocks.track).toHaveBeenCalledExactlyOnceWith('practice_engaged',{page:'recording'})
 })
