@@ -71,7 +71,11 @@ describe('business analytics boundaries', () => {
     await act(async () => { await result.current.onRecord() })
     mocks.page = 'practice'
     act(() => capture(new Float32Array(10 * 16000), 16000))
-    act(() => capture(new Float32Array(10 * 48000), 48000))
+    expect(mocks.track.mock.calls.filter(([name]) => name === 'practice_engaged')).toEqual([])
+    const nextCapture = mocks.startCapture.mock.calls[1][0] as typeof capture
+    act(() => nextCapture(new Float32Array(5 * 16000), 16000))
+    expect(mocks.track.mock.calls.filter(([name]) => name === 'practice_engaged')).toEqual([])
+    act(() => nextCapture(new Float32Array(5 * 48000), 48000))
     const engagements = mocks.track.mock.calls.filter(([name]) => name === 'practice_engaged')
     expect(engagements).toEqual([['practice_engaged', { page: 'practice' }]])
   })
