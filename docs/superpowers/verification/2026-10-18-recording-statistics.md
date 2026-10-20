@@ -139,3 +139,13 @@
 - 独立审查发现授权等待长文案溢出固定槽位，补失败回归后改为可见「授权中…」，保留完整 aria-label/title。浏览器授权文案右边1014.74px，小于按钮右边1036px，问题已修复；无其他审查发现。
 - 保存 `toolbar-desktop-paused.png`、`toolbar-desktop-limit.png`、`toolbar-desktop-analyzing.png` 和 `toolbar-desktop-requesting.png` 到聊天产物目录。使用实际组件与模拟音频，没有调用物理麦克风；临时验证入口已移除。
 - 最终 89 个测试文件、661 项测试通过，构建、TypeScript 和 diff 检查通过。构建保留原有大分块提示。
+
+
+### 2026-10-20 阅读材料帮助与剩余高度
+
+- 横屏移除阅读卡底部帮助链接和 footer，在「阅读材料」标题旁复用 ContextHelpButton，仍进入统一帮助的统计分析主题；关闭恢复入口焦点。
+- 阅读卡填满设置条下方剩余高度，底部保留 24px 间距；仅 article 内部滚动。详情页自然滚动及竖屏 Dock 避让不变。
+- 回归用例先因旧帮助链接存在失败，修改后通过；完整 89 文件 / 661 项测试通过，生产构建、TypeScript 检查通过。构建保留现有大文件体积提示。
+- 浏览器检查：1440×900 阅读卡延伸至底部常规间距；900×600、26px 字号时 article 高 193px、内容 521px，End 后 scrollTop=328，main scrollTop=0；390×844 时 article 内部滚动且 main 无溢出。
+- 图标打开原帮助弹窗并选中统计分析；桌面、竖屏均无底部帮助占位。
+- 效果图：`C:/Users/Administrator/.codex/visualizations/2026/10/18/01a14d7c-f8c7-7913-9755-2979e99b400c/recording-reader-help-fill.png`。

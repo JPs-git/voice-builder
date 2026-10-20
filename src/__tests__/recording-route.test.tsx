@@ -233,7 +233,9 @@ it('keeps failed PCM at the recorder while an older detail is viewed, then retri
 it('offers contextual reader help without redundant metadata',()=>{
  mount()
  expect(screen.queryByText(/原创短文 · 约/)).toBeNull()
- const entry=screen.getByRole('button',{name:'不知道怎么用？'})
+ expect(screen.queryByText('不知道怎么用？')).toBeNull()
+ const entry=screen.getByRole('button',{name:'阅读材料说明'})
+ expect(entry.closest('header')?.textContent).toContain('阅读材料')
  entry.focus();fireEvent.click(entry)
  expect(screen.getByRole('button',{name:'统计分析'}).getAttribute('aria-pressed')).toBe('true')
  fireEvent.click(screen.getByRole('button',{name:'关闭'}))
