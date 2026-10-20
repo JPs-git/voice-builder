@@ -21,14 +21,14 @@ it('copies complete PCM and analyzes only on finish',async()=>{
  const input=new Float32Array(16000).fill(.2);s.chunk(input);input.fill(0)
  expect(s.analyze).not.toHaveBeenCalled()
  expect(s.controller.getSnapshot().elapsed).toBe(1)
- s.controller.finish();await settle()
+ s.controller.pause();s.controller.finish();await settle()
  expect(s.controller.getSnapshot().phase).toBe('prepared')
  expect(s.records.getSnapshot()!.clip.samples![0]).toBeCloseTo(.2)
  expect(s.engine.stopCapture).toHaveBeenCalled()
 })
 it('clips the final input block at exactly 60 seconds and finalizes once',async()=>{
  const s=setup();await s.controller.start(options)
- s.chunk(new Float32Array(960010));s.controller.finish();await settle()
+ s.chunk(new Float32Array(960010));s.controller.pause();s.controller.finish();await settle()
  expect(s.analyze).toHaveBeenCalledTimes(1)
  expect(s.records.getSnapshot()!.clip.samples!.length).toBe(960000)
  expect(s.records.getSnapshot()!.clip.duration).toBe(60)
@@ -46,18 +46,20 @@ it('keeps the previous report when a new recording is cancelled or import fails'
 it('ignores a late analysis after cancel and preserves failed PCM for retry',async()=>{
  const s=setup();let resolve!:(a:ClipAnalysis)=>void
  s.analyze.mockImplementationOnce(()=>new Promise(r=>{resolve=r}))
- await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish()
+ await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.pause();s.controller.finish()
  s.controller.cancel();resolve(s.result);await settle()
  expect(s.records.getSnapshot()).toBeNull()
  s.analyze.mockRejectedValueOnce(new Error('worker failed'))
- await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
+ await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.pause();s.controller.finish();await settle()
  expect(s.controller.getSnapshot().phase).toBe('error')
  s.controller.retry();await settle()
  expect(s.controller.getSnapshot().phase).toBe('prepared')
 })
-it('finishes on leave and cancels pending permission',async()=>{
+it('pauses on leave and cancels first pending permission',async()=>{
  const s=setup();await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.leave();await settle()
- expect(s.controller.getSnapshot().phase).toBe('prepared')
+ expect(s.controller.getSnapshot().phase).toBe('paused')
+ expect(s.analyze).not.toHaveBeenCalled()
+ s.controller.cancel()
  let resolve!:()=>void
  s.engine.startCapture.mockImplementationOnce(()=>new Promise<void>(r=>{resolve=r}))
  const pending=s.controller.start(options);s.controller.leave();resolve();await pending
@@ -70,7 +72,7 @@ it('stops a capture that never supplies an initial chunk after permission succee
  expect(s.controller.getSnapshot().error).toMatch(/没有收到音频/)
  expect(s.engine.stopCapture).toHaveBeenCalled()
 })
-it('analyzes preserved PCM on interruption and ignores stale interruption events',async()=>{
+it('pauses preserved PCM on interruption and ignores stale interruption events',async()=>{
  const s=setup();const interruptions:Array<()=>void>=[]
  s.engine.startCapture.mockImplementation(async(cb:any,_signal?:any,onInterrupted?:any)=>{interruptions.push(onInterrupted)})
  await s.controller.start(options)
@@ -84,7 +86,9 @@ it('analyzes preserved PCM on interruption and ignores stale interruption events
  s.engine.startCapture.mockImplementation(async(cb:any,_signal?:any,onInterrupted?:any)=>{interruptions.push(onInterrupted);(s as any).feed=cb})
  await s.controller.start(options);(s as any).feed(new Float32Array(16000),16000)
  interruptions[interruptions.length-1]?.();await settle()
- expect(s.controller.getSnapshot().phase).toBe('prepared')
+ expect(s.controller.getSnapshot().phase).toBe('paused')
+ expect(s.analyze).not.toHaveBeenCalled()
+ s.controller.finish();await settle()
  expect(s.records.getSnapshot()!.clip.duration).toBe(1)
 })
 
@@ -112,7 +116,7 @@ it('retains failed PCM while old records are read and publishes a new identity o
  const old=s.records.getSnapshot()!
  s.records.playback.seek(.4)
  s.analyze.mockRejectedValueOnce(new Error('worker failed'))
- await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.finish();await settle()
+ await s.controller.start(options);s.chunk(new Float32Array(16000));s.controller.pause();s.controller.finish();await settle()
  expect(s.controller.canRetry()).toBe(true)
  expect(s.records.get(old.id)).toBe(old)
  expect(s.records.playback.getSnapshot().position).toBe(.4)

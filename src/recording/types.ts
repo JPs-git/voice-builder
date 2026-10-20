@@ -21,7 +21,7 @@ export interface AnalysisSettings {
 export interface ClipAnalysis { frames: PitchFrame[]; summary: PitchSummary; version: string; settings: AnalysisSettings }
 export type StoredRecordingClip=Omit<AudioClip,'samples'>&{samples?:Float32Array}
 export interface RecordingReport { id:string;createdAt:string;clip:StoredRecordingClip;analysis:ClipAnalysis }
-export type RecordingPhase = 'prepared'|'requesting'|'recording'|'importing'|'analyzing'|'error'
+export type RecordingPhase = 'prepared'|'requesting'|'recording'|'paused'|'importing'|'analyzing'|'error'
 export interface RecordingSnapshot {
-  phase: RecordingPhase; elapsed: number; progress: number; completedRecordId:string|null; error: string|null
+  phase: RecordingPhase; atLimit:boolean; elapsed: number; progress: number; completedRecordId:string|null; error: string|null
 }
