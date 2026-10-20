@@ -1,4 +1,3 @@
-import {useEffect,useRef} from 'react'
 import styles from './FirstUseHelpBanner.module.css'
 
 interface FirstUseHelpBannerProps {
@@ -9,20 +8,11 @@ interface FirstUseHelpBannerProps {
   onOpen: () => void
   onDismiss: () => void
   description?:string
-  onHeightChange?:(height:number)=>void
 }
 
-export function FirstUseHelpBanner({ visible, suppressed, layout, dockHeight = 0, onOpen, onDismiss, description='了解录音、读图与目标设置', onHeightChange }: FirstUseHelpBannerProps) {
-  const root=useRef<HTMLElement>(null)
-  useEffect(()=>{
-    const measure=()=>onHeightChange?.(visible&&!suppressed&&layout==='portrait'&&dockHeight>0?(root.current?.getBoundingClientRect().height??0)+10:0)
-    measure()
-    if(!root.current||typeof ResizeObserver==='undefined')return
-    const observer=new ResizeObserver(measure);observer.observe(root.current)
-    return()=>observer.disconnect()
-  },[visible,suppressed,layout,dockHeight,onHeightChange,description])
+export function FirstUseHelpBanner({ visible, suppressed, layout, dockHeight = 0, onOpen, onDismiss, description='了解录音、读图与目标设置' }: FirstUseHelpBannerProps) {
   if (!visible || (layout === 'portrait' && dockHeight <= 0)) return null
-  return <section ref={root} aria-label="首次使用帮助" className={styles.anchor} style={{ bottom: layout === 'portrait' ? dockHeight + 10 : 24 }}
+  return <section aria-label="首次使用帮助" className={styles.anchor} style={{ bottom: layout === 'portrait' ? dockHeight + 10 : 24 }}
     data-layout={layout}
     data-suppressed={suppressed} aria-hidden={suppressed || undefined}>
     <div className={styles.banner}>

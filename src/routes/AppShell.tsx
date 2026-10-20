@@ -35,7 +35,6 @@ export interface ShellContext {
   onPlayback?: () => void
   isPlaying?: boolean
   dockHeight?: number
-  introHeight?: number
   onRecord: () => void
   pianoScrollProgress?: number
   setPianoScrollProgress?: (progress: number) => void
@@ -57,7 +56,6 @@ function AppShellContent() {
   const helpButtonRef = useRef<HTMLButtonElement>(null)
   const moreButtonRef = useRef<HTMLButtonElement>(null)
   const [dockHeight, setDockHeight] = useState(0)
-  const [introHeight, setIntroHeight] = useState(0)
   const { eligible, dismiss } = useFirstUseHelp()
 
   const isPractice = useMatch('/practice') != null
@@ -146,7 +144,6 @@ function AppShellContent() {
     onPlayback: () => handleClickTool('playback'),
     isPlaying,
     dockHeight: showPortraitDock ? dockHeight : 0,
-    introHeight:isRecording?introHeight:0,
     pianoScrollProgress: pianoScrollProgressRef.current,
     setPianoScrollProgress: (progress: number) => {
       pianoScrollProgressRef.current = progress
@@ -219,7 +216,6 @@ function AppShellContent() {
         visible={eligible && !isReport}
         suppressed={(isRecording?!['prepared','paused'].includes(recordingSnapshot.phase):hasData || isCapturing || isRequesting || isPlaying) || helpOpen || configOpen || aboutOpen || goalOpen}
         description={isRecording?'了解录制、暂停和统计结果':undefined}
-        onHeightChange={setIntroHeight}
         dockHeight={dockHeight}
         onOpen={() => openHelp(isRecording?'recording-statistics':'quick-start')}
         onDismiss={() => { [recordButtonRef.current, getHelpFallbackFocus()].find(isAvailableFocusTarget)?.focus({ preventScroll: true }); dismiss() }}

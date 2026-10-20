@@ -72,3 +72,5 @@ Task 1 complete: shared base RED→GREEN; 151 DSP tests at first gate, additiona
 Task 2 complete: three dedicated pause regressions RED→GREEN; old implicit-finish tests superseded. Rate mismatch uses the approved rejection path, preserving the original draft for completion.
 Task 3 complete: reader-help/default-font tests RED→GREEN; route, portrait and global first-use regressions pass. Browser 360px measures equal tracks and centered mic; article ends above intro.
 Task 4 complete: 89 files/657 tests, build, tsc passed. Fresh independent review: no substantive or minor findings. Reviewer left real viewport and physical microphone verification to execution; viewport checks completed, physical microphone remains untested.
+
+Follow-up correction: first-use help is a pure fixed overlay. Removed the planned intro-height measurement/reservation; only Dock height affects article space. Regression RED→GREEN and browser visible/dismissed article height unchanged at 508px; full suite 658 passed, build and tsc passed.

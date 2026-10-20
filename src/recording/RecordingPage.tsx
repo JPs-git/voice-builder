@@ -28,7 +28,7 @@ export function RecordingPage(){
   if(title&&canAutoFocusPage()){title.tabIndex=-1;title.focus()}
  },[])
  useEffect(()=>{if(s.error&&canAutoFocusPage())errorRef.current?.focus()},[s.error])
- return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active="true" style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight+(shell.introHeight??0)}px`:undefined} as CSSProperties}>
+ return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active="true" style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
   <div className={styles.content}>
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
     <span>{s.error}</span>

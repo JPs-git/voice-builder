@@ -6,6 +6,7 @@ import {RecordingPage} from '../recording/RecordingPage'
 import {RecordingReportPage} from '../recording/RecordingReportPage'
 import {summarizePitch} from '../recording/statistics'
 import {ANALYSIS_SETTINGS} from '../recording/constants'
+import {useIntroHintStore} from '../store/introHintStore'
 const audio=vi.hoisted(()=>({startCapture:vi.fn(),stopCapture:vi.fn()}))
 const analyze=vi.hoisted(()=>vi.fn())
 vi.mock('../ts',()=>({getAudioEngine:()=>audio}))
@@ -145,4 +146,26 @@ it('uses a smaller default and pauses before showing a distinct completion actio
  expect((screen.getByRole('button',{name:'继续录制'}) as HTMLButtonElement).disabled).toBe(true)
  expect(analyze).not.toHaveBeenCalled()
  expect(screen.getByText('已达 60 秒，请完成录制并分析')).toBeTruthy()
+})
+it('reserves only Dock height while the first-use hint appears, hides and is dismissed',async()=>{
+ useIntroHintStore.setState({handled:false})
+ const geometry=vi.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockReturnValue({height:80} as DOMRect)
+ let chunk!:(samples:Float32Array,rate:number)=>void
+ audio.startCapture.mockImplementation(async cb=>{chunk=cb})
+ try {
+  mount()
+  const reserved=()=>document.querySelector<HTMLElement>('main[data-recording-page]')!.style.getPropertyValue('--recording-dock-height')
+  expect(screen.getByRole('region',{name:'首次使用帮助'})).toBeTruthy()
+  expect(reserved()).toBe('80px')
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+  act(()=>chunk(new Float32Array(16000),16000))
+  expect(screen.queryByRole('region',{name:'首次使用帮助'})).toBeNull()
+  expect(reserved()).toBe('80px')
+  fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+  expect(screen.getByRole('region',{name:'首次使用帮助'})).toBeTruthy()
+  expect(reserved()).toBe('80px')
+  fireEvent.click(screen.getByRole('button',{name:'关闭首次使用提示'}))
+  expect(screen.queryByRole('region',{name:'首次使用帮助'})).toBeNull()
+  expect(reserved()).toBe('80px')
+ } finally {geometry.mockRestore();act(()=>useIntroHintStore.setState({handled:false}))}
 })
