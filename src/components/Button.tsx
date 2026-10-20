@@ -1,10 +1,10 @@
-import type { ButtonHTMLAttributes, Ref } from 'react'
+import type { ButtonHTMLAttributes, Ref, ReactNode } from 'react'
 import styles from './Button.module.css'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   ref?: Ref<HTMLButtonElement>
   variant?: 'default' | 'primary' | 'ghost'
-  icon?: string
+  icon?: ReactNode
   label?: string
   recording?: boolean
 }
@@ -20,7 +20,7 @@ export function Button({ variant = 'default', icon, label, recording, className,
 
   return (
     <button className={cls} {...rest}>
-      {icon && <span className={styles.icon}>{icon}</span>}
+      {icon && <span className={styles.icon} aria-hidden="true">{icon}</span>}
       {label && <span className={styles.label}>{label}</span>}
       {children}
     </button>

@@ -61,10 +61,8 @@ describe('first-use help integration', () => {
     fireEvent.click(screen.getByRole('button', { name: '基频图说明' }))
     expect(track).toHaveBeenLastCalledWith('help_open', { page: 'analysis', topic: 'charts' })
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    if (portrait) {
-      fireEvent.click(screen.getByRole('button', { name: '更多操作' }))
-      fireEvent.click(screen.getByRole('menuitem', { name: '帮助' }))
-    } else fireEvent.click(screen.getByRole('button', { name: /帮助/ }))
+    fireEvent.click(screen.getByRole('button', { name: '更多操作' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '帮助' }))
     expect(track).toHaveBeenCalledTimes(3)
     expect(track).toHaveBeenLastCalledWith('help_open', { page: 'analysis', topic: 'quick-start' })
   })
@@ -73,7 +71,7 @@ describe('first-use help integration', () => {
     resizeLayout(portrait)
     expect(screen.queryByRole('button', { name: '查看上手步骤' })).toBeNull()
     expect(screen.getAllByRole('region', { name: '首次使用帮助' })).toHaveLength(1)
-    fireEvent.click(portrait ? screen.getByRole('link', { name: '音高参考' }) : screen.getByRole('button', { name: /音高参考/ }))
+    fireEvent.click(screen.getByRole('link', { name: '音高参考' }))
     expect(screen.queryByRole('button', { name: '了解音高参考' })).toBeNull()
     expect(screen.getByRole('button', { name: '音高图说明' })).toBeTruthy()
     expect(screen.getAllByRole('region', { name: '首次使用帮助' })).toHaveLength(1)
@@ -94,7 +92,7 @@ describe('first-use help integration', () => {
     expect(document.activeElement).toBe(topic)
     expect(topic.getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: /开始录音/ }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
     expect(audio).not.toHaveBeenCalled()
   })
 
@@ -107,9 +105,7 @@ describe('first-use help integration', () => {
     view.rerender(<TestApp />)
     resizeLayout(!portrait)
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.activeElement).toBe(portrait
-      ? screen.getByRole('button', { name: /帮助/ })
-      : screen.getByRole('button', { name: '更多操作' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
     expect(audio).not.toHaveBeenCalled()
   })
 
@@ -131,7 +127,7 @@ describe('first-use help integration', () => {
     fireEvent.click(screen.getByRole('button', { name: '关闭首次使用提示' }))
     expect(document.activeElement).toBe(screen.getByRole('button', { name: '开始录音' }))
     act(() => useAppStore.getState().clearFrames())
-    fireEvent.click(screen.getByRole('link', { name: '声音分析' }))
+    fireEvent.click(screen.getByRole('link', { name: '实时分析' }))
     resizeLayout(false); resizeLayout(true)
     expect(screen.queryByRole('region', { name: '首次使用帮助' })).toBeNull()
     expect(audio).not.toHaveBeenCalled()
@@ -153,18 +149,18 @@ describe('first-use help integration', () => {
     expect(audio).not.toHaveBeenCalled()
   })
 
-  it('returns focus to the mic if successful analysis removes the trigger while help is open', () => {
+  it('returns focus to More if successful analysis removes the trigger while help is open', () => {
     render(<TestApp />)
     const trigger = screen.getByRole('button', { name: '查看说明' })
     trigger.focus(); fireEvent.click(trigger)
     act(() => useAppStore.getState().setFrames([{ time: 1, f0: 200, f1: null, f2: null }]))
     expect(trigger.isConnected).toBe(false)
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: '开始录音' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
     expect(screen.queryByRole('region', { name: '首次使用帮助' })).toBeNull()
   })
 
-  it('returns focus to the mic when invalid imported data suppresses the connected trigger', () => {
+  it('returns focus to More when invalid imported data suppresses the connected trigger', () => {
     const view = render(<TestApp />)
     const trigger = screen.getByRole('button', { name: '查看说明' })
     trigger.focus(); fireEvent.click(trigger)
@@ -172,7 +168,7 @@ describe('first-use help integration', () => {
     view.rerender(<TestApp />)
     expect(trigger.isConnected).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: '开始录音' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '更多操作' }))
     expect(useIntroHintStore.getState().handled).toBe(false)
   })
 

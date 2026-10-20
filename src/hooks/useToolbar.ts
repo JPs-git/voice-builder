@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, type ReactNode } from 'react'
 import { useAppStore } from '../store/appStore'
 import { useAnalysis } from './useAnalysis'
 import { usePlayback } from './usePlayback'
@@ -6,10 +6,12 @@ import { usePlayback } from './usePlayback'
 export interface ToolItem {
   id: string
   variant: 'primary' | 'ghost'
-  icon: string
+  icon: ReactNode
   label: string
+  displayLabel?: string
   recording?: boolean
   disabled?: boolean
+  inMore?: boolean
 }
 
 // Actions that need pre-stop; config/help/about don't

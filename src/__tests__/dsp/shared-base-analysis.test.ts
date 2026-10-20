@@ -1,5 +1,6 @@
 import {it,expect} from 'vitest'
 import {BaseAnalysisPipeline,type BaseAnalysisFrame} from '../../dsp/base-analysis'
+import {analyzeClip} from '../../recording/analyzeClip'
 import {AnalysisPipeline} from '../../dsp/analysis-pipeline'
 
 it.each([16000,44100,48000])('shares raw frames for whole and chunked %iHz input, with idempotent flush',rate=>{
@@ -13,6 +14,7 @@ it.each([16000,44100,48000])('shares raw frames for whole and chunked %iHz input
  }
  const whole=run(input.length),chunked=run(137)
  expect(chunked).toEqual(whole)
+ expect(analyzeClip(input,rate).frames.map(({start,duration,time,rawF0,voiced})=>({start,duration,time,rawF0,voiced}))).toEqual(whole)
  expect(whole[whole.length-1].time).toBeLessThanOrEqual(input.length/rate)
 })
 it('retains high raw pitches and rejects synthetic tail evidence',()=>{

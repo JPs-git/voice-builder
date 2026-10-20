@@ -53,18 +53,19 @@ describe('AppShell toolbar density', () => {
     expect(screen.queryByText('导入音频')).toBeNull()
     expect(screen.getByRole('navigation', { name: '页面切换' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '音高参考' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: '声音分析' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '实时分析' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '统计分析' })).toBeTruthy()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('true')
   })
 
-  it('keeps the full flat toolbar in landscape', () => {
+  it('keeps frequent toolbar actions and More in landscape', () => {
     setMatchMedia(false)
     renderShell()
-    expect(screen.queryByLabelText('更多操作')).toBeNull()
+    expect(screen.getByLabelText('更多操作')).toBeTruthy()
     expect(screen.getByText('导入音频')).toBeTruthy()
     expect(screen.getByText('音高参考')).toBeTruthy()
     expect(document.querySelector('header')?.getAttribute('data-compact')).toBe('false')
-    expect(document.querySelectorAll('header button[id]').length).toBe(7)
+    expect(document.querySelectorAll('header button[id]').length).toBe(4)
   })
 
   it('navigates to the practice page from the portrait tabs', () => {

@@ -1,11 +1,14 @@
+import {RecordingControlIcon} from '../components/RecordingControlIcon'
+import {Button} from '../components/Button'
 import { useEffect, useRef, useState } from 'react'
-import { Outlet, useMatch, useNavigate } from 'react-router-dom'
+import { Outlet, useMatch } from 'react-router-dom'
 import { useToolbar } from '../hooks/useToolbar'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { Toolbar } from '../components/Toolbar'
 import { MobileMoreMenu } from '../components/mobile/MobileMoreMenu'
 import { MobilePageTabs } from '../components/mobile/MobilePageTabs'
 import { RecordDock } from '../components/mobile/RecordDock'
+import { RecordingReferenceMenu } from '../recording/RecordingReferenceMenu'
 import { TrainingGoalModal } from '../components/mobile/TrainingGoalModal'
 import { ConfigDrawer } from '../components/ConfigDrawer'
 import { HelpDrawer } from '../components/HelpDrawer'
@@ -18,6 +21,10 @@ import { useFirstUseHelp } from '../hooks/useFirstUseHelp'
 import { FirstUseHelpBanner } from '../components/FirstUseHelpBanner'
 import { isAvailableFocusTarget } from '../components/focusTarget'
 import { getAnalyticsPage, track } from '../analytics/analytics'
+import { RecordingSessionProvider, useRecordingSession } from '../recording/RecordingSessionProvider'
+import { useRecordingRecords } from '../recording/RecordingRecordsProvider'
+import { useReportNavigation } from '../recording/useReportNavigation'
+import { useRecordingToolbar } from '../recording/useRecordingToolbar'
 
 const PORTRAIT_QUERY = '(max-width: 768px)'
 
@@ -29,6 +36,7 @@ export interface ShellContext {
   onClear?: () => void
   onPlayback?: () => void
   isPlaying?: boolean
+  dockHeight?: number
   onRecord: () => void
   pianoScrollProgress?: number
   setPianoScrollProgress?: (progress: number) => void
@@ -36,6 +44,10 @@ export interface ShellContext {
 }
 
 export function AppShell() {
+  return <RecordingSessionProvider><AppShellContent /></RecordingSessionProvider>
+}
+
+function AppShellContent() {
   const [configOpen, setConfigOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [helpTopic, setHelpTopic] = useState<HelpTopic>('quick-start')
@@ -48,15 +60,26 @@ export function AppShell() {
   const [dockHeight, setDockHeight] = useState(0)
   const { eligible, dismiss } = useFirstUseHelp()
 
-  const navigate = useNavigate()
   const isPractice = useMatch('/practice') != null
+  const isRecording = useMatch('/recording') != null
+  const reportMatch = useMatch('/reports/:reportId')
+  const isReport = reportMatch != null
+  const isStatistics = isRecording || isReport
+  const { records, latest } = useRecordingRecords()
+  const reportNavigation = useReportNavigation()
+  const availableReport = isReport && !!records.get(reportMatch.params.reportId??'')
+  const { controller: recordingController, snapshot: recordingSnapshot } = useRecordingSession()
   const isPortrait = useMediaQuery(PORTRAIT_QUERY)
+  const showPortraitDock = isPortrait && !isReport
+  useEffect(() => {
+    if (!showPortraitDock) setDockHeight(0)
+  }, [showPortraitDock])
   const activePreset = useAppStore(s => s.activePreset)
   useEffect(() => {
     if (!isPortrait) setGoalOpen(false)
   }, [isPortrait])
   const getHelpFallbackFocus = () =>
-    [recordButtonRef.current, helpButtonRef.current, moreButtonRef.current].find(isAvailableFocusTarget) ?? null
+    [helpButtonRef.current, moreButtonRef.current, recordButtonRef.current].find(isAvailableFocusTarget) ?? null
 
   const openOverlay = (overlay: 'config' | 'help' | 'about' | 'goal') => {
     setConfigOpen(overlay === 'config')
@@ -64,10 +87,10 @@ export function AppShell() {
     setAboutOpen(overlay === 'about')
     setGoalOpen(overlay === 'goal')
   }
-  const openHelp = (topic: HelpTopic = 'quick-start') => {
+  const openHelp = (topic?: HelpTopic) => {
     const page = getAnalyticsPage()
-    if (!helpOpen && page) track('help_open', { page, topic })
-    setHelpTopic(topic)
+    if (!helpOpen && page) track('help_open', { page, topic: topic ?? (isStatistics ? 'recording-statistics' : 'quick-start') })
+    setHelpTopic(topic ?? (isStatistics ? 'recording-statistics' : 'quick-start'))
     openOverlay('help')
   }
 
@@ -80,13 +103,37 @@ export function AppShell() {
     isRequesting,
     fileInputRef,
     handleFileChange,
+    suspend: suspendRealtime,
   } = useToolbar(
     () => openOverlay('config'),
     () => openHelp(),
     () => openOverlay('about'),
   )
 
-  const togglePage = () => navigate(isPractice ? '/' : '/practice')
+  const recordingTools = useRecordingToolbar(() => openHelp(), () => openOverlay('about'))
+  const completionTool = recordingTools.toolItems.find(item=>item.id==='finish')
+  const previousRecording = useRef(isRecording)
+  const previousStatistics = useRef(isStatistics)
+  useEffect(() => {
+    if (isStatistics && !previousStatistics.current) {
+      suspendRealtime?.();setConfigOpen(false);setGoalOpen(false)
+    }
+    if (!isRecording && previousRecording.current) recordingController.leave()
+    previousRecording.current = isRecording
+    previousStatistics.current = isStatistics
+  }, [isRecording, isStatistics, suspendRealtime, recordingController])
+  const detailTools = [
+    {id:'report-back',variant:'ghost' as const,icon:<RecordingControlIcon kind="back"/>,label:availableReport?reportNavigation.backLabel:'返回录音'},
+    {id:'help',variant:'ghost' as const,icon:'?',label:'帮助'},
+    {id:'about',variant:'ghost' as const,icon:'ⓘ',label:'关于'},
+  ]
+  const handleDetailTool = (id:string) => {
+    if(id==='report-back')reportNavigation.back(availableReport)
+    if(id==='help')openHelp()
+    if(id==='about')openOverlay('about')
+  }
+  const currentTools = isReport ? detailTools : isRecording ? recordingTools.toolItems : toolItems
+  const handleCurrentTool = isReport ? handleDetailTool : isRecording ? recordingTools.handleClickTool : handleClickTool
   const isPlaying = toolItems.some(item => item.id === 'playback' && item.label === '停止')
 
   const shellContext: ShellContext = {
@@ -99,6 +146,7 @@ export function AppShell() {
     onClear: () => handleClickTool('clear'),
     onPlayback: () => handleClickTool('playback'),
     isPlaying,
+    dockHeight: showPortraitDock ? dockHeight : 0,
     pianoScrollProgress: pianoScrollProgressRef.current,
     setPianoScrollProgress: (progress: number) => {
       pianoScrollProgressRef.current = progress
@@ -108,24 +156,49 @@ export function AppShell() {
   return (
     <>
       <Toolbar
+        compactActions={!isPortrait}
+        moreButtonRef={moreButtonRef}
+        recordingPage={isStatistics}
         recordButtonRef={recordButtonRef}
         helpButtonRef={helpButtonRef}
-        toolItems={toolItems}
-        onToolClick={handleClickTool}
-        nav={isPortrait ? undefined : { label: isPractice ? '返回分析' : '音高参考', onClick: togglePage }}
-        pageTabs={isPortrait ? <MobilePageTabs /> : undefined}
+        toolItems={currentTools}
+        onToolClick={handleCurrentTool}
+        pageTabs={<MobilePageTabs variant={isPortrait ? 'mobile' : 'desktop'} />}
         moreMenu={isPortrait
           ? <MobileMoreMenu
               triggerButtonRef={moreButtonRef}
-              items={toolItems}
-              onSelect={handleClickTool}
+              items={currentTools.filter(item => !['view-report','report-back','finish'].includes(item.id))}
+              onSelect={handleCurrentTool}
             />
           : undefined}
       />
       <Outlet context={shellContext} />
-      {isPortrait && (
+      {showPortraitDock && (
         <>
+          {isRecording ? <RecordDock
+            leadingControl={<RecordingReferenceMenu/>}
+            trailingControl={completionTool?
+              <Button type="button" variant="ghost" disabled={completionTool.disabled} aria-label={completionTool.label}
+                onClick={()=>recordingTools.handleClickTool('finish')}>{completionTool.label}</Button>:
+              latest&&['prepared','error'].includes(recordingSnapshot.phase)?
+              <Button type="button" variant="ghost" onClick={()=>reportNavigation.openReport(latest.id)}>查看上次结果</Button>:undefined}
+            recordAsText={recordingSnapshot.phase==='error'}
+            isProcessing={['requesting','importing','analyzing'].includes(recordingSnapshot.phase)}
+            key="statistics"
+            variant="statistics"
+            recordButtonRef={recordButtonRef}
+            onHeightChange={setDockHeight}
+            onRecord={() => recordingTools.handleClickTool('record')}
+            recordLabel={recordingTools.toolItems.find(item => item.id==='record')?.label}
+            recordDisabled={recordingTools.toolItems.find(item => item.id==='record')?.disabled}
+            isCapturing={recordingSnapshot.phase==='recording'}
+            isPaused={recordingSnapshot.phase==='paused'}
+            isRequesting={recordingSnapshot.phase==='requesting'}
+            elapsedSeconds={recordingSnapshot.elapsed}
+            showGoal={false}
+          /> :
           <RecordDock
+            key="realtime"
             recordButtonRef={recordButtonRef}
             onHeightChange={setDockHeight}
             onRecord={() => handleClickTool('record')}
@@ -138,23 +211,24 @@ export function AppShell() {
             onPlayback={() => handleClickTool('playback')}
             hasData={hasData}
             isPlaying={isPlaying}
-          />
-          <TrainingGoalModal open={goalOpen} onClose={() => setGoalOpen(false)} />
+          />}
+          {!isRecording && <TrainingGoalModal open={goalOpen} onClose={() => setGoalOpen(false)} />}
         </>
       )}
       <FirstUseHelpBanner
         layout={isPortrait ? 'portrait' : 'landscape'}
-        visible={eligible}
-        suppressed={hasData || isCapturing || isRequesting || isPlaying || helpOpen || configOpen || aboutOpen || goalOpen}
+        visible={eligible && !isReport}
+        suppressed={(isRecording?!['prepared','paused'].includes(recordingSnapshot.phase):hasData || isCapturing || isRequesting || isPlaying) || helpOpen || configOpen || aboutOpen || goalOpen}
+        description={isRecording?'了解录制、暂停和统计结果':undefined}
         dockHeight={dockHeight}
-        onOpen={() => openHelp('quick-start')}
-        onDismiss={() => { getHelpFallbackFocus()?.focus({ preventScroll: true }); dismiss() }}
+        onOpen={() => openHelp(isRecording?'recording-statistics':'quick-start')}
+        onDismiss={() => { [recordButtonRef.current, getHelpFallbackFocus()].find(isAvailableFocusTarget)?.focus({ preventScroll: true }); dismiss() }}
       />
       <Toast />
-      <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
+      <ConfigDrawer open={configOpen && !isStatistics} onClose={() => setConfigOpen(false)} />
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} topic={helpTopic} onTopicChange={setHelpTopic} getFallbackFocus={getHelpFallbackFocus} />
       <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
-      <input ref={fileInputRef} type="file" accept="audio/*" hidden onChange={handleFileChange} />
+      {!isReport&&<input ref={isRecording ? recordingTools.fileInputRef : fileInputRef} type="file" accept="audio/*" hidden onChange={isRecording ? recordingTools.handleFileChange : handleFileChange} />}
     </>
   )
 }

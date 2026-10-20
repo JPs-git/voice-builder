@@ -4,13 +4,16 @@
   justify-content: center;
   flex: 1;
   min-width: 0;
-  max-width: 330px;
+  max-width: 360px;
   box-sizing: border-box;
   height: 40px;
   padding: 3px;
   border-radius: 999px;
   background: #eef3fb;
 }
+.desktop { border-radius:0; background:transparent; padding:0; gap:24px; height:50px; }
+.desktop .tab { border-radius:0; font-size:14px; padding:0 4px; height:50px; box-sizing:border-box; border-bottom:2px solid transparent; }
+.desktop .active { background:transparent; color:#e23e57; box-shadow:none; border-bottom-color:#e23e57; }
 
 .tab {
   display: flex;

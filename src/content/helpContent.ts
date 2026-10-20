@@ -2,13 +2,42 @@ import { F0_CHART_RANGE, FORMANT_CHART_RANGE, F0_REFERENCE_ZONES, FORMANT_MIN_GA
 import { AUDIO_WINDOW_SECONDS } from '../config/audioLimits'
 import { VOWEL_PRESETS, presetShortLabel } from '../types'
 
-export type HelpTopic = 'quick-start' | 'charts' | 'targets' | 'audio' | 'troubleshooting' | 'pitch-reference'
+export type HelpTopic = 'quick-start' | 'charts' | 'targets' | 'audio' | 'troubleshooting' | 'pitch-reference' | 'recording-statistics'
 export type HelpLayout = 'portrait' | 'landscape'
 export interface HelpSection { title: string; paragraphs: readonly string[] }
-export const HELP_TOPIC_ORDER: readonly HelpTopic[] = ['quick-start', 'charts', 'targets', 'audio', 'troubleshooting', 'pitch-reference']
+function getRecordingHelpSections(layout: HelpLayout): readonly HelpSection[] {
+  const recordEntry = layout === 'portrait' ? '点击底部麦克风按钮' : '点击顶栏「开始录音」'
+  const returnEntry = layout === 'portrait' ? '报告标题右侧的「返回录音」' : '顶栏「返回录音」'
+  const importEntry = layout === 'portrait'
+    ? '在录音页通过右上角「更多 → 导入音频」选择文件。报告详情不提供导入。'
+    : '录音准备页通过顶栏「导入音频」选择文件。报告详情不提供导入。'
+  return [
+    { title: '安静录音，录后分析', paragraphs: [
+      `可从三篇短文中选择参考材料，也可按自己的习惯自然说话。${layout==='portrait'?'取消录音位于顶部更多菜单。':''}${recordEntry}开始采集；建议录制 30–60 秒，再次点击原录音按钮暂停，可继续同一段录音；暂停后点击「完成录制」才生成报告。累计达到 60 秒自动暂停，不能继续，仍需确认完成。暂停不计入时长，采集中只显示材料与计时，不显示声学反馈。录制或暂停时仍可切换参考短文，不影响音频与计时；录制中完成按钮可见但禁用，暂停后启用。`,
+      `分析成功后自动打开独立的只读报告详情。点击${returnEntry}返回来源录音页，保留短文和字号，不会立即申请麦克风；只有点击「开始录音」才采集。有成功报告时，录音页可通过「查看上次结果」再次打开，未来也可从列表查看同一详情。`,
+    ] },
+    { title: '导入与完整回放', paragraphs: [
+      `可导入最多 60 秒的 WAV、MP3、M4A 等浏览器支持的音频。${importEntry}取消文件选择不会替换原结果。`,
+      '结果页保留完整录音，可播放、暂停和拖动进度，从选定位置继续播放到结尾。统计过滤不会裁剪原音频，停顿和超上限音高对应的声音仍完整保留。',
+    ] },
+    { title: '中位数与 P10/P90', paragraphs: [
+      '典型 F0 为有效音高中位数；P10/P90 描述常用音高范围的分位边界，不是最低/最高值。中间 80% 是分位范围的定义，边界值重复时实际落入范围的比例可能更高。直方图纵轴是有效音高时间占比，不是整段录音的时间占比。',
+      '有效 F0 少于 3 秒时隐藏三项数值与图中分位标记；达到 3 秒但少于 10 秒时显示样本较少的说明。有有效数据时仍可看直方图，完整录音始终可回放。',
+    ] },
+    { title: '统计范围与限制', paragraphs: [
+      '仅统计 60–500 Hz，包含 500 Hz。停顿、无效值和超过上限的检测值不按 0 Hz 计入，也不将高值压到 500 Hz。超上限排除数量、时长和比例可在报告「统计说明」中查看。',
+      '范围过滤不能消除所有倍频或半频检测误差，也可能排除真实高音。有效时间比例不是识别准确率，报告不代表个人完整音域。',
+    ] },
+    { title: '数据与恢复', paragraphs: [
+      '声音仅在本地处理。详情只展示报告和回放，返回来源时暂停并保留进度；再次查看同一记录不自动播放。录音页取消或失败不会自动打开旧报告，可主动「查看上次结果」，失败 PCM 仍可重试。录音中离页会保留为暂停草稿，返回后可继续或完成，不会自动分析。',
+      '取消或失败不破坏上一份成功记录，只有新分析成功才替换。报告 ID 不可用时显示失效提示，可返回录音。刷新或关闭后不保留声音数据，本期没有历史列表或持久化保存。实时分析和音高参考仍使用最近 10 秒的窗口。',
+    ] },
+  ]
+}
+export const HELP_TOPIC_ORDER: readonly HelpTopic[] = ['quick-start', 'charts', 'targets', 'audio', 'troubleshooting', 'pitch-reference', 'recording-statistics']
 const TITLES: Record<HelpTopic, string> = {
   'quick-start': '快速上手', charts: '读图与反馈', targets: '训练目标', audio: '录音与导入',
-  troubleshooting: '遇到问题', 'pitch-reference': '音高参考',
+  troubleshooting: '遇到问题', 'pitch-reference': '音高参考', 'recording-statistics': '统计分析',
 }
 export function getHelpTopicTitle(topic: HelpTopic): string { return TITLES[topic] }
 
@@ -30,6 +59,7 @@ export function getHelpSections(topic: HelpTopic, layout: HelpLayout): readonly 
   const targetsEntry = layout === 'portrait' ? '底部「当前目标」' : '左侧「目标区间」'
   const importEntry = layout === 'portrait' ? '右上角「更多 → 导入音频」' : '顶栏「导入音频」'
   switch (topic) {
+    case 'recording-statistics': return getRecordingHelpSections(layout)
     case 'quick-start': return getQuickStartSteps(layout).map(step => ({ title: step.title, paragraphs: [step.description] }))
     case 'charts': return [
       { title: '基频图：曲线与固定参考', paragraphs: [
@@ -58,6 +88,7 @@ export function getHelpSections(topic: HelpTopic, layout: HelpLayout): readonly 
     ]
     case 'audio': return [
       { title: '录音与回放', paragraphs: [
+        '本主题介绍实时分析与音高参考页。60 秒录音统计与完整回放请查看「统计分析」主题。',
         `${getQuickStartSteps(layout)[0].description}再次点击录音按钮可停止；继续录音会接着追加数据。`,
         `实时曲线和回放保留最近 ${AUDIO_WINDOW_SECONDS} 秒的窗口，持续录音不会自动停止。停止录音后点击「回放」听取当前窗口。`,
         `点击${layout === 'portrait' ? '底部「清除图谱」' : '顶栏「清空」'}会停止录音并清除当前声音数据，但保留训练目标。`,
