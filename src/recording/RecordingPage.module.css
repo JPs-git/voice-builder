@@ -82,3 +82,7 @@ button.stat:disabled{cursor:default}
 }
 
 @media(max-width:768px){.stat[data-testid="stat-median"]{grid-column:1 / -1}}
+
+.helpLink{border:0;background:transparent;color:var(--info);font:inherit;cursor:pointer;padding:4px 8px;text-decoration:underline;text-underline-offset:3px}
+.helpLink:hover{color:var(--text)}
+.helpLink:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:4px}

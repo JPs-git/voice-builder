@@ -5,6 +5,8 @@ import {AppShell} from '../routes/AppShell'
 import {RecordingPage} from '../recording/RecordingPage'
 import {RecordingReportPage} from '../recording/RecordingReportPage'
 import {summarizePitch} from '../recording/statistics'
+import {useIntroHintStore} from '../store/introHintStore'
+import {useAppStore} from '../store/appStore'
 import {ANALYSIS_SETTINGS} from '../recording/constants'
 const analyze=vi.hoisted(()=>vi.fn())
 vi.mock('../recording/workerClient',()=>({runClipAnalysis:analyze}))
@@ -41,7 +43,7 @@ it('suspends realtime on entry and stops the new capture on leaving',async()=>{
  expect(realtime.suspend).toHaveBeenCalledTimes(1)
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:/开始录音/})))
  act(()=>chunk(new Float32Array(16000),16000))
- expect(screen.getByRole('button',{name:/结束并分析/})).toBeTruthy()
+ expect(screen.getByRole('button',{name:/暂停录制/})).toBeTruthy()
  expect(screen.getByLabelText('参考内容').hasAttribute('disabled')).toBe(true)
  await act(async()=>{fireEvent.click(screen.getByRole('link',{name:'实时分析'}));await Promise.resolve()})
  expect(audio.stopCapture).toHaveBeenCalled()
@@ -56,7 +58,8 @@ it('uses standalone desktop details and restores the recorder across routes',asy
  mount()
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(16000),16000))
- await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
+ fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'})))
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
  expect(screen.getByRole('button',{name:'返回录音'})).toBeTruthy()
  expect(screen.queryByRole('button',{name:'清除本次'})).toBeNull()
@@ -105,19 +108,21 @@ it('selects help from the current entry and lets every page browse statistics',(
 it.each([false,true])('keeps help focus and capture stable when analysis finishes (failure=%s)',async failure=>{
  let chunk!:(samples:Float32Array,rate:number)=>void
  audio.startCapture.mockImplementation(async cb=>{chunk=cb})
- if(failure)analyze.mockRejectedValueOnce(new Error('analysis test failure'))
- else analyze.mockResolvedValueOnce({...summarizePitch([],60),settings:ANALYSIS_SETTINGS,version:'test'})
  mount()
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(1600),16000))
+ fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+ let finishAnalysis!:(value:any)=>void,failAnalysis!:(value:any)=>void
+ analyze.mockImplementationOnce(()=>new Promise((resolve,reject)=>{finishAnalysis=resolve;failAnalysis=reject}))
+ fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'}))
  fireEvent.click(screen.getByRole('button',{name:'更多操作'}))
  fireEvent.click(screen.getByRole('menuitem',{name:/帮助/}))
  fireEvent.click(screen.getByRole('button',{name:'快速上手'}))
  const chosen=screen.getByRole('button',{name:'快速上手'})
  chosen.focus()
- expect(audio.stopCapture).not.toHaveBeenCalled()
+ expect(audio.stopCapture).toHaveBeenCalledTimes(1)
  expect(audio.startCapture).toHaveBeenCalledTimes(1)
- await act(async()=>chunk(new Float32Array(960000),16000))
+ await act(async()=>{if(failure)failAnalysis(new Error('analysis test failure'));else finishAnalysis({...summarizePitch([],60),settings:ANALYSIS_SETTINGS,version:'test'})})
  expect(screen.getByRole('button',{name:'快速上手'}).getAttribute('aria-pressed')).toBe('true')
  expect(screen.getAllByRole('dialog')).toHaveLength(1)
  expect(document.activeElement).toBe(chosen)
@@ -140,7 +145,8 @@ it('keeps full playback running while browsing and closing shared help',async()=
  mount()
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(16000),16000))
- await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
+ fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'})))
  fireEvent.click(screen.getByRole('button',{name:'播放'}))
  expect(screen.getByRole('button',{name:'暂停'})).toBeTruthy()
  fireEvent.click(screen.getByRole('button',{name:'更多操作'}))
@@ -161,7 +167,8 @@ it('uses independent detail URLs and browser back/forward without creating a rec
  mount()
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(16000),16000))
- await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
+ fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'})))
  const path=screen.getByTestId('route').textContent!
  expect(path).toMatch(/^\/reports\/[a-f0-9-]+$/)
  expect(screen.getByRole('link',{name:'统计分析'}).getAttribute('aria-current')).toBe('page')
@@ -184,6 +191,8 @@ it('does not redirect other pages when a background recording analysis completes
  mount()
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(16000),16000))
+ fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+ fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'}))
  fireEvent.click(screen.getByRole('link',{name:'实时分析'}))
  await act(async()=>resolve({...summarizePitch([],1),settings:ANALYSIS_SETTINGS,version:'test'}))
  expect(screen.getByTestId('route').textContent).toBe('/')
@@ -201,7 +210,8 @@ it('keeps failed PCM at the recorder while an older detail is viewed, then retri
  const capture=async()=>{
   await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
   act(()=>chunk(new Float32Array(16000),16000))
-  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'结束并分析'})))
+  fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'})))
  }
  await capture()
  const old=screen.getByTestId('route').textContent
@@ -218,4 +228,30 @@ it('keeps failed PCM at the recorder while an older detail is viewed, then retri
  expect(screen.getByTestId('route').textContent).not.toBe(old)
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
  expect(audio.startCapture).toHaveBeenCalledTimes(2)
+})
+
+it('offers contextual reader help without redundant metadata',()=>{
+ mount()
+ expect(screen.queryByText(/原创短文 · 约/)).toBeNull()
+ const entry=screen.getByRole('button',{name:'不知道怎么用？'})
+ entry.focus();fireEvent.click(entry)
+ expect(screen.getByRole('button',{name:'统计分析'}).getAttribute('aria-pressed')).toBe('true')
+ fireEvent.click(screen.getByRole('button',{name:'关闭'}))
+ expect(document.activeElement).toBe(entry)
+ expect(audio.startCapture).not.toHaveBeenCalled()
+})
+
+it('keeps the global first-use hint across entry into recording and remembers dismissal',()=>{
+ useAppStore.getState().reset();useIntroHintStore.setState({handled:false})
+ mount('/')
+ expect(screen.getByRole('region',{name:'首次使用帮助'})).toBeTruthy()
+ fireEvent.click(screen.getByRole('link',{name:'统计分析'}))
+ expect(screen.getByText('了解录制、暂停和统计结果')).toBeTruthy()
+ fireEvent.click(screen.getByRole('button',{name:'查看说明'}))
+ expect(screen.getByRole('button',{name:'统计分析'}).getAttribute('aria-pressed')).toBe('true')
+ fireEvent.click(screen.getByRole('button',{name:'关闭'}))
+ fireEvent.click(screen.getByRole('button',{name:'关闭首次使用提示'}))
+ fireEvent.click(screen.getByRole('link',{name:'实时分析'}))
+ fireEvent.click(screen.getByRole('link',{name:'统计分析'}))
+ expect(screen.queryByRole('region',{name:'首次使用帮助'})).toBeNull()
 })

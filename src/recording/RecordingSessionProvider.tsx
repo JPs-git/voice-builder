@@ -8,7 +8,7 @@ import {RecordingRecordsProvider,useRecordingRecords} from './RecordingRecordsPr
 import type {RecordingRecordStore} from './recordStore'
 
 export interface RecordingPreferences {
- referenceId:string;fontSize:number;promptVisible:boolean
+ referenceId:string;fontSize:number|null;promptVisible:boolean
 }
 const Context=createContext<{controller:RecordingSessionController;preferences:RecordingPreferences;
  updatePreferences:(patch:Partial<RecordingPreferences>)=>void}|null>(null)
@@ -23,7 +23,7 @@ function RecordingTaskProvider({children,controller:provided}:ProviderProps){
  },records))
  const lifecycle=useRef(0)
  const [preferences,setPreferences]=useState<RecordingPreferences>({
-  referenceId:'after-rain-v1',fontSize:22,promptVisible:true,
+  referenceId:'after-rain-v1',fontSize:null,promptVisible:true,
  })
  const updatePreferences=useCallback((patch:Partial<RecordingPreferences>)=>setPreferences(old=>({...old,...patch})),[])
  useEffect(()=>{

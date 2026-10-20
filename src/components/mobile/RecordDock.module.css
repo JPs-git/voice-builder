@@ -153,3 +153,11 @@
 .dock[data-variant="statistics"] .action { height:44px; padding:0 12px; font-size:12px; }
 .dock[data-actions="true"] .timer { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); font-size: 10px; }
 @media (max-width: 384px) { .dock[data-actions="true"] { padding-left: 10px; padding-right: 10px; gap: 4px; } .action { padding: 0 5px; } }
+
+.dock[data-variant="statistics"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;justify-items:center}
+.dock[data-variant="statistics"] .leadingControl,.dock[data-variant="statistics"] .cancel{grid-column:1;grid-row:1;margin:0;min-width:0;max-width:100%;justify-self:center}
+.dock[data-variant="statistics"] .leadingControl{width:100%}
+.dock[data-variant="statistics"] .micHalo,.dock[data-variant="statistics"] .textPrimary{grid-column:2;grid-row:1;position:static;left:auto;transform:none;margin:-8px 0 0}
+.dock[data-variant="statistics"] .textPrimary{padding:0 8px;max-width:100%;font-size:13px;white-space:normal}
+.dock[data-variant="statistics"] .trailingControl{grid-column:3;grid-row:1;margin:0;min-width:0;max-width:100%;text-align:center}
+.dock[data-variant="statistics"] .trailingControl button{max-width:100%;white-space:normal;line-height:1.5;padding:4px 8px}

@@ -35,6 +35,7 @@ export interface ShellContext {
   onPlayback?: () => void
   isPlaying?: boolean
   dockHeight?: number
+  introHeight?: number
   onRecord: () => void
   pianoScrollProgress?: number
   setPianoScrollProgress?: (progress: number) => void
@@ -56,6 +57,7 @@ function AppShellContent() {
   const helpButtonRef = useRef<HTMLButtonElement>(null)
   const moreButtonRef = useRef<HTMLButtonElement>(null)
   const [dockHeight, setDockHeight] = useState(0)
+  const [introHeight, setIntroHeight] = useState(0)
   const { eligible, dismiss } = useFirstUseHelp()
 
   const isPractice = useMatch('/practice') != null
@@ -144,6 +146,7 @@ function AppShellContent() {
     onPlayback: () => handleClickTool('playback'),
     isPlaying,
     dockHeight: showPortraitDock ? dockHeight : 0,
+    introHeight:isRecording?introHeight:0,
     pianoScrollProgress: pianoScrollProgressRef.current,
     setPianoScrollProgress: (progress: number) => {
       pianoScrollProgressRef.current = progress
@@ -164,7 +167,7 @@ function AppShellContent() {
         moreMenu={isPortrait
           ? <MobileMoreMenu
               triggerButtonRef={moreButtonRef}
-              items={currentTools.filter(item => !['cancel','view-report','prepare','report-back'].includes(item.id))}
+              items={currentTools.filter(item => !['cancel','view-report','prepare','report-back','finish'].includes(item.id))}
               onSelect={handleCurrentTool}
             />
           : undefined}
@@ -175,7 +178,7 @@ function AppShellContent() {
           {isRecording ? <RecordDock
             leadingControl={recordingSnapshot.phase==='prepared'?<RecordingReferenceMenu/>:
               recordingSnapshot.phase==='error'&&recordingController.canRetry()?<button type="button" onClick={()=>recordingController.prepare()}>重新准备</button>:undefined}
-            trailingControl={latest&&['prepared','error'].includes(recordingSnapshot.phase)?
+            trailingControl={recordingSnapshot.phase==='paused'?<button type="button" disabled={recordingSnapshot.elapsed<=0} onClick={()=>recordingTools.handleClickTool('finish')}>完成录制并分析</button>:latest&&['prepared','error'].includes(recordingSnapshot.phase)?
               <button type="button" onClick={()=>reportNavigation.openReport(latest.id)}>查看上次结果</button>:undefined}
             recordAsText={['error','importing','analyzing'].includes(recordingSnapshot.phase)}
             key="statistics"
@@ -186,6 +189,7 @@ function AppShellContent() {
             recordLabel={recordingTools.toolItems.find(item => item.id==='record')?.label}
             recordDisabled={recordingTools.toolItems.find(item => item.id==='record')?.disabled}
             isCapturing={recordingSnapshot.phase==='recording'}
+            isPaused={recordingSnapshot.phase==='paused'}
             isRequesting={recordingSnapshot.phase==='requesting'}
             elapsedSeconds={recordingSnapshot.elapsed}
             showGoal={false}
@@ -212,10 +216,12 @@ function AppShellContent() {
       )}
       <FirstUseHelpBanner
         layout={isPortrait ? 'portrait' : 'landscape'}
-        visible={eligible && !isStatistics}
-        suppressed={hasData || isCapturing || isRequesting || isPlaying || helpOpen || configOpen || aboutOpen || goalOpen}
+        visible={eligible && !isReport}
+        suppressed={(isRecording?!['prepared','paused'].includes(recordingSnapshot.phase):hasData || isCapturing || isRequesting || isPlaying) || helpOpen || configOpen || aboutOpen || goalOpen}
+        description={isRecording?'了解录制、暂停和统计结果':undefined}
+        onHeightChange={setIntroHeight}
         dockHeight={dockHeight}
-        onOpen={() => openHelp('quick-start')}
+        onOpen={() => openHelp(isRecording?'recording-statistics':'quick-start')}
         onDismiss={() => { [recordButtonRef.current, getHelpFallbackFocus()].find(isAvailableFocusTarget)?.focus({ preventScroll: true }); dismiss() }}
       />
       <Toast />

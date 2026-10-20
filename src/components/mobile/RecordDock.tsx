@@ -25,6 +25,7 @@ export interface RecordDockProps {
   leadingControl?: ReactNode
   trailingControl?: ReactNode
   recordAsText?: boolean
+  isPaused?: boolean
 }
 
 function MicGlyph() {
@@ -42,7 +43,7 @@ function MicGlyph() {
 }
 
 export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onGoalClick, showGoal = true, onClear, onPlayback, hasData, isPlaying, recordButtonRef, onHeightChange,
-  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音', leadingControl, trailingControl, recordAsText=false }: RecordDockProps) {
+  variant='realtime', recordLabel, recordDisabled, elapsedSeconds, clearLabel='清除图谱', clearDisabled, onCancel, cancelLabel='取消录音', leadingControl, trailingControl, recordAsText=false, isPaused=false }: RecordDockProps) {
   const dockRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const dock = dockRef.current
@@ -86,7 +87,7 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
         onClick={onRecord} disabled={recordDisabled??isRequesting} aria-label={micLabel}>{micLabel}</button>:<span className={styles.micHalo} data-testid="dock-mic-halo">
         <button ref={recordButtonRef} type="button" className={styles.mic} data-recording={isCapturing}
           onClick={onRecord} disabled={recordDisabled ?? isRequesting} aria-label={micLabel} title={micLabel}>
-          {isCapturing ? '●' : <MicGlyph />}
+          {isCapturing ? (variant==='statistics'?'Ⅱ':'●') : isPaused ? '▶' : <MicGlyph />}
         </button>
       </span>}
       {trailingControl&&<div className={styles.trailingControl}>{trailingControl}</div>}
@@ -99,7 +100,7 @@ export function RecordDock({ onRecord, isCapturing, isRequesting, goalLabel, onG
       <span className={styles.hint} data-testid="dock-hint">
         {isCapturing ? '正在录音' : '点击开始录音'}
       </span>
-      {isCapturing && <span className={styles.timer} data-testid="dock-timer">{timer}</span>}
+      {(isCapturing || isPaused) && <span className={styles.timer} data-testid="dock-timer">{timer}</span>}
     </div>
   )
 }

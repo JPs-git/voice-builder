@@ -11,7 +11,7 @@ export function RecordingReferenceMenu(){
  const trigger=useRef<HTMLButtonElement>(null)
  const menu=useRef<HTMLDivElement>(null)
  const id=useId()
- const busy=['requesting','recording','importing','analyzing'].includes(snapshot.phase)
+ const busy=['requesting','recording','paused','importing','analyzing'].includes(snapshot.phase)
  useEffect(()=>{
   if(!open)return
   menu.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
