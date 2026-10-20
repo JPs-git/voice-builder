@@ -49,7 +49,7 @@ export function Toolbar({ toolItems, onToolClick, nav, pageTabs, moreMenu, recor
               title={item.label}
               variant={item.variant}
               icon={item.icon}
-              label={item.label}
+              label={item.displayLabel??item.label}
               recording={item.recording}
               disabled={item.disabled}
               onClick={() => onToolClick(item.id)}

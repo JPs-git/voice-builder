@@ -130,3 +130,12 @@
 - 产物目录保存 `dock-ui-recording.png`、`dock-ui-paused.png`、`dock-ui-analyzing.png`、`dock-ui-limit.png`。临时组件验证入口已移除；没有调用物理麦克风。
 - 独立审查无新增实质问题。既有 MobileMoreMenu 暂无方向键菜单导航/自动聚焦，Tab 仍可访问取消；本次未扩大菜单键盘导航范围。
 - 最终全量 89 个测试文件、659 项测试通过；生产构建、TypeScript 与 diff 检查通过，构建保留原有大分块提示。
+
+## 2026-10-20 横屏 Toolbar 状态
+
+- 抽取 RecordingControlIcon，横屏 Toolbar 与 RecordDock 共用麦克风、暂停、继续和加载 SVG；录制工具栏取消、完成、导入、报告和返回均使用矢量图标。Button/ToolItem 兼容 ReactNode 和原有字符图标，实时页操作保持。
+- 新增完整横屏状态回归：准备 SVG、录制暂停与禁用完成/导入、暂停启用完成、满时长继续禁用、分析加载/可取消、成功后只读详情返回。宽横屏录制槽120px，取消/完成/导入各104px；禁用主槽灰色显示。
+- 浏览器1440px模拟采集验证暂停、满上限、分析与详情；导航中心始终720px。暂停与分析的四槽x为916/1044/1156/1268，宽120/104/104/104，顶栏高度74.80px。1024px时导航中心512px，按钮在右侧换行且无重叠，文档宽1024px。
+- 独立审查发现授权等待长文案溢出固定槽位，补失败回归后改为可见「授权中…」，保留完整 aria-label/title。浏览器授权文案右边1014.74px，小于按钮右边1036px，问题已修复；无其他审查发现。
+- 保存 `toolbar-desktop-paused.png`、`toolbar-desktop-limit.png`、`toolbar-desktop-analyzing.png` 和 `toolbar-desktop-requesting.png` 到聊天产物目录。使用实际组件与模拟音频，没有调用物理麦克风；临时验证入口已移除。
+- 最终 89 个测试文件、661 项测试通过，构建、TypeScript 和 diff 检查通过。构建保留原有大分块提示。

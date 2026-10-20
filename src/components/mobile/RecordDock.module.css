@@ -164,9 +164,6 @@
 
 .dock[data-variant="statistics"] .trailingControl button{display:flex;align-items:center;justify-content:center;min-height:44px;height:44px;max-width:100%;border:1px solid #e4ebf5;border-radius:12px;background:#fff;color:#6d83a4;font:12px var(--font-sans);line-height:1.35;padding:4px 10px;white-space:normal}
 .dock[data-variant="statistics"] .trailingControl button:disabled{opacity:.4;cursor:not-allowed}
-.spinner{animation:dock-spin 1s linear infinite}
-@keyframes dock-spin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
 
 .dock[data-variant="statistics"] .trailingControl{width:100%}
 .dock[data-variant="statistics"] .trailingControl button{width:100%}

@@ -22,7 +22,8 @@
   outline-offset: 2px;
 }
 
-.icon { font-size: 14px; line-height: 1; }
+.icon { display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;line-height:1; }
+.icon svg{display:block}
 .label { /* text rendered by children */ }
 
 .primary {

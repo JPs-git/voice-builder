@@ -116,3 +116,12 @@
   .toolbar[data-compact="true"] .logo { width: 28px; height: 28px; }
   .toolbar[data-compact="true"] .title { font-size: 15px; letter-spacing: 0; }
 }
+
+@media(min-width:1281px){
+ .toolbar[data-recording-page="true"] .actions>button{justify-content:center;padding:0 12px}
+ .toolbar[data-recording-page="true"] .actions>button[id="record"]{width:120px}
+ .toolbar[data-recording-page="true"] .actions>button[id="cancel"],.toolbar[data-recording-page="true"] .actions>button[id="finish"],.toolbar[data-recording-page="true"] .actions>button[id="import"]{width:104px}
+}
+@media(min-width:769px){
+ .toolbar[data-recording-page="true"] .actions>button[id="record"]:disabled{background:var(--bg);color:var(--text-mute);border-color:var(--border);opacity:1;box-shadow:none;animation:none}
+}

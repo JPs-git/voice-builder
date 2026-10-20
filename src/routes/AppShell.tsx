@@ -1,3 +1,4 @@
+import {RecordingControlIcon} from '../components/RecordingControlIcon'
 import {Button} from '../components/Button'
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useMatch } from 'react-router-dom'
@@ -122,7 +123,7 @@ function AppShellContent() {
     previousStatistics.current = isStatistics
   }, [isRecording, isStatistics, suspendRealtime, recordingController])
   const detailTools = [
-    {id:'report-back',variant:'ghost' as const,icon:'←',label:availableReport?reportNavigation.backLabel:'返回录音'},
+    {id:'report-back',variant:'ghost' as const,icon:<RecordingControlIcon kind="back"/>,label:availableReport?reportNavigation.backLabel:'返回录音'},
     {id:'help',variant:'ghost' as const,icon:'?',label:'帮助'},
     {id:'about',variant:'ghost' as const,icon:'ⓘ',label:'关于'},
   ]
