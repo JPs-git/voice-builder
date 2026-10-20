@@ -54,4 +54,3 @@ it('releases capture on track termination and ignores stale track events',async(
  expect(engine.isCapturing).toBe(true);expect(interrupted).toHaveBeenCalledTimes(1)
  engine.stopCapture()
 })
-

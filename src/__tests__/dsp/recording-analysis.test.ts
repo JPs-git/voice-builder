@@ -30,4 +30,3 @@ it('handles 48kHz input with bounded valid duration and actual window times',()=
  expect(result.summary.validDuration).toBeLessThanOrEqual(1)
  expect(result.frames[result.frames.length-1].time).toBeLessThanOrEqual(1)
 })
-
