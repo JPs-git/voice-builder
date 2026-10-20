@@ -178,7 +178,7 @@ function AppShellContent() {
             leadingControl={<RecordingReferenceMenu/>}
             trailingControl={completionTool?
               <Button type="button" variant="ghost" disabled={completionTool.disabled} aria-label={completionTool.label}
-                onClick={()=>recordingTools.handleClickTool('finish')}>{completionTool.label==='完成录制并分析'?<span>完成录制<br/>并分析</span>:completionTool.label}</Button>:
+                onClick={()=>recordingTools.handleClickTool('finish')}>{completionTool.label}</Button>:
               latest&&['prepared','error'].includes(recordingSnapshot.phase)?
               <Button type="button" variant="ghost" onClick={()=>reportNavigation.openReport(latest.id)}>查看上次结果</Button>:undefined}
             recordAsText={recordingSnapshot.phase==='error'}

@@ -59,7 +59,7 @@ it('uses standalone desktop details and restores the recorder across routes',asy
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(16000),16000))
  fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
- await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'})))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制'})))
  expect(screen.getByRole('heading',{name:'录音分析结果'})).toBeTruthy()
  expect(screen.getByRole('button',{name:'返回录音'})).toBeTruthy()
  expect(screen.queryByRole('button',{name:'清除本次'})).toBeNull()
@@ -114,7 +114,7 @@ it.each([false,true])('keeps help focus and capture stable when analysis finishe
  fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
  let finishAnalysis!:(value:any)=>void,failAnalysis!:(value:any)=>void
  analyze.mockImplementationOnce(()=>new Promise((resolve,reject)=>{finishAnalysis=resolve;failAnalysis=reject}))
- fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'}))
+ fireEvent.click(screen.getByRole('button',{name:'完成录制'}))
  fireEvent.click(screen.getByRole('button',{name:'更多操作'}))
  fireEvent.click(screen.getByRole('menuitem',{name:/帮助/}))
  fireEvent.click(screen.getByRole('button',{name:'快速上手'}))
@@ -146,7 +146,7 @@ it('keeps full playback running while browsing and closing shared help',async()=
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(16000),16000))
  fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
- await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'})))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制'})))
  fireEvent.click(screen.getByRole('button',{name:'播放'}))
  expect(screen.getByRole('button',{name:'暂停'})).toBeTruthy()
  fireEvent.click(screen.getByRole('button',{name:'更多操作'}))
@@ -168,7 +168,7 @@ it('uses independent detail URLs and browser back/forward without creating a rec
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(16000),16000))
  fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
- await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'})))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制'})))
  const path=screen.getByTestId('route').textContent!
  expect(path).toMatch(/^\/reports\/[a-f0-9-]+$/)
  expect(screen.getByRole('link',{name:'统计分析'}).getAttribute('aria-current')).toBe('page')
@@ -192,7 +192,7 @@ it('does not redirect other pages when a background recording analysis completes
  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
  act(()=>chunk(new Float32Array(16000),16000))
  fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
- fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'}))
+ fireEvent.click(screen.getByRole('button',{name:'完成录制'}))
  fireEvent.click(screen.getByRole('link',{name:'实时分析'}))
  await act(async()=>resolve({...summarizePitch([],1),settings:ANALYSIS_SETTINGS,version:'test'}))
  expect(screen.getByTestId('route').textContent).toBe('/')
@@ -211,7 +211,7 @@ it('keeps failed PCM at the recorder while an older detail is viewed, then retri
   await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
   act(()=>chunk(new Float32Array(16000),16000))
   fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
- await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制并分析'})))
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'完成录制'})))
  }
  await capture()
  const old=screen.getByTestId('route').textContent

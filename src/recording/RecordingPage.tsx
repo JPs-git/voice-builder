@@ -45,7 +45,7 @@ export function RecordingPage(){
       <span className={styles.timer} role="timer">{formatClock(s.elapsed)} <span className={styles.muted}>/ 01:00</span></span>
      </div>
     </section>}
-    {s.atLimit&&s.phase==='paused'&&<p role="status" className={styles.notice}>已达 60 秒，请完成录制并分析</p>}
+    {s.atLimit&&s.phase==='paused'&&<p role="status" className={styles.notice}>已达 60 秒，请完成录制</p>}
     {(s.phase==='analyzing'||s.phase==='importing')&&<div className={styles.analysisProgress} aria-live="polite">
       <span>{s.phase==='importing'?'正在读取音频':'正在生成分析报告'}</span>
       {s.phase==='analyzing'&&<progress aria-label="分析进度" max={1} value={s.progress}/>}
