@@ -36,4 +36,13 @@ it('plays the complete clip, seeks to the end, replays and ignores stale ended h
  expect(s.nodes[2].stop).toHaveBeenCalled()
  s.controller.destroy()
 })
+it('stops at the end when seeking during playback and replays only on explicit play',()=>{
+ const s=setup();s.controller.play()
+ s.controller.seek(clip.duration)
+ expect(s.controller.getSnapshot()).toMatchObject({playing:false,position:clip.duration})
+ expect(s.engine.createPlaybackSource).toHaveBeenCalledTimes(1)
+ s.controller.play()
+ expect(s.nodes[1].start).toHaveBeenCalledWith(0,0,clip.duration)
+ s.controller.destroy()
+})
 

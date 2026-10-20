@@ -57,7 +57,7 @@ export class RecordingPlaybackController {
  seek(seconds:number){
   const playing=this.snapshot.playing;this.pause()
   this.update({position:Math.max(0,Math.min(this.snapshot.duration,seconds))})
-  if(playing)this.play()
+  if(playing&&this.snapshot.position<this.snapshot.duration)this.play()
  }
  stop(){this.detach();this.update({playing:false,position:0})}
  destroy(){this.stop();this.clip=null;this.listeners.clear()}

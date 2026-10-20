@@ -61,10 +61,8 @@ describe('first-use help integration', () => {
     fireEvent.click(screen.getByRole('button', { name: '基频图说明' }))
     expect(track).toHaveBeenLastCalledWith('help_open', { page: 'analysis', topic: 'charts' })
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
-    if (portrait) {
-      fireEvent.click(screen.getByRole('button', { name: '更多操作' }))
-      fireEvent.click(screen.getByRole('menuitem', { name: '帮助' }))
-    } else fireEvent.click(screen.getByRole('button', { name: /帮助/ }))
+    fireEvent.click(screen.getByRole('button', { name: '更多操作' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '帮助' }))
     expect(track).toHaveBeenCalledTimes(3)
     expect(track).toHaveBeenLastCalledWith('help_open', { page: 'analysis', topic: 'quick-start' })
   })
