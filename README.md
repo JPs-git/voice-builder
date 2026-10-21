@@ -1,50 +1,65 @@
-
 # Voice Builder
 
-实时分析语音音高, 共振峰, 专为伪音练习设计.
+面向伪音练习的在线声音训练工具：实时观察音高与共振峰、听取参考音，并通过录音报告了解一段话的常用音高范围。
 
-<img alt="Logo" src="assets/logo-with-text.png" width="60%">
-
-## Quick Start
-
-克隆本仓库
-```bash
-  git clone https://github.com/JPs-git/voice-builder.git
-  cd voice-builder
-```
-安装依赖启动开发服务器
-```bash
-  npm install
-  npm run dev
-```
+<img alt="Voice Builder 标志" src="assets/logo-with-text.png" width="60%">
 
 ## Features
 
-- 实时显示音高、共振峰
-- 回放自己的声音
-- 支持上传wav文件分析
-- 独立「统计分析」页（`/recording`）：自然朗读或自由说话，最多 60 秒，录音时仅显示材料与计时，支持暂停/继续，确认完成后分析整段音频；满 60 秒自动暂停。
-- 统计典型 F0（中位数）、最高/最低 F0、变化幅度与半音跨度，提供时间曲线、分布与极值附近回听。
-
-实时分析与音高参考继续使用 10 秒音频窗口；统计分析支持录音或导入不超过 60 秒的片段。录音与报告仅在浏览器当前会话内保留，刷新后清除。有效 F0 少于 3 秒时不显示摘要值；3–10 秒显示样本较少提示。统计反映本段说话，不代表个人完整音域。
-
-
-## 匿名使用统计
-
-自行部署默认关闭统计。正式站点可按 [统计接入说明](docs/analytics.md) 配置 Umami Cloud。录音和声音分析数据在本地处理，不发送给统计服务。
-
-## Skills
-- Javascript
-- HTML
-- CSS
-- Echarts
+- **实时分析**：直观展示音高与共振峰变化，提供实时声音反馈。
+- **训练目标**：选择元音预设或自定义目标区间，辅助发声练习。
+- **音高参考**：通过钢琴键盘听取参考音，对照音高曲线练习。
+- **统计分析**：通过朗读或自由说话生成报告，了解常用音高范围与分布。
+- **录音与回放**：支持麦克风录音、音频导入和回放，方便反复对照。
 
 ## Screenshots
-<img alt="Logo" src="assets/screen_shot.png" width="80%">
-<img alt="Logo" src="assets/screen_shot_2.png" width="80%">
+
+### 实时分析
+
+<img alt="实时分析：元音目标区间、基频与共振峰曲线" src="assets/screen_shot.png" width="100%">
+
+### 音高参考
+
+<img alt="音高参考：钢琴键盘与音高曲线" src="assets/screen_shot_2.png" width="100%">
+
+### 录音与统计报告
+
+<img alt="统计分析录音页：参考短文、录音操作与计时" src="assets/recording.png" width="100%">
+<img alt="录音分析报告：典型 F0、P10/P90、完整回放与音高分布" src="assets/recording-report.png" width="100%">
+
+### 手机布局
+
+<img alt="手机竖屏实时分析：反馈、曲线与底部录音操作" src="assets/analysis-mobile.png" width="320">
+
+## Quick Start
+
+克隆仓库并安装依赖：
+
+```bash
+git clone https://github.com/JPs-git/voice-builder.git
+cd voice-builder
+npm install
+```
+
+启动开发服务器：
+
+```bash
+npm run dev
+```
+
+打开终端显示的本地地址，即可录音或导入音频体验。
+
+构建并预览：
+
+```bash
+npm run build
+npm run preview
+```
+
+## Tech Stack
+
+React · TypeScript · Vite · Zustand · ECharts · Web Audio API
 
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
-
-
