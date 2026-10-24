@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
-import { VoiceActivityDetector, DEFAULT_VAD_THRESHOLD } from '../../dsp/vad'
+import { VoiceActivityDetector, DEFAULT_VAD_THRESHOLD, DEFAULT_VAD_OPTIONS } from '../../dsp/vad'
 
 describe('VoiceActivityDetector', () => {
   it('returns voiced=false for silence (all zeros)', () => {
@@ -37,9 +37,10 @@ describe('VoiceActivityDetector', () => {
     assert.ok(result.rms > 0.008)
   })
 
-  it('uses default threshold of 0.008', () => {
+  it('uses the selected shared default threshold', () => {
     const vad = new VoiceActivityDetector()
     assert.equal(vad._threshold, DEFAULT_VAD_THRESHOLD)
+    assert.deepEqual(DEFAULT_VAD_OPTIONS, { threshold: 0.01, releaseThreshold: 0.01, holdMs: 0 })
   })
 
   it('accepts custom threshold', () => {
@@ -55,5 +56,20 @@ describe('VoiceActivityDetector', () => {
     const r2 = vad.compute(samples)
     assert.equal(r1.voiced, r2.voiced)
     assert.equal(r1.rms, r2.rms)
+  })
+})
+
+
+describe('default gate compromise', () => {
+  it('closes below the opening threshold without hysteresis or hold', () => {
+    const vad = new VoiceActivityDetector()
+    const level = rms => new Float32Array(800).fill(rms)
+    assert.equal(vad.compute(level(0.009)).voiced, false)
+    assert.equal(vad.compute(level(0.011)).voiced, true)
+    assert.equal(vad.compute(level(0.009)).voiced, false)
+    assert.equal(vad.compute(level(0.02), 10, false).voiced, false)
+    assert.equal(vad.compute(level(0.011)).voiced, true)
+    vad.reset()
+    assert.equal(vad.compute(level(0.009)).voiced, false)
   })
 })

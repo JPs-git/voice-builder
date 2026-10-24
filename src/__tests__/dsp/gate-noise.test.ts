@@ -57,16 +57,21 @@ describe('shared gate and background noise', () => {
     expect(frames.every(f => f.voiced && f.f0 === 200)).toBe(true)
   })
 
-  it('treats an empty gate override as shared defaults', () => {
+  it('treats an empty gate override as shared defaults without a hold', () => {
     const frames: SmootherFrame[] = []
     const pipeline = new AnalysisPipeline({ vadOptions: {}, onFrame: f => frames.push(f) })
     pipeline.pushChunk(tone(800, 0.02), 16000)
+    expect(frames[0].f0).toBe(200)
     pipeline.pushChunk(tone(16000, 0.009), 16000)
-    expect(frames.slice(5).every(f => f.voiced && f.f0 === 200)).toBe(true)
+    expect(frames.slice(5).every(f => !f.voiced && f.f0 === null && f.f1 === null && f.f2 === null)).toBe(true)
   })
 
-  it('retains weak periodic speech across the hysteresis band', () => {
-    const { pipeline, frames } = collect()
+  it('retains weak periodic speech when hysteresis is explicitly requested', () => {
+    const frames: SmootherFrame[] = []
+    const pipeline = new AnalysisPipeline({
+      vadOptions: { threshold: 0.008, releaseThreshold: 0.005, holdMs: 100 },
+      onFrame: f => frames.push(f),
+    })
     pipeline.pushChunk(tone(800, 0.02), 16000)
     pipeline.pushChunk(tone(16000, 0.009), 16000)
     expect(frames.slice(5).every(f => f.voiced && f.f0 === 200)).toBe(true)
