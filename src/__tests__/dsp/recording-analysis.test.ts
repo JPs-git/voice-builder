@@ -9,7 +9,8 @@ it('analyzes low-volume speech-like periodic input without a 10 second window',(
  expect(result.frames[result.frames.length-1].time).toBeLessThanOrEqual(11)
  expect(result.settings.f0Range).toEqual([60,1000])
  expect(result.settings.statisticsRange).toEqual([60,500])
- expect(result.version).toBe('recording-f0-v3')
+ expect(result.settings.vad).toEqual({threshold:.01,releaseThreshold:.01,holdMs:0})
+ expect(result.version).toBe('recording-f0-v4')
 })
 it('does not invent pitch in silence or short zero-padded tails',()=>{
  expect(analyzeClip(new Float32Array(16000),16000).summary.median).toBeNull()

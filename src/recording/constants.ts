@@ -9,4 +9,4 @@ export const ANALYSIS_SETTINGS: AnalysisSettings = {
   statisticsRange:[STATISTICS_F0_RANGE.min,STATISTICS_F0_RANGE.max],
   vad:{...DEFAULT_VAD_OPTIONS}, outlierVersion:'isolated-jump-v1',
 }
-export const ANALYSIS_VERSION = 'recording-f0-v3'
+export const ANALYSIS_VERSION = 'recording-f0-v4'

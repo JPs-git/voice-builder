@@ -1,4 +1,4 @@
-export const DEFAULT_VAD_THRESHOLD = 0.008
+export const DEFAULT_VAD_THRESHOLD = 0.01
 
 export interface VadOptions {
   threshold?: number
@@ -9,8 +9,8 @@ export interface VadOptions {
 // Shared by streaming capture and file analysis.
 export const DEFAULT_VAD_OPTIONS: Readonly<Required<VadOptions>> = {
   threshold: DEFAULT_VAD_THRESHOLD,
-  releaseThreshold: 0.005,
-  holdMs: 100,
+  releaseThreshold: DEFAULT_VAD_THRESHOLD,
+  holdMs: 0,
 }
 
 export class VoiceActivityDetector {
