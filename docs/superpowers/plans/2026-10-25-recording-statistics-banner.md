@@ -2,7 +2,7 @@
 
 **Goal:** Implement approved A design: a compact, permanent two-line expectation banner on the portrait recording page.
 
-**Design:** After page tabs and before reading content, show “建议录制 30–60 秒，最长 60 秒” and “典型音高、常用范围、分布与回放”. The question icon opens existing recording-statistics help. Banner uses normal document flow, about 52px tall, no close control. Visible through all recording task phases regardless of intro flags. Replace portrait recording first-use overlay; leave desktop, other pages and report details unchanged. Reader fills remaining space and scrolls internally. Approved preview: statistics-banner-a-390x844.png.
+**Design:** After page tabs and before reading content, show “建议录制 30–60 秒，最长 60 秒” and “短文仅供参考，可自由选择说话内容”. The question icon opens existing recording-statistics help. Banner uses normal document flow, about 52px tall, no close control. Visible through all recording task phases regardless of intro flags. Replace portrait recording first-use overlay; leave desktop, other pages and report details unchanged. Reader fills remaining space and scrolls internally. Approved preview: statistics-banner-a-390x844.png.
 
 **Architecture:** RecordingPage owns portrait-only banner; existing ContextHelpButton and ShellContext open shared help. AppShell excludes only portrait recorder from legacy first-use overlay. Scoped CSS preserves flex sizing and Dock clearance.
 

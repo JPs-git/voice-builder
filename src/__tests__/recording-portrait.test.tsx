@@ -162,7 +162,7 @@ it('keeps a compact permanent guide through task phases and opens shared help wi
   mount()
   const guide=()=>screen.getByRole('region',{name:'统计录音说明'})
   expect(guide().textContent).toContain('建议录制 30–60 秒，最长 60 秒')
-  expect(guide().textContent).toContain('典型音高、常用范围、分布与回放')
+  expect(guide().textContent).toContain('短文仅供参考，可自由选择说话内容')
   expect(screen.queryByRole('region',{name:'首次使用帮助'})).toBeNull()
   act(()=>useIntroHintStore.setState({handled:false}))
   expect(guide()).toBeTruthy()

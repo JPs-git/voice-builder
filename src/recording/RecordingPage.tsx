@@ -33,7 +33,7 @@ export function RecordingPage(){
   <div className={styles.content}>
    {portrait&&<section className={styles.statisticsBanner} aria-label="统计录音说明">
     <p>建议录制 <strong>30–60 秒</strong>，最长 60 秒</p>
-    <p className={styles.statisticsBannerSummary}>典型音高、常用范围、分布与回放</p>
+    <p className={styles.statisticsBannerSummary}>短文仅供参考，可自由选择说话内容</p>
     {shell?.onOpenHelp&&<span className={styles.statisticsBannerHelp}><ContextHelpButton label="统计分析说明" onClick={()=>shell.onOpenHelp?.('recording-statistics')}/></span>}
    </section>}
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
