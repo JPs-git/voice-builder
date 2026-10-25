@@ -217,7 +217,7 @@ function AppShellContent() {
       )}
       <FirstUseHelpBanner
         layout={isPortrait ? 'portrait' : 'landscape'}
-        visible={eligible && !isReport}
+        visible={eligible && !isReport && !(isPortrait && isRecording)}
         suppressed={(isRecording?!['prepared','paused'].includes(recordingSnapshot.phase):hasData || isCapturing || isRequesting || isPlaying) || helpOpen || configOpen || aboutOpen || goalOpen}
         description={isRecording?'了解录制、暂停和统计结果':undefined}
         dockHeight={dockHeight}

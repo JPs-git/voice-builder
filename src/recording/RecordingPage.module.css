@@ -81,3 +81,14 @@ button.stat:disabled{cursor:default}
 
 @media(min-width:769px){.page[data-reader-active="true"]{padding-bottom:24px}}
 .readerTitle{display:flex;align-items:center;gap:8px;min-width:0}
+
+.statisticsBanner{position:relative;padding:8px 12px;margin-bottom:12px;border-radius:10px;background:#eaf5ff;color:#294566;font-size:12px;line-height:18px}
+.statisticsBanner p{margin:0;white-space:nowrap}
+.statisticsBanner strong{font-weight:700;color:#0a2344}
+.statisticsBannerSummary{padding-right:32px}
+.statisticsBannerHelp{position:absolute;right:4px;bottom:0}
+.statisticsBannerHelp button{width:44px;height:36px;padding:8px 12px;color:#1677ff}
+.statisticsBannerHelp svg{width:20px;height:20px}
+.statisticsBannerHelp svg>circle:first-child{fill:#1677ff;stroke:none}
+.statisticsBannerHelp svg>path{stroke:#fff}
+.statisticsBannerHelp svg>circle:last-child{fill:#fff}
