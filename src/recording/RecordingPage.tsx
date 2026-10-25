@@ -4,6 +4,7 @@ import type {ShellContext} from '../routes/AppShell'
 import {useRecordingSession} from './RecordingSessionProvider'
 import {RecordingReferenceSelect} from './RecordingReferenceSelect'
 import {useMediaQuery} from '../hooks/useMediaQuery'
+import {ContextHelpButton} from '../components/ContextHelpButton'
 import {RecordingReader} from './RecordingReader'
 import {useReportNavigation} from './useReportNavigation'
 import {formatClock} from './format'
@@ -30,6 +31,11 @@ export function RecordingPage(){
  useEffect(()=>{if(s.error&&canAutoFocusPage())errorRef.current?.focus()},[s.error])
  return <main ref={mainRef} className={styles.page} data-recording-page data-reader-active="true" style={{'--recording-dock-height':shell?.dockHeight?`${shell.dockHeight}px`:undefined} as CSSProperties}>
   <div className={styles.content}>
+   {portrait&&<section className={styles.statisticsBanner} aria-label="统计录音说明">
+    <p>建议录制 <strong>30–60 秒</strong>，最长 60 秒</p>
+    <p className={styles.statisticsBannerSummary}>短文仅供参考，可自由选择说话内容</p>
+    {shell?.onOpenHelp&&<span className={styles.statisticsBannerHelp}><ContextHelpButton label="统计分析说明" onClick={()=>shell.onOpenHelp?.('recording-statistics')}/></span>}
+   </section>}
    {s.error&&<div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
     <span>{s.error}</span>
    </div>}
