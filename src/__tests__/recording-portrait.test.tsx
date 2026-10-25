@@ -153,7 +153,7 @@ it('uses a smaller default and pauses before showing a distinct completion actio
  expect(analyze).not.toHaveBeenCalled()
  expect(screen.getByText('已达 60 秒，请完成录制')).toBeTruthy()
 })
-it('keeps a compact permanent guide through task phases and opens shared help without another intro overlay',async()=>{
+it('keeps a compact permanent guide through task phases alongside the original intro behavior',async()=>{
  useIntroHintStore.setState({handled:true})
  let chunk!:(samples:Float32Array,rate:number)=>void,allow!:()=>void,complete!:(value:any)=>void
  audio.startCapture.mockImplementation(cb=>{chunk=cb;return new Promise<void>(resolve=>{allow=resolve})})
@@ -163,9 +163,6 @@ it('keeps a compact permanent guide through task phases and opens shared help wi
   const guide=()=>screen.getByRole('region',{name:'统计录音说明'})
   expect(guide().textContent).toContain('建议录制 30–60 秒，最长 60 秒')
   expect(guide().textContent).toContain('短文仅供参考，可自由选择说话内容')
-  expect(screen.queryByRole('region',{name:'首次使用帮助'})).toBeNull()
-  act(()=>useIntroHintStore.setState({handled:false}))
-  expect(guide()).toBeTruthy()
   expect(screen.queryByRole('region',{name:'首次使用帮助'})).toBeNull()
   const help=within(guide()).getByRole('button',{name:'统计分析说明'})
   help.focus();fireEvent.click(help)
@@ -190,6 +187,30 @@ it('keeps a compact permanent guide through task phases and opens shared help wi
   fireEvent.click(screen.getByRole('button',{name:'返回录音'}))
   expect(guide()).toBeTruthy()
  } finally {act(()=>useIntroHintStore.setState({handled:false}))}
+})
+it('reserves only Dock height while the first-use hint appears, hides and is dismissed',async()=>{
+ useIntroHintStore.setState({handled:false})
+ const geometry=vi.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockReturnValue({height:80} as DOMRect)
+ let chunk!:(samples:Float32Array,rate:number)=>void
+ audio.startCapture.mockImplementation(async cb=>{chunk=cb})
+ try {
+  mount()
+  const reserved=()=>document.querySelector<HTMLElement>('main[data-recording-page]')!.style.getPropertyValue('--recording-dock-height')
+  expect(screen.getByRole('region',{name:'首次使用帮助'})).toBeTruthy()
+  expect(screen.getByRole('region',{name:'统计录音说明'})).toBeTruthy()
+  expect(reserved()).toBe('80px')
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'开始录音'})))
+  act(()=>chunk(new Float32Array(16000),16000))
+  expect(screen.queryByRole('region',{name:'首次使用帮助'})).toBeNull()
+  expect(reserved()).toBe('80px')
+  fireEvent.click(screen.getByRole('button',{name:'暂停录制'}))
+  expect(screen.getByRole('region',{name:'首次使用帮助'})).toBeTruthy()
+  expect(screen.getByRole('region',{name:'统计录音说明'})).toBeTruthy()
+  expect(reserved()).toBe('80px')
+  fireEvent.click(screen.getByRole('button',{name:'关闭首次使用提示'}))
+  expect(screen.queryByRole('region',{name:'首次使用帮助'})).toBeNull()
+  expect(reserved()).toBe('80px')
+ } finally {geometry.mockRestore();act(()=>useIntroHintStore.setState({handled:false}))}
 })
 it('keeps reference and completion slots stable across recording, pause, processing and cancellation',async()=>{
  let chunk!:(samples:Float32Array,rate:number)=>void,complete!:(value:any)=>void
