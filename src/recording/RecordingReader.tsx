@@ -16,7 +16,13 @@ export function RecordingReader({compact=false}:{compact?:boolean}){
  }
  return <section className={`${styles.reader} ${compact?styles.compactReader:''}`} data-compact-reader={compact||undefined}>
   <header className={styles.readerHeader}>
-   {compact&&material?<h1>{material.title}</h1>:<div className={styles.readerTitle}><strong>{material?'阅读材料':prompt?'话题提示':'参考内容'}</strong>{shell?.onOpenHelp&&<ContextHelpButton label="阅读材料说明" onClick={()=>shell.onOpenHelp?.('recording-statistics')}/>}</div>}
+   {compact&&material?<h1>{material.title}</h1>:<div className={styles.readerTitle}>
+    <div className={styles.readerHeading}><strong>{material?'阅读材料':prompt?'话题提示':'参考内容'}</strong>{shell?.onOpenHelp&&<ContextHelpButton label="阅读材料说明" onClick={()=>shell.onOpenHelp?.('recording-statistics')}/>}</div>
+    {!compact&&<p className={styles.readerGuidance}>
+     <span>建议录制 <strong>30–60 秒</strong>，最长 60 秒<span className={styles.guidanceSeparator} aria-hidden="true">|</span></span>
+     <span>短文仅供参考，可自由选择说话内容</span>
+    </p>}
+   </div>}
    <div className={styles.fontControls}><span>字号</span>
     <button type="button" aria-label="减小字号" disabled={fontSize===18} onClick={()=>step(-1)}>−</button>
     <span aria-hidden="true">A</span>

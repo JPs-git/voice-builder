@@ -80,7 +80,13 @@ button.stat:disabled{cursor:default}
 @media(max-width:768px){.stat[data-testid="stat-median"]{grid-column:1 / -1}}
 
 @media(min-width:769px){.page[data-reader-active="true"]{padding-bottom:24px}}
-.readerTitle{display:flex;align-items:center;gap:8px;min-width:0}
+.readerTitle{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.readerHeading{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.readerGuidance{display:flex;flex-wrap:wrap;align-items:center;gap:2px 0;margin:0;color:var(--text-mute);font-size:12px;line-height:20px;min-width:0}
+.readerGuidance>span{white-space:nowrap}
+.readerGuidance strong{font-weight:600}
+.guidanceSeparator{display:inline-block;margin:0 12px;color:var(--border)}
+.fontControls{flex-shrink:0}
 
 .statisticsBanner{position:relative;padding:8px 12px;margin-bottom:12px;border-radius:10px;background:#eaf5ff;color:#294566;font-size:12px;line-height:18px}
 .statisticsBanner p{margin:0;white-space:nowrap}
