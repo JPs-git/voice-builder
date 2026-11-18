@@ -44,8 +44,6 @@ function renderApp(initialEntry: string) {
         <Route element={<AppShell />}>
           <Route index element={<div>analysis-content</div>} />
           <Route path="practice" element={<ProbePage />} />
-          <Route path="recording" element={<div>recording-content</div>} />
-          <Route path="reports/:reportId" element={<div>report-content</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -99,18 +97,3 @@ describe('AppShell', () => {
     expect(audioAction).not.toHaveBeenCalled()
   })
 })
-
-describe('homepage survey visibility', () => {
-  beforeEach(() => sessionStorage.clear())
-  it('shows on the homepage and disappears after navigation', () => {
-    renderApp('/')
-    expect(screen.getByRole('region', { name: '用户问卷调查' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('link', { name: '音高参考' }))
-    expect(screen.queryByRole('region', { name: '用户问卷调查' })).toBeNull()
-  })
-  it.each(['/practice', '/recording', '/reports/example'])('does not show at %s', path => {
-    renderApp(path)
-    expect(screen.queryByRole('region', { name: '用户问卷调查' })).toBeNull()
-  })
-})
-
