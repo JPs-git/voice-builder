@@ -44,36 +44,8 @@ jobs:
       - name: Decide version bump from Conventional Commits
         id: bump
         run: |
-          LAST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
-          if [ -n "$LAST_TAG" ]; then
-            RANGE="${LAST_TAG}..HEAD"
-            echo "Analysing commits in ${RANGE}"
-          else
-            RANGE=""
-            echo "No previous tag — analysing full history"
-          fi
-
-          SUBJECTS="$(git log $RANGE --format='%s')"
-          BODIES="$(git log $RANGE --format='%B')"
-
-          BUMP=""
-          # major: "BREAKING CHANGE" in any body, or "type!:" / "type(scope)!:" header
-          if echo "$BODIES" | grep -qE 'BREAKING[ -]CHANGE' \
-            || echo "$SUBJECTS" | grep -qE '^[a-z]+(\([^)]+\))?!:'; then
-            BUMP="major"
-          elif echo "$SUBJECTS" | grep -qE '^feat(\([^)]+\))?:'; then
-            BUMP="minor"
-          elif echo "$SUBJECTS" | grep -qE '^fix(\([^)]+\))?:'; then
-            BUMP="patch"
-          fi
-
-          if [ -z "$BUMP" ]; then
-            echo "No releasable commits (feat/fix/BREAKING) since ${LAST_TAG:-start} — skipping release."
-            echo "bump=none" >> "$GITHUB_OUTPUT"
-          else
-            echo "Selected bump: ${BUMP}"
-            echo "bump=${BUMP}" >> "$GITHUB_OUTPUT"
-          fi
+          node --test scripts/release-bump.test.mjs
+          node scripts/release-bump.mjs
 
       - name: Test + build
         if: steps.bump.outputs.bump != 'none'
@@ -100,5 +72,3 @@ jobs:
           NEW_VERSION="$(npm version ${{ steps.bump.outputs.bump }} -m 'chore(release): %s [skip ci]')"
           echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
           git push --follow-tags
-
-
