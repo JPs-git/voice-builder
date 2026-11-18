@@ -16,6 +16,13 @@ name: Auto Release
 on:
   push:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      revert_bump:
+        description: 'Reviewed bump for unresolved reverts (does not lower other changes)'
+        type: choice
+        default: auto
+        options: [auto, none, patch, minor, major]
 
 permissions:
   contents: write
@@ -27,6 +34,7 @@ concurrency:
 
 jobs:
   release:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,6 +51,8 @@ jobs:
 
       - name: Decide version bump from Conventional Commits
         id: bump
+        env:
+          RELEASE_REVERT_BUMP: ${{ inputs.revert_bump != 'auto' && inputs.revert_bump || '' }}
         run: |
           node --test scripts/release-bump.test.mjs
           node scripts/release-bump.mjs
@@ -60,14 +70,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Remove stale tag left from a previous partial run
+          # Published version tags are immutable; resolve partial releases manually.
           CURRENT="$(node -p "require('./package.json').version")"
           case "${{ steps.bump.outputs.bump }}" in
             major) NEW="$(awk -F. '{print $1+1".0.0"}' <<< "$CURRENT")" ;;
             minor) NEW="$(awk -F. '{print $1"."$2+1".0"}' <<< "$CURRENT")" ;;
             patch) NEW="$(awk -F. '{print $1"."$2"."$3+1}' <<< "$CURRENT")" ;;
           esac
-          git tag -d "v$NEW" 2>/dev/null && echo "Removed stale tag v$NEW" || true
+          if git show-ref --verify --quiet "refs/tags/v$NEW"; then
+            echo "Tag v$NEW already exists; refusing to replace it."
+            exit 1
+          fi
 
           NEW_VERSION="$(npm version ${{ steps.bump.outputs.bump }} -m 'chore(release): %s [skip ci]')"
           echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
