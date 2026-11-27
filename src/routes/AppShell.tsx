@@ -18,7 +18,6 @@ import { useAppStore } from '../store/appStore'
 import { presetShortLabel } from '../types'
 import type { HelpTopic } from '../content/helpContent'
 import { useFirstUseHelp } from '../hooks/useFirstUseHelp'
-import { SurveyBanner } from '../components/SurveyBanner'
 import { FirstUseHelpBanner } from '../components/FirstUseHelpBanner'
 import { isAvailableFocusTarget } from '../components/focusTarget'
 import { getAnalyticsPage, track } from '../analytics/analytics'
@@ -61,7 +60,6 @@ function AppShellContent() {
   const [dockHeight, setDockHeight] = useState(0)
   const { eligible, dismiss } = useFirstUseHelp()
 
-  const isHome = useMatch({ path: '/', end: true }) != null
   const isPractice = useMatch('/practice') != null
   const isRecording = useMatch('/recording') != null
   const reportMatch = useMatch('/reports/:reportId')
@@ -174,7 +172,6 @@ function AppShellContent() {
             />
           : undefined}
       />
-      {isHome && <SurveyBanner surveyId="PLHDDnU" href="https://v.wjx.cn/vm/PLHDDnU.aspx#" onDismiss={() => getHelpFallbackFocus()?.focus({ preventScroll: true })} />}
       <Outlet context={shellContext} />
       {showPortraitDock && (
         <>
