@@ -100,17 +100,27 @@ describe('AppShell', () => {
   })
 })
 
-describe('homepage survey visibility', () => {
-  beforeEach(() => sessionStorage.clear())
-  it('shows on the homepage and disappears after navigation', () => {
-    renderApp('/')
-    expect(screen.getByRole('region', { name: '用户问卷调查' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('link', { name: '音高参考' }))
+describe('retired homepage survey', () => {
+  function expectNoSurvey() {
     expect(screen.queryByRole('region', { name: '用户问卷调查' })).toBeNull()
+    expect(document.querySelector('a[href*="v.wjx.cn/vm/PLHDDnU"]')).toBeNull()
+  }
+  it('has no survey on first visit or after remounting', () => {
+    const view = renderApp('/')
+    expectNoSurvey()
+    view.unmount()
+    renderApp('/')
+    expectNoSurvey()
+  })
+  it('keeps the survey absent when navigating away and back', () => {
+    renderApp('/')
+    fireEvent.click(screen.getByRole('link', { name: '音高参考' }))
+    expectNoSurvey()
+    fireEvent.click(screen.getByRole('link', { name: '实时分析' }))
+    expectNoSurvey()
   })
   it.each(['/practice', '/recording', '/reports/example'])('does not show at %s', path => {
     renderApp(path)
-    expect(screen.queryByRole('region', { name: '用户问卷调查' })).toBeNull()
+    expectNoSurvey()
   })
 })
-
